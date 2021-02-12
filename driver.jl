@@ -1,6 +1,5 @@
 
-include("src/SpinDoctor.jl")
-
+using SpinDoctor
 
 ## Choose setup script
 

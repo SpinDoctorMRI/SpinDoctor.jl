@@ -28,5 +28,6 @@ meshfiles
 output
 test.jl
 
-# OSX
+# Local configurations
 .DS_STORE
+.vscode
