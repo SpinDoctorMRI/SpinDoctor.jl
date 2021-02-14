@@ -7,7 +7,7 @@ function create_directions(experiment::ExperimentSetup)
         directions = direction / norm(direction)
     elseif flat_dirs
         # Create directions (unformly distributed on unit circle)
-        θ = 2π * (0:ndir-1)' / ndir
+        θ = 2π * collect(0:ndir-1)' / ndir
         directions = [
             cos.(θ)
             sin.(θ)

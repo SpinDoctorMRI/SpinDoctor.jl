@@ -11,7 +11,7 @@
     include_nucleus::Bool = false
     nucleus_radiusratio::Float64 = 0.
     include_ecs::Bool = false
-    ecs_shape::String = "no_ecs"
+    ecs_shape::String = "box"
     ecs_gap::Float64 = 0.
     refinement::Union{Float64, Nothing} = nothing
 end

@@ -1,6 +1,6 @@
 function create_fibonacci_sphere(npoint)
     φ = (1 + √5) / 2
-    inds = (0:npoint-1)'
+    inds = collect(0:npoint-1)'
     θ = 2π / φ * inds
     ϕ = acos.(1 .- 2 .* (inds .+ 0.5) ./ npoint)
 

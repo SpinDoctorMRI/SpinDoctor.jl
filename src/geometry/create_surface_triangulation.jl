@@ -11,7 +11,9 @@ end
 
 
 """
-Create surface triangulation of (inner and) outer cylinders (and ECS).
+    create_surface_triangulation(cellsetup, cells, domain)
+
+Create surface triangulation of [inner and] outer cylinders [and ECS].
 
 The ground surface is triangulated first, before the walls are "extruded" and
 the top surface is copied from the ground surface.
@@ -30,7 +32,7 @@ function create_surface_triangulation_cylinder(cellsetup::CellSetup, cells, doma
     create_nside(r) = max(nside_min, round(Int, nside * r / rmean))
     create_angles(n) = 2π * (0:n-1) / n
     create_circle(r, angles, center) = r * [cos.(angles'); sin.(angles')] .+ center
-    create_circle_edges(n) = [(1:n-1)' n; (2:n)' 1]
+    create_circle_edges(n) = [collect(1:n-1)' n; collect(2:n)' 1]
 
     centers_columns = reshape([centers[:, i] for i=1:ncell], (1, ncell))
 
@@ -228,7 +230,7 @@ function create_surface_triangulation_cylinder(cellsetup::CellSetup, cells, doma
 end
 
 
-""" Create surface triangulation of (inner and) outer spheres (and ECS). """
+""" Create surface triangulation of [inner and] outer spheres [and ECS]. """
 function create_surface_triangulation_sphere(cellsetup::CellSetup, cells, domain)
     error("not implemented")
 end

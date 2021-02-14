@@ -1,3 +1,8 @@
+"""
+    create_cells(cellsetup)
+
+Create geometrical configuration of cells. Return mathematical description (radii, centers).
+"""
 function create_cells(setup::CellSetup)
     @unpack shape, ncell, rmin, rmax, dmin, dmax = setup
 
@@ -32,8 +37,11 @@ function create_cells(setup::CellSetup)
 
         # Generate a random point using a uniform distribution with zero mean and
         # variance proportional to rmean
-        # point = (rand(ndim) .- 0.5) * rmean * max(10, ncell^(1 / 3))
-        point = (rand(ndim) .- 0.5) * rmean * max(10., sqrt(ncell)) * 40.
+        if shape == "sphere"
+            point = (rand(ndim) .- 0.5) * rmean * max(10, ncell^(1 / 3))
+        else # cylinder
+            point = (rand(ndim) .- 0.5) * rmean * max(10., sqrt(ncell)) * 40.
+        end
 
         # Distance from point to the (already determined) cells
         # dist = sqrt.(sum(abs2, centers .- point; dims=1)) .- radii
@@ -79,10 +87,5 @@ function create_cells(setup::CellSetup)
     pmean = (pmin + pmax) / 2
     centers = centers .- pmean
 
-    normals = shape == "cylinder" ? repeat([0; 0; 1], 1, ndim) : nothing
-
-    cells = Dict{String, Any}()
-    @pack! cells = radii, centers, normals
-
-    cells
+    (; radii, centers)
 end

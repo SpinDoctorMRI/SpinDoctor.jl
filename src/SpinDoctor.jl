@@ -3,12 +3,12 @@ module SpinDoctor
 using Printf
 using Parameters
 using LinearAlgebra
-using Arpack
+using Arpack: eigs
 using SparseArrays
 using Statistics: mean
 
 using DifferentialEquations
-using Expokit
+using Expokit: expmv!
 using QuadGK
 using Polyhedra: polyhedron, vrep, removevredundancy!, DefaultLibrary
 import GLPK: Optimizer
@@ -49,7 +49,7 @@ include("compute_laplace_eig.jl")
 include("solve_btpde.jl")
 include("solve_mf.jl")
 
-# Postprocess
+# Saving
 include("savefield.jl")
 
 
