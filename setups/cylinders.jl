@@ -1,4 +1,4 @@
-cellsetup = SpinDoctor.CellSetup(
+cellsetup = CellSetup(
     name = "slabs",
     shape = "cylinder",
     ncell = 30,
@@ -16,7 +16,7 @@ cellsetup = SpinDoctor.CellSetup(
     refinement = 0.1
 )
 
-domainsetup = SpinDoctor.DomainSetup(
+domainsetup = DomainSetup(
     diffusivity_in = 0.002,
     diffusivity_out = 0.002,
     diffusivity_ecs = 0.002,
@@ -30,14 +30,14 @@ domainsetup = SpinDoctor.DomainSetup(
     permeability_out_ecs = 1e-4,
 )
 
-experiment = SpinDoctor.ExperimentSetup(
+experiment = ExperimentSetup(
     ndir = 1,
     flat_dirs = false,
     direction = [0.; 0.; 1.],
-    sequences = [SpinDoctor.PGSE(2000., 6000.)],
+    sequences = [PGSE(2000., 6000.)],
     values = [10000.],
     values_type = 'b',
-    btpde = SpinDoctor.BTPDE(odesolver=SpinDoctor.Trapezoid(), nsave=1),
+    btpde = BTPDE(odesolver=Trapezoid(), nsave=1),
     # mf = MF(length_scale=3, neig_max=400)
 )
 
