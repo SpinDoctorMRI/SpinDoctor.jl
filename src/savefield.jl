@@ -2,7 +2,7 @@ function savefield(mesh, field, filename::String, fieldname="Magnetization")
 
     vtmfile = vtk_multiblock(filename)
 
-    for icmpt = 1:mesh.ncmpt
+    for icmpt = 1:mesh.ncompartment
 
         f = field[icmpt]
         points = mesh.points[icmpt]
@@ -27,7 +27,7 @@ end
 
 function savefield_time(mesh, time, field, filename::String, fieldname="Magnetization")
 
-    ncmpt = mesh.ncmpt
+    ncompartment = mesh.ncompartment
 
     pvd = paraview_collection(filename)
 
@@ -36,7 +36,7 @@ function savefield_time(mesh, time, field, filename::String, fieldname="Magnetiz
         vtmfile = vtk_multiblock(filename * "_$it")
 
 
-        for icmpt = 1:ncmpt
+        for icmpt = 1:ncompartment
             points = mesh.points[icmpt]
             elements = mesh.elements[icmpt]
 
@@ -58,7 +58,7 @@ end
 
 function save_btpde_results(mesh, btpde, experiment, directions, filename)
 
-    ncmpt = mesh.ncmpt
+    ncompartment = mesh.ncompartment
     g = directions[:, 1]
     f = experiment.sequences[1]
 
@@ -72,7 +72,7 @@ function save_btpde_results(mesh, btpde, experiment, directions, filename)
 
         vtmfile = vtk_multiblock(filename * "_$it")
 
-        for icmpt = 1:ncmpt
+        for icmpt = 1:ncompartment
             points = mesh.points[icmpt]
             elements = mesh.elements[icmpt]
 

@@ -6,7 +6,7 @@ Solve the Bloch-Torrey partial differential equation.
 function solve_btpde(mesh, domain, experiment, directions)
 
     # Extract input parameters
-    @unpack boundary_markers, compartments, boundaries, ncmpt, nboundary, diffusivity, relaxation, permeability, initial_density = domain
+    @unpack boundary_markers, compartments, boundaries, ncompartment, nboundary, diffusivity, relaxation, permeability, initial_density = domain
     @unpack ndir, flat_dirs, direction, sequences, values, values_type, btpde = experiment
 
     # Extract solver scheme
@@ -25,7 +25,7 @@ function solve_btpde(mesh, domain, experiment, directions)
         Q = [],
         Mx = [[] for idim=1:3]
     )
-    for icmpt = 1:ncmpt
+    for icmpt = 1:ncompartment
         # Finite elements
         points = mesh.points[icmpt];
         facets = mesh.facets[icmpt, :];
@@ -50,15 +50,15 @@ function solve_btpde(mesh, domain, experiment, directions)
     Mx = [blockdiag(fem_mat_cmpts.Mx[dim]...) for dim = 1:3]
 
     # Create initial conditions (enforce complex values)
-    ρ_cmpts = [fill(Complex(initial_density[icmpt]), npoint_cmpts[icmpt]) for icmpt = 1:ncmpt];
+    ρ_cmpts = [fill(Complex(initial_density[icmpt]), npoint_cmpts[icmpt]) for icmpt = 1:ncompartment];
 
     # Initial spin density on entire domain
     ρ = vcat(ρ_cmpts...)
 
     # Allocate output arrays
-    signal = fill(Array{ComplexF64}(undef, 0), ncmpt, namplitude, nsequence, ndir)
+    signal = fill(Array{ComplexF64}(undef, 0), ncompartment, namplitude, nsequence, ndir)
     signal_allcmpts = fill(Array{ComplexF64}(undef, 0), namplitude, nsequence, ndir)
-    magnetization = fill(Array{ComplexF64, 2}(undef, 0, 0), ncmpt, namplitude, nsequence, ndir)
+    magnetization = fill(Array{ComplexF64, 2}(undef, 0, 0), ncompartment, namplitude, nsequence, ndir)
     time = fill(Float64[], namplitude, nsequence, ndir)
 
     # Q-values and b-values
@@ -148,7 +148,7 @@ function solve_btpde(mesh, domain, experiment, directions)
         mag = hcat(sol.u...)
 
         # Split solution into compartments
-        for icmpt = 1:ncmpt
+        for icmpt = 1:ncompartment
             inds = inds_cmpts[icmpt]+1:inds_cmpts[icmpt+1]
 
             # Store magnetization in compartment

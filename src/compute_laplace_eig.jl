@@ -2,7 +2,7 @@
 function compute_laplace_eig(mesh, domain, eiglim=Inf, neig_max=Inf)
 
     # Extract parameters
-    @unpack ncmpt = mesh
+    @unpack ncompartment = mesh
     @unpack diffusivity, permeability, relaxation = domain
 
     # Assemble finite element matrices compartment-wise
@@ -12,7 +12,7 @@ function compute_laplace_eig(mesh, domain, eiglim=Inf, neig_max=Inf)
         Q = [],
         Mx = [[] for idim=1:3]
     )
-    for icmpt = 1:ncmpt
+    for icmpt = 1:ncompartment
         # Finite elements
         points = mesh.points[icmpt];
         facets = mesh.facets[icmpt, :];

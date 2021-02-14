@@ -6,7 +6,7 @@ Solve for magnetization using Matrix Formalism.
 function solve_mf(mesh, domain, experiment, lap_eig, directions)
 
     # Extract parameters
-    @unpack ncmpt = mesh
+    @unpack ncompartment = mesh
     @unpack initial_density, permeability = domain
     @unpack ndir, sequences, values, values_type, mf = experiment
     @unpack ninterval = mf
@@ -25,7 +25,7 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
 
     # Assemble mass matrices compartment-wise (for spatial integration)
     M_cmpts = []
-    for icmpt = 1:ncmpt
+    for icmpt = 1:ncompartment
         # Finite elements
         points = mesh.points[icmpt];
         elements = mesh.elements[icmpt];
@@ -39,7 +39,7 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
     M = blockdiag(M_cmpts...)
 
     # Create initial conditions (enforce complex values)
-    ρ_cmpts = [fill(Complex(initial_density[icmpt]), npoint_cmpts[icmpt]) for icmpt = 1:ncmpt];
+    ρ_cmpts = [fill(Complex(initial_density[icmpt]), npoint_cmpts[icmpt]) for icmpt = 1:ncompartment];
 
     # Initial spin density on entire domain
     ρ = vcat(ρ_cmpts...)
@@ -57,9 +57,9 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
     end
 
     # Allocate arrays
-    signal = zeros(ComplexF64, ncmpt, namplitude, nsequence, ndir)
+    signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndir)
     signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndir)
-    magnetization = fill(ComplexF64[], ncmpt, namplitude, nsequence, ndir)
+    magnetization = fill(ComplexF64[], ncompartment, namplitude, nsequence, ndir)
 
     # Laplace operator in Laplace eigenfunction basis
     L = diagm(λ)
@@ -116,7 +116,7 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
         mag = ϕ * T;
 
         # Store results
-        for icmpt = 1:ncmpt
+        for icmpt = 1:ncompartment
             inds = get_inds(icmpt)
 
             # Store magnetization in compartment

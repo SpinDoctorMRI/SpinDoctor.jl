@@ -21,7 +21,7 @@ the top surface is copied from the ground surface.
 function create_surface_triangulation_cylinder(cellsetup::CellSetup, cells, domain)
     @unpack ncell, rmin, rmax, height, include_nucleus, nucleus_radiusratio, include_ecs, ecs_shape, ecs_gap = cellsetup
     @unpack radii, centers = cells
-    @unpack compartments, boundaries, ncmpt, nboundary = domain
+    @unpack compartments, boundaries, ncompartment, nboundary = domain
 
     # Choose approximate cylinder side length
     nside = 30
@@ -224,13 +224,23 @@ function create_surface_triangulation_cylinder(cellsetup::CellSetup, cells, doma
     points = points3d
     facets = facets3d
 
-    d = Dict{String, Any}()
-    @pack! d = points, facets, facetmarkers, regions
-    d
+    (; points, facets, facetmarkers, regions)
 end
 
 
-""" Create surface triangulation of [inner and] outer spheres [and ECS]. """
+"""
+    create_surface_triangulation_sphere(cellsetup, cells, domain)
+
+Create surface triangulation of [inner and] outer spheres [and ECS].
+"""
 function create_surface_triangulation_sphere(cellsetup::CellSetup, cells, domain)
+
+    # Extract parameters
+    @unpack ncell, rmin, rmax, height, include_nucleus, nucleus_radiusratio, include_ecs, ecs_shape, ecs_gap = cellsetup
+    @unpack radii, centers = cells
+    @unpack compartments, boundaries, ncompartment, nboundary = domain
+
+
+
     error("not implemented")
 end

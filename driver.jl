@@ -48,6 +48,6 @@ if !isnothing(experiment.mf)
 
     npoint_cmpts = size.(mesh.points, 2)
     bounds = cumsum([0; npoint_cmpts])
-    ϕ_cmpts = [lap_eig.funcs[bounds[i]+1:bounds[i+1], :] for i = 1:mesh.ncmpt]
+    ϕ_cmpts = [lap_eig.funcs[bounds[i]+1:bounds[i+1], :] for i = 1:mesh.ncompartment]
     savefield(mesh, ϕ_cmpts, "output/$(cellsetup.name)/laplace_eig", "Laplace eigenfunction")
 end

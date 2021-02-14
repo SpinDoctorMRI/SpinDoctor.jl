@@ -1,6 +1,6 @@
 function create_mesh(cellsetup::CellSetup, domain, tri)
     @unpack ncell, refinement = cellsetup
-    @unpack ncmpt = domain
+    @unpack ncompartment = domain
     @unpack points, facets, facetmarkers, regions = tri
 
     input = TetGen.RawTetGenIO{Cdouble}()
@@ -10,7 +10,7 @@ function create_mesh(cellsetup::CellSetup, domain, tri)
 
     input.facetmarkerlist = facetmarkers
 
-    input.regionlist = [regions 1:ncmpt repeat([0.1], ncmpt)]'
+    input.regionlist = [regions 1:ncompartment repeat([0.1], ncompartment)]'
 
     isnothing(refinement) ? tetrahedralize(input, "pqA") : tetrahedralize(input, "pqAa$(refinement)")
 end
