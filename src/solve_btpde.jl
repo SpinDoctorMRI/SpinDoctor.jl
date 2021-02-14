@@ -16,7 +16,6 @@ function solve_btpde(mesh, domain, experiment, directions)
     nsequence = length(sequences)
     namplitude = length(values)
     npoint_cmpts = size.(mesh.points, 2)
-
     inds_cmpts = cumsum([0; npoint_cmpts])
 
     # Assemble finite element matrices compartment-wise
@@ -65,13 +64,37 @@ function solve_btpde(mesh, domain, experiment, directions)
     # Q-values and b-values
     if values_type == 'q'
         qvalues = repeat(values, 1, nsequence)
-        bvalues = values.^2 .* bvalue_no_q.(sequences)'
+        bvalues = values.^2 .* bvalue_no_q.(sequences')
     else
         bvalues = repeat(values, 1, nsequence)
-        qvalues = .√(values ./ bvalue_no_q.(sequences)')
+        qvalues = .√(values ./ bvalue_no_q.(sequences'))
     end
 
     save_everystep = nsave > 1
+
+    # ODE function
+    function M∂u∂t!(du, u, p, t)
+        J, S, Q, iA, q, f = p
+        @. J = -S - Q - im * f(t) * q * A
+        mul!(du, J, u)
+        nothing
+    end
+
+    # Jacobian of ODE function with respect to the state `u`
+    function Jac!(J, u, p, t)
+        TMP, S, Q, A, q, f = p
+        @. J = -(S + Q + im * f(t) * q * A)
+        nothing
+    end
+
+    # Gather ODE function
+    odefunction = ODEFunction(
+        M∂u∂t!,
+        jac = Jac!,
+        jac_prototype = -complex(S + Q),
+        mass_matrix = M,
+    )
+
 
     # Iterate over gradient amplitudes, time profiles and directions
     for (iamp, iseq, idir) ∈ Iterators.product(1:namplitude, 1:nsequence, 1:ndir)
@@ -84,6 +107,7 @@ function solve_btpde(mesh, domain, experiment, directions)
         f = sequences[iseq]
         interval = (0, echotime(f))
         if nsave == 1
+            saveat = interval[2]
             saveat = [interval[1], interval[2]]
         else
             saveat = LinRange(interval..., nsave)
@@ -99,48 +123,31 @@ function solve_btpde(mesh, domain, experiment, directions)
         @printf "  Amplitude %d of %d: q = %g, b = %g\n" iamp namplitude q b
 
         # Gradient direction dependent finite element matrix
-        iA = im * sum(dir[i] * Mx[i] for i = 1:3)
+        A = sum(dir[dim] * Mx[dim] for dim = 1:3)
 
-        # ODE functions
-        TMP = S + Q + iA
-        p = (TMP, S, Q, iA, q, f)
-        function M∂u∂t!(du, u, p, t)
-            TMP, S, Q, iA, q, f = p
-            @. TMP = -S - f(t) * q * iA - Q
-            mul!(du, TMP, u)
-            nothing
-        end
-        function Jac!(J, u, p, t)
-            TMP, S, Q, A, q, f = p
-            @. J = -(S + f(t) * q * iA + Q)
-            nothing
-        end
-        odefunction = ODEFunction(
-            M∂u∂t!,
-            jac = Jac!,
-            jac_prototype = -complex(S+Q),
-            mass_matrix = M
-        )
-
-        problem = ODEProblem(
-            odefunction, ρ, interval, p;
-            # save_everystep = save_everystep,
-            # save_positions = save_positions,
+        # ODE problem
+        J = complex(S + Q + A)
+        p = (J, S, Q, A, q, f)
+        odeproblem = ODEProblem(
+            odefunction, ρ, interval, p,
             progress = true,
             reltol = reltol,
             abstol = abstol,
         )
 
+        # Solve ODE problem
         if isnothing(odesolver)
-            sol = solve(problem; saveat=saveat, tstops = [f.δ, f.Δ])
+            sol = solve(odeproblem, saveat=saveat, tstops = [f.δ, f.Δ])
         else
-            sol = solve(problem, odesolver, saveat=saveat, tstops = [f.δ, f.Δ])
+            sol = solve(odeproblem, odesolver, saveat=saveat, tstops = [f.δ, f.Δ])
         end
         @show size(sol.u)
 
+        # Extract solution
         time[iamp, iseq, idir] = sol.t
         mag = hcat(sol.u...)
 
+        # Split solution into compartments
         for icmpt = 1:ncmpt
             inds = inds_cmpts[icmpt]+1:inds_cmpts[icmpt+1]
 
@@ -150,14 +157,17 @@ function solve_btpde(mesh, domain, experiment, directions)
             # Integrate magnetization over compartment
             signal[icmpt, iamp, iseq, idir] = sum(fem_mat_cmpts.M[icmpt] * mag[inds, :]; dims=1)[:]
 
+            # Compute total signal
             if icmpt == 1
                 signal_allcmpts[iamp, iseq, idir] = signal[icmpt, iamp, iseq, idir]
             else
                 signal_allcmpts[iamp, iseq, idir] .+= signal[icmpt, iamp, iseq, idir]
             end
 
-        end
-    end
+        end # Compartments
+    end # Iterations
 
+    # Return named tuple
     (; magnetization, signal, signal_allcmpts, time)
-end
+
+end # Function
