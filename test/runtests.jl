@@ -1,3 +1,3 @@
 using SpinDoctor, Test
 
-include("test/test_creat_cells.jl")
+include("test_create_cells.jl")
