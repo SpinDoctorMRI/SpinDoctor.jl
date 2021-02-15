@@ -4,7 +4,8 @@ using DifferentialEquations: Trapezoid
 
 ## Choose setup script
 
-include("setups/cylinders.jl")
+# include("setups/cylinders.jl")
+include("setups/spheres.jl")
 
 
 ## Prepare experiments

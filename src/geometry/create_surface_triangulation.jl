@@ -224,6 +224,8 @@ function create_surface_triangulation_cylinder(cellsetup::CellSetup, cells, doma
     points = points3d
     facets = facets3d
 
+    points, facets, regions = points', facets', regions'
+
     (; points, facets, facetmarkers, regions)
 end
 
@@ -240,7 +242,85 @@ function create_surface_triangulation_sphere(cellsetup::CellSetup, cells, domain
     @unpack radii, centers = cells
     @unpack compartments, boundaries, ncompartment, nboundary = domain
 
+    rmean = (rmin + rmax) / 2
 
+    create_npoint(radius) = round(Int, 200 * (radius / rmean)^2)
+    if include_nucleus
+        npoint_in = create_npoint.(nucleus_radiusratio .* radii)
+        points_in = [centers[:, i] .+ nucleus_radiusratio * radii[i] * create_fibonacci_sphere(npoint_in[i]) for i = 1:ncell]
+        facets_in = [hcat(chull(collect(points_in[i]')).simplices...) for i = 1:ncell]
+        regions_in = centers
+        nfacet_in = size.(facets_in, 2)
+    else
+        npoint_in = zeros(Int, 0)
+        nfacet_in = zeros(Int, 0)
+        points_in = zeros(3, 0)
+        facets_in = zeros(Int, 3, 0)
+        regions_in = zeros(3, 0)
+    end
 
-    error("not implemented")
+    npoint_out = create_npoint.(radii)
+    points_out = [centers[:, i] .+ radii[i] * create_fibonacci_sphere(npoint_out[i]) for i = 1:ncell]
+    facets_out = [hcat(chull(collect(points_out[i]')).simplices...) for i = 1:ncell]
+    regions_out = @. centers + (1 + nucleus_radiusratio) / 2 * radii * [1; 0; 0]
+    nfacet_out = size.(facets_out, 2)
+    
+    if include_ecs
+        if ecs_shape == "box"
+            # Determine bounds of domain
+            emin = minimum(hcat(points_out...); dims=2)
+            emax = maximum(hcat(points_out...); dims=2)
+
+            # Extend bounds by ECS gap
+            @. emin = emin - ecs_gap * rmean
+            @. emax = emax + ecs_gap * rmean
+
+            # Define eight corners of box ECS and their corresponding edges
+            points_ecs = [
+                emin[1] emax[1] emax[1] emin[1] emin[1] emax[1] emax[1] emin[1] 
+                emin[2] emin[2] emax[2] emax[2] emin[2] emin[2] emax[2] emax[2] 
+                emin[3] emin[3] emin[3] emin[3] emax[2] emax[2] emax[2] emax[2]
+            ]
+            facets_ecs = [
+                1 1 1 1 2 2 3 3 4 4 5 5
+                2 3 2 6 3 7 4 8 1 5 6 7
+                3 4 6 5 7 6 8 7 5 8 7 8
+            ]
+            regions_ecs =  emin .+ ecs_gap / 2 * rmean
+            npoint_ecs = 8
+            nfacet_ecs = 12
+        elseif ecs_shape == "convexhull"
+            npoint_ecs = create_npoint.((1 + ecs_gap) .* radii)
+            points_ecs = [centers[:, i] .+ (1 + ecs_gap) * radii[i] * create_fibonacci_sphere(npoint_ecs[i]) for i = 1:ncell]
+            points_ecs = hcat(points_ecs...)
+
+            ecs_hull = chull(collect(points_ecs'))
+            points_ecs = points_ecs[:, ecs_hull.vertices]
+            npoint_ecs = size(points_ecs, 2)
+            facets_ecs = hcat(ecs_hull.simplices...)
+            [facets_ecs[i, j] = findfirst(facets_ecs[i, j] .== ecs_hull.vertices) for j = 1:length(ecs_hull.simplices) for i = 1:3]
+            nfacet_ecs = size(facets_ecs, 2)
+            regions_ecs =  centers[:, 1] + (1 + ecs_gap / 2) * radii[1] * [1; 0; 0]
+        end
+    else
+        npoint_ecs = zeros(Int, 0)
+        nfacet_ecs = zeros(Int, 0)
+        points_ecs = zeros(3, 0)
+        facets_ecs = zeros(Int, 3, 0)
+        regions_ecs = zeros(3, 0)
+    end
+
+    npoint = cumsum(vcat(0, npoint_in..., npoint_out..., npoint_ecs))
+    nfacet = cumsum(vcat(0, nfacet_in..., nfacet_out..., nfacet_ecs))
+    points = hcat(points_in..., points_out..., points_ecs)
+    facets = hcat(facets_in..., facets_out..., facets_ecs)
+    facetmarkers = zeros(Int, size(facets, 2))
+    for i = 1:length(npoint)-1
+        inds = nfacet[i]+1:nfacet[i+1]
+        facets[:, inds] .+= npoint[i]
+        facetmarkers[inds] .= i
+    end
+    regions = [regions_in regions_out regions_ecs]
+
+    (; points, facets, facetmarkers, regions)
 end

@@ -11,6 +11,7 @@ using DifferentialEquations
 using Expokit: expmv!
 using QuadGK
 using Polyhedra: polyhedron, vrep, removevredundancy!, DefaultLibrary
+using QHull: chull
 import GLPK: Optimizer
 using Triangle: constrained_triangulation
 using TetGen
