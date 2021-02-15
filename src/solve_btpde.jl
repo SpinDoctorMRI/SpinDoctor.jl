@@ -64,17 +64,17 @@ function solve_btpde(mesh, domain, experiment, directions)
     # Q-values and b-values
     if values_type == 'q'
         qvalues = repeat(values, 1, nsequence)
-        bvalues = values.^2 .* bvalue_no_q.(sequences')
+        bvalues = values.^2 .* bvalue_no_q.(sequences)'
     else
         bvalues = repeat(values, 1, nsequence)
-        qvalues = .√(values ./ bvalue_no_q.(sequences'))
+        qvalues = .√(values ./ bvalue_no_q.(sequences)')
     end
 
     save_everystep = nsave > 1
 
     # ODE function
     function M∂u∂t!(du, u, p, t)
-        J, S, Q, iA, q, f = p
+        J, S, Q, A, q, f = p
         @. J = -S - Q - im * f(t) * q * A
         mul!(du, J, u)
         nothing
@@ -108,7 +108,7 @@ function solve_btpde(mesh, domain, experiment, directions)
         interval = (0, echotime(f))
         if nsave == 1
             saveat = interval[2]
-            saveat = [interval[1], interval[2]]
+            # saveat = [interval[1], interval[2]]
         else
             saveat = LinRange(interval..., nsave)
         end
