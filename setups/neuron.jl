@@ -31,7 +31,7 @@ domainsetup = DomainSetup(
 )
 
 experiment = ExperimentSetup(
-    ndir = 1,
+    ndirection = 1,
     flat_dirs = false,
     direction = [1.; 0.; 0.],
     sequences = [PGSE(2000., 6000.)],

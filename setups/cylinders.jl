@@ -31,14 +31,14 @@ domainsetup = DomainSetup(
 )
 
 experiment = ExperimentSetup(
-    ndir = 1,
+    ndirection = 1,
     flat_dirs = false,
-    direction = [0.; 0.; 1.],
+    direction = [1.; 0.; 0.],
     sequences = [PGSE(2000., 6000.)],
     values = [10000.],
     values_type = 'b',
     btpde = BTPDE(odesolver=Trapezoid(), nsave=1),
-    # mf = MF(length_scale=3, neig_max=400)
+    # mf = MF(length_scale=3, neig_max=400),
 )
 
 # ImplicitEuler

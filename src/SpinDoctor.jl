@@ -16,6 +16,7 @@ import GLPK: Optimizer
 using Triangle: constrained_triangulation
 using TetGen
 using WriteVTK
+using Polynomials: fit
 
 # using ForwardDiff
 # can_dual(::Type{ComplexF64}) = true
@@ -50,9 +51,9 @@ include("compute_laplace_eig.jl")
 include("solve_btpde.jl")
 include("solve_mf.jl")
 
-# Saving
+# Postprocessing
+include("fit_adc.jl")
 include("savefield.jl")
-
 
 
 export integral, bvalue_no_q, echotime, PGSE, CosOGSE, SinOGSE, DoublePGSE, echotime,
@@ -69,6 +70,6 @@ export integral, bvalue_no_q, echotime, PGSE, CosOGSE, SinOGSE, DoublePGSE, echo
     compute_laplace_eig, length2eig, eig2length,
     solve_btpde,
     solve_mf,
-    savefield, savefield_time, save_btpde_results
-    
+    savefield, savefield_time, save_btpde_results,
+    fit_adc
 end

@@ -7,7 +7,7 @@ function solve_btpde(mesh, domain, experiment, directions)
 
     # Extract input parameters
     @unpack boundary_markers, compartments, boundaries, ncompartment, nboundary, diffusivity, relaxation, permeability, initial_density = domain
-    @unpack ndir, flat_dirs, direction, sequences, values, values_type, btpde = experiment
+    @unpack ndirection, flat_dirs, direction, sequences, values, values_type, btpde = experiment
 
     # Extract solver scheme
     @unpack odesolver, reltol, abstol, nsave = btpde
@@ -56,10 +56,10 @@ function solve_btpde(mesh, domain, experiment, directions)
     ρ = vcat(ρ_cmpts...)
 
     # Allocate output arrays
-    signal = fill(Array{ComplexF64}(undef, 0), ncompartment, namplitude, nsequence, ndir)
-    signal_allcmpts = fill(Array{ComplexF64}(undef, 0), namplitude, nsequence, ndir)
-    magnetization = fill(Array{ComplexF64, 2}(undef, 0, 0), ncompartment, namplitude, nsequence, ndir)
-    time = fill(Float64[], namplitude, nsequence, ndir)
+    signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndirection)
+    signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndirection)
+    magnetization = fill(Array{ComplexF64, 2}(undef, 0, 0), ncompartment, namplitude, nsequence, ndirection)
+    time = fill(Float64[], namplitude, nsequence, ndirection)
 
     # Q-values and b-values
     if values_type == 'q'
@@ -91,13 +91,13 @@ function solve_btpde(mesh, domain, experiment, directions)
     odefunction = ODEFunction(
         M∂u∂t!,
         jac = Jac!,
-        jac_prototype = -(S + Q + im * A),
+        jac_prototype = -(S + Q + im * sum(Mx)),
         mass_matrix = M,
     )
 
 
     # Iterate over gradient amplitudes, time profiles and directions
-    for (iamp, iseq, idir) ∈ Iterators.product(1:namplitude, 1:nsequence, 1:ndir)
+    for (iamp, iseq, idir) ∈ Iterators.product(1:namplitude, 1:nsequence, 1:ndirection)
 
         # Gradient amplitude
         q = qvalues[iamp, iseq]
@@ -118,7 +118,7 @@ function solve_btpde(mesh, domain, experiment, directions)
 
         # Display state of iterations
         @printf "Solving BTPDE with size %d\n" (sum(npoint_cmpts))
-        @printf "  Direction %d of %d: g = [%.2f, %.2f, %.2f]\n" idir ndir dir...
+        @printf "  Direction %d of %d: g = [%.2f, %.2f, %.2f]\n" idir ndirection dir...
         @printf "  Sequence %d of %d: f = %s\n" iseq nsequence f
         @printf "  Amplitude %d of %d: q = %g, b = %g\n" iamp namplitude q b
 
@@ -154,18 +154,14 @@ function solve_btpde(mesh, domain, experiment, directions)
             # Store magnetization in compartment
             magnetization[icmpt, iamp, iseq, idir] = mag[inds, :]
 
-            # Integrate magnetization over compartment
-            signal[icmpt, iamp, iseq, idir] = sum(fem_mat_cmpts.M[icmpt] * mag[inds, :]; dims=1)[:]
-
-            # Compute total signal
-            if icmpt == 1
-                signal_allcmpts[iamp, iseq, idir] = signal[icmpt, iamp, iseq, idir]
-            else
-                signal_allcmpts[iamp, iseq, idir] .+= signal[icmpt, iamp, iseq, idir]
-            end
+            # Integrate final magnetization over compartment
+            signal[icmpt, iamp, iseq, idir] = sum(fem_mat_cmpts.M[icmpt] * mag[inds, end], dims=1)[1]
 
         end # Compartments split
     end # Experiment iterations
+
+    signal_allcmpts = sum(signal, dims=1)[1, :, :, :]
+
 
     # Return named tuple
     (; magnetization, signal, signal_allcmpts, time)

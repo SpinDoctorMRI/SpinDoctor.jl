@@ -4,8 +4,8 @@ using DifferentialEquations: Trapezoid
 
 ## Choose setup script
 
-# include("setups/cylinders.jl")
-include("setups/spheres.jl")
+include("setups/cylinders.jl")
+# include("setups/spheres.jl")
 
 
 ## Prepare experiments
@@ -26,6 +26,21 @@ volumes = get_cmpt_volumes(mesh)
 
 σ_avg = domain.diffusivity' * volumes / sum(volumes)
 
+# Sizes
+ncompartment = domain.ncompartment
+namplitude = length(experiment.values)
+nsequence = length(experiment.sequences)
+ndirection = experiment.ndirection
+
+# Q-values and b-values
+if experiment.values_type == 'q'
+    qvalues = repeat(experiment.values, 1, nsequence)
+    bvalues = experiment.values.^2 .* bvalue_no_q.(experiment.sequences)'
+else
+    bvalues = repeat(experiment.values, 1, nsequence)
+    qvalues = .√(experiment.values ./ bvalue_no_q.(experiment.sequences)')
+end
+
 
 ## Solve
 
@@ -33,10 +48,16 @@ if !isnothing(experiment.btpde)
     btpde = @time solve_btpde(mesh, domain, experiment, directions)
 
     if experiment.btpde.nsave == 1
-        savefield(mesh, btpde.magnetization[:, 1, 1, 1], "output/$(cellsetup.name)/magnetization_btpde")
+        savefield(mesh, btpde.magnetization[:, 1, 1, 1],
+            "output/$(cellsetup.name)/magnetization_btpde")
     else
-        save_btpde_results(mesh, btpde, experiment, directions, "output/$(cellsetup.name)/magnetization_btpde")
+        save_btpde_results(mesh, btpde, experiment, directions,
+            "output/$(cellsetup.name)/magnetization_btpde")
     end
+    
+    adc = [fit_adc(bvalues[:, iseq],
+        real(btpde.signal[icmpt, :, iseq, idir]) / (domain.initial_density' * volumes))
+        for idir = 1:ndirection for iseq = 1:nsequence for icmpt = 1:ncompartment]
 end
 
 if !isnothing(experiment.mf)

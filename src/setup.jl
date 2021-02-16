@@ -75,7 +75,7 @@ end
 end
 
 @with_kw struct ExperimentSetup
-    ndir::Int = 1
+    ndirection::Int = 1
     flat_dirs::Bool = false
     direction::Array{Float64} = [1.; 0.; 0.]
     sequences::Array{TimeProfile}

@@ -8,7 +8,7 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
     # Extract parameters
     @unpack ncompartment = mesh
     @unpack initial_density, permeability = domain
-    @unpack ndir, sequences, values, values_type, mf = experiment
+    @unpack ndirection, sequences, values, values_type, mf = experiment
     @unpack ninterval = mf
 
     # Laplace eigenmodes
@@ -57,15 +57,15 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
     end
 
     # Allocate arrays
-    signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndir)
-    signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndir)
-    magnetization = fill(ComplexF64[], ncompartment, namplitude, nsequence, ndir)
+    signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndirection)
+    signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndirection)
+    magnetization = fill(ComplexF64[], ncompartment, namplitude, nsequence, ndirection)
 
     # Laplace operator in Laplace eigenfunction basis
     L = diagm(λ)
 
     # Iterate over gradient amplitudes, time profiles and directions
-    for (iamp, iseq, idir) ∈ Iterators.product(1:namplitude, 1:nsequence, 1:ndir)
+    for (iamp, iseq, idir) ∈ Iterators.product(1:namplitude, 1:nsequence, 1:ndirection)
 
         # Gradient amplitude
         q = qvalues[iamp, iseq]
@@ -79,7 +79,7 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
 
         # Display state of iterations
         @printf "Solving MF with size %d and neig = %d\n" (sum(npoint_cmpts)) length(λ)
-        @printf "  Direction %d of %d: g = [%.2f, %.2f, %.2f]\n" idir ndir dir...
+        @printf "  Direction %d of %d: g = [%.2f, %.2f, %.2f]\n" idir ndirection dir...
         @printf "  Sequence %d of %d: f = %s\n" iseq nsequence f
         @printf "  Amplitude %d of %d: q = %g, b = %g\n" iamp namplitude q b
 
