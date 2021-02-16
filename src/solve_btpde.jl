@@ -91,7 +91,7 @@ function solve_btpde(mesh, domain, experiment, directions)
     odefunction = ODEFunction(
         M∂u∂t!,
         jac = Jac!,
-        jac_prototype = -complex(S + Q),
+        jac_prototype = -(S + Q + im * A),
         mass_matrix = M,
     )
 
@@ -126,7 +126,7 @@ function solve_btpde(mesh, domain, experiment, directions)
         A = sum(dir[dim] * Mx[dim] for dim = 1:3)
 
         # ODE problem
-        J = complex(S + Q + A)
+        J = -(S + Q + im * q * A)
         p = (J, S, Q, A, q, f)
         odeproblem = ODEProblem(
             odefunction, ρ, interval, p,
@@ -164,10 +164,10 @@ function solve_btpde(mesh, domain, experiment, directions)
                 signal_allcmpts[iamp, iseq, idir] .+= signal[icmpt, iamp, iseq, idir]
             end
 
-        end # Compartments
-    end # Iterations
+        end # Compartments split
+    end # Experiment iterations
 
     # Return named tuple
     (; magnetization, signal, signal_allcmpts, time)
 
-end # Function
+end # solve_btpde
