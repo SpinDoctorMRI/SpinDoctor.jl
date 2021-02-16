@@ -2,7 +2,7 @@
 """
 General time profile type (gradient sequence).
 
-A `TimeProfile` should implement a calling method, returning the value of the
+A `TimeProfile` should implement a calling method returning the value of the
 time profile at time `t`. It can optionally overwrite the `echotime` `integral`,
 and `bvalue_no_q` methods, the first providing a default value and the latter
 two computing numerical approximation to the integral quantities if not
@@ -24,7 +24,7 @@ end
 """
     f = CosOGSE(δ, Δ, nperiod)
 
-Cosinus Oscillating Gradient Spin Echo sequence with two pulses of duration `δ`
+Oscillating Gradient Spin Echo sequence with two cos-pulses of duration `δ`
 separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
 """
 struct CosOGSE <: TimeProfile
@@ -36,7 +36,7 @@ end
 """
     f = SinOGSE(δ, Δ, nperiod)
 
-Sinus Oscillating Gradient Spin Echo sequence with two pulses of duration `δ`
+Oscillating Gradient Spin Echo sequence with two sin-pulses of duration `δ`
 separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse."""
 struct SinOGSE <: TimeProfile
     δ::Float64

@@ -23,7 +23,7 @@ function check_consistency(setup::CellSetup)
         @assert setup.deformation[2] ≈ 0.
     elseif setup.shape == "cylinder"
         @assert setup.ncell ≥ 1
-        @assert  setup.height > 0.
+        @assert setup.height > 0.
         @assert setup.deformation[1] ≥ 0.
         @assert setup.deformation[2] ≥ 0.
         @assert 0. < setup.rmin ≤ setup.rmax < Inf
