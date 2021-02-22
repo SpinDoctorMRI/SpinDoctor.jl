@@ -3,7 +3,7 @@ function compute_laplace_eig(mesh, domain, eiglim=Inf, neig_max=Inf)
 
     # Extract parameters
     @unpack ncompartment = mesh
-    @unpack diffusivity, permeability, relaxation = domain
+    @unpack σ, κ, T₂ = domain
 
     # Assemble finite element matrices compartment-wise
     fem_mat_cmpts = (
@@ -21,8 +21,8 @@ function compute_laplace_eig(mesh, domain, eiglim=Inf, neig_max=Inf)
 
         # Assemble mass, stiffness and flux matrices
         push!(fem_mat_cmpts.M, assemble_mass_matrix(elements', volumes))
-        push!(fem_mat_cmpts.S, assemble_stiffness_matrix(elements', points', diffusivity[icmpt]))
-        push!(fem_mat_cmpts.Q, assemble_flux_matrix_cmpt(points, facets, permeability))
+        push!(fem_mat_cmpts.S, assemble_stiffness_matrix(elements', points', σ[icmpt]))
+        push!(fem_mat_cmpts.Q, assemble_flux_matrix_cmpt(points, facets, κ))
 
         # Assemble first order product moment matrices
         for idim = 1:3

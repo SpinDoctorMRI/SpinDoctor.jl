@@ -1,12 +1,12 @@
 """
     results = solve_btpde(mesh, domain, experiment, directions)
 
-Solve the Bloch-Torrey partial differential equation.
+Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 """
 function solve_btpde(mesh, domain, experiment, directions)
 
     # Extract input parameters
-    @unpack boundary_markers, compartments, boundaries, ncompartment, nboundary, diffusivity, relaxation, permeability, initial_density = domain
+    @unpack boundary_markers, compartments, boundaries, ncompartment, nboundary, σ, T₂, κ, ρ = domain
     @unpack ndirection, flat_dirs, direction, sequences, values, values_type, btpde = experiment
 
     # Extract solver scheme
@@ -34,8 +34,8 @@ function solve_btpde(mesh, domain, experiment, directions)
 
         # Assemble mass, stiffness and flux matrices
         push!(fem_mat_cmpts.M, assemble_mass_matrix(elements', volumes))
-        push!(fem_mat_cmpts.S, assemble_stiffness_matrix(elements', points', diffusivity[icmpt]))
-        push!(fem_mat_cmpts.Q, assemble_flux_matrix_cmpt(points, facets, permeability))
+        push!(fem_mat_cmpts.S, assemble_stiffness_matrix(elements', points', σ[icmpt]))
+        push!(fem_mat_cmpts.Q, assemble_flux_matrix_cmpt(points, facets, κ))
 
         # Assemble first order product moment matrices
         for dim = 1:3
@@ -50,11 +50,8 @@ function solve_btpde(mesh, domain, experiment, directions)
     Mx = [blockdiag(fem_mat_cmpts.Mx[dim]...) for dim = 1:3]
 
     # Create initial conditions (enforce complex values)
-    ρ_cmpts = [fill(Complex(initial_density[icmpt]), npoint_cmpts[icmpt]) for icmpt = 1:ncompartment];
-
-    # Initial spin density on entire domain
-    ρ = vcat(ρ_cmpts...)
-
+    ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
+    
     # Allocate output arrays
     signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndirection)
     signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndirection)
@@ -82,7 +79,7 @@ function solve_btpde(mesh, domain, experiment, directions)
 
     # Jacobian of ODE function with respect to the state `u`
     function Jac!(J, u, p, t)
-        TMP, S, Q, A, q, f = p
+        _, S, Q, A, q, f = p
         @. J = -(S + Q + im * f(t) * q * A)
         nothing
     end
@@ -94,7 +91,6 @@ function solve_btpde(mesh, domain, experiment, directions)
         jac_prototype = -(S + Q + im * sum(Mx)),
         mass_matrix = M,
     )
-
 
     # Iterate over gradient amplitudes, time profiles and directions
     for (iamp, iseq, idir) ∈ Iterators.product(1:namplitude, 1:nsequence, 1:ndirection)
@@ -161,7 +157,6 @@ function solve_btpde(mesh, domain, experiment, directions)
     end # Experiment iterations
 
     signal_allcmpts = sum(signal, dims=1)[1, :, :, :]
-
 
     # Return named tuple
     (; magnetization, signal, signal_allcmpts, time)

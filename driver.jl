@@ -24,7 +24,7 @@ mesh = split_mesh(domain, tetgenmesh)
 directions = create_directions(experiment)
 volumes = get_cmpt_volumes(mesh)
 
-σ_avg = domain.diffusivity' * volumes / sum(volumes)
+σ_avg = domain.σ' * volumes / sum(volumes)
 
 # Sizes
 ncompartment = domain.ncompartment
@@ -56,7 +56,7 @@ if !isnothing(experiment.btpde)
     end
     
     adc = [fit_adc(bvalues[:, iseq],
-        real(btpde.signal[icmpt, :, iseq, idir]) / (domain.initial_density' * volumes))
+        real(btpde.signal[icmpt, :, iseq, idir]) / (domain.ρ' * volumes))
         for idir = 1:ndirection for iseq = 1:nsequence for icmpt = 1:ncompartment]
 end
 

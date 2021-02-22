@@ -42,17 +42,20 @@ function check_consistency(setup::CellSetup)
 end
 
 @with_kw struct DomainSetup
-    diffusivity_in::Float64
-    diffusivity_out::Float64
-    diffusivity_ecs::Float64
-    relaxation_in::Float64 = Inf
-    relaxation_out::Float64 = Inf
-    relaxation_ecs::Float64 = Inf
-    initial_density_in::Float64
-    initial_density_out::Float64
-    initial_density_ecs::Float64
-    permeability_in_out::Float64
-    permeability_out_ecs::Float64
+    σ_in::Float64
+    σ_out::Float64
+    σ_ecs::Float64
+    T₂_in::Float64 = Inf
+    T₂_out::Float64 = Inf
+    T₂_ecs::Float64 = Inf
+    ρ_in::Float64
+    ρ_out::Float64
+    ρ_ecs::Float64
+    κ_in::Float64
+    κ_out::Float64
+    κ_ecs::Float64
+    κ_in_out::Float64
+    κ_out_ecs::Float64
 end
 
 @with_kw struct BTPDE

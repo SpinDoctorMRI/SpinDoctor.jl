@@ -63,24 +63,27 @@ function prepare_pde(cellsetup::CellSetup, domainsetup::DomainSetup)
     end
 
     # Initialize output arrays
-    diffusivity = zeros(ncompartment)
-    relaxation = zeros(ncompartment)
-    permeability = zeros(nboundary)
-    initial_density = zeros(ncompartment)
+    σ = zeros(ncompartment)
+    T₂ = zeros(ncompartment)
+    κ = zeros(nboundary)
+    ρ = zeros(ncompartment)
 
     # Distribute material properties to compartments and boundaries
-    diffusivity[compartments .== "in"] .= domainsetup.diffusivity_in
-    diffusivity[compartments .== "out"] .= domainsetup.diffusivity_out
-    diffusivity[compartments .== "ecs"] .= domainsetup.diffusivity_ecs
-    relaxation[compartments .== "in"] .= domainsetup.relaxation_in
-    relaxation[compartments .== "out"] .= domainsetup.relaxation_out
-    relaxation[compartments .== "ecs"] .= domainsetup.relaxation_ecs
-    permeability[boundaries .== "in-out"] .= domainsetup.permeability_in_out
-    permeability[boundaries .== "out-ecs"] .= domainsetup.permeability_out_ecs
-    initial_density[compartments .== "in"] .= domainsetup.initial_density_in
-    initial_density[compartments .== "out"] .= domainsetup.initial_density_out
-    initial_density[compartments .== "ecs"] .= domainsetup.initial_density_ecs
+    ρ[compartments .== "in"] .= domainsetup.ρ_in
+    ρ[compartments .== "out"] .= domainsetup.ρ_out
+    ρ[compartments .== "ecs"] .= domainsetup.ρ_ecs
+    σ[compartments .== "in"] .= domainsetup.σ_in
+    σ[compartments .== "out"] .= domainsetup.σ_out
+    σ[compartments .== "ecs"] .= domainsetup.σ_ecs
+    T₂[compartments .== "in"] .= domainsetup.T₂_in
+    T₂[compartments .== "out"] .= domainsetup.T₂_out
+    T₂[compartments .== "ecs"] .= domainsetup.T₂_ecs
+    κ[boundaries .== "in"] .= domainsetup.κ_in
+    κ[boundaries .== "out"] .= domainsetup.κ_out
+    κ[boundaries .== "ecs"] .= domainsetup.κ_ecs
+    κ[boundaries .== "in-out"] .= domainsetup.κ_in_out
+    κ[boundaries .== "out-ecs"] .= domainsetup.κ_out_ecs
 
     # Return named tuple
-    (; boundary_markers, compartments, boundaries, ncompartment, nboundary, diffusivity, relaxation, permeability, initial_density)
+    (; boundary_markers, compartments, boundaries, ncompartment, nboundary, σ, T₂, κ, ρ)
 end

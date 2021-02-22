@@ -10,6 +10,7 @@ overwritten.
 """
 abstract type TimeProfile end
 
+
 """
     f = PGSE(δ, Δ)
 
@@ -20,6 +21,7 @@ struct PGSE <: TimeProfile
     δ::Float64
     Δ::Float64
 end
+
 
 """
     f = CosOGSE(δ, Δ, nperiod)
@@ -33,6 +35,7 @@ struct CosOGSE <: TimeProfile
     nperiod::Int
 end
 
+
 """
     f = SinOGSE(δ, Δ, nperiod)
 
@@ -43,6 +46,7 @@ struct SinOGSE <: TimeProfile
     Δ::Float64
     nperiod::Int
 end
+
 
 """
     f = DoublePGSE(δ, Δ)
@@ -72,7 +76,7 @@ end
 function (f::CosOGSE)(t)
     (
           (t < f.δ) * cos(2π * f.nperiod * t / f.δ )
-        - (f.Δ ≤ t) * cos(2π * f.nperiod * (t - f.Δ) /f.δ )
+        - (f.Δ ≤ t) * cos(2π * f.nperiod * (t - f.Δ) / f.δ)
     )
 end
 

@@ -7,7 +7,7 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
 
     # Extract parameters
     @unpack ncompartment = mesh
-    @unpack initial_density, permeability = domain
+    @unpack ρ, κ = domain
     @unpack ndirection, sequences, values, values_type, mf = experiment
     @unpack ninterval = mf
 
@@ -39,10 +39,7 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
     M = blockdiag(M_cmpts...)
 
     # Create initial conditions (enforce complex values)
-    ρ_cmpts = [fill(Complex(initial_density[icmpt]), npoint_cmpts[icmpt]) for icmpt = 1:ncompartment];
-
-    # Initial spin density on entire domain
-    ρ = vcat(ρ_cmpts...)
+    ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
 
     # Project initial spin density onto Laplace eigenfunction basis
     T0 = ϕ' * (M * ρ)

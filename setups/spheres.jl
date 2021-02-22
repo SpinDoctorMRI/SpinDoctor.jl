@@ -15,17 +15,20 @@ cellsetup = CellSetup(
 )
 
 domainsetup = DomainSetup(
-    diffusivity_in = 0.002,
-    diffusivity_out = 0.002,
-    diffusivity_ecs = 0.002,
-    relaxation_in = Inf,
-    relaxation_out = Inf,
-    relaxation_ecs = Inf,
-    initial_density_in = 1.,
-    initial_density_out = 1.,
-    initial_density_ecs = 1.,
-    permeability_in_out = 1e-4,
-    permeability_out_ecs = 1e-4,
+    σ_in = 0.002,
+    σ_out = 0.002,
+    σ_ecs = 0.002,
+    T₂_in = Inf,
+    T₂_out = Inf,
+    T₂_ecs = Inf,
+    ρ_in = 1.,
+    ρ_out = 1.,
+    ρ_ecs = 1.,
+    κ_in = 0.,
+    κ_out = 0.,
+    κ_ecs = 0.,
+    κ_in_out = 1e-4,
+    κ_out_ecs = 1e-4,
 )
 
 experiment = ExperimentSetup(

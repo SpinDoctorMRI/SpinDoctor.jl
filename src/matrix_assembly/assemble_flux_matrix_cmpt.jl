@@ -1,5 +1,5 @@
 """ Assemble flux matrix (Q) in compartment. """
-function assemble_flux_matrix_cmpt(points, facets, permeability)
+function assemble_flux_matrix_cmpt(points, facets, κ)
 
     # Sizes
     npoint = size(points, 2)
@@ -12,7 +12,7 @@ function assemble_flux_matrix_cmpt(points, facets, permeability)
     for iboundary = 1:nboundary
 
         # Check that there is coupling
-        if permeability[iboundary] > 1e-16
+        if κ[iboundary] > 1e-16
 
             # Extract boundary facets
             neumann = facets[iboundary]'
@@ -25,7 +25,7 @@ function assemble_flux_matrix_cmpt(points, facets, permeability)
 
                 # Set weigths to boundary permeability for boundary nodes, else 0
                 weights = zeros(npoint, 1)
-                weights[neumann_nodes] .= permeability[iboundary]
+                weights[neumann_nodes] .= κ[iboundary]
 
                 # Add block to flux matrix (the blocks do not overlap)
                 flux_matrix += assemble_flux_matrix(neumann, points', weights)
