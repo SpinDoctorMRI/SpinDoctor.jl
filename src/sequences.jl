@@ -122,8 +122,7 @@ Integral of time profile `f` between `0` and `t`. Unless specified, the echotime
 is used as the upper integral limit.
 
 For the `PGSE`, `SinOGSE`, `CosOGSE` and `DoublePGSE` sequences, analytical
-expressions are available for `t=echotime(f)`. Otherwise a numerical integral is
-computed.
+expressions are available. Otherwise a numerical integral is computed.
 """
 function integral(f::TimeProfile, t=echotime(f))
     quadgk(f, 0, t)
@@ -175,8 +174,8 @@ multiply the result by q^2 = (γg)^2, where γ is the gyromagnetic ratio of the
 water proton, g is the gradient amplitude, and b(q, f) = q^2 * bvalue_no_q(f).
 
 """
-function bvalue_no_q(f::TimeProfile, t=echotime(f))
-    quadgk(s->integral(f, s)^2, 0, t)
+function bvalue_no_q(f::TimeProfile)
+    quadgk(s->integral(f, s)^2, 0, echotime(f))
 end
 
 function bvalue_no_q(f::PGSE)

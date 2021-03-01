@@ -1,4 +1,8 @@
-""" Compute the Laplace eigenvalues, eigenfunctions and first order moments of products of pairs of eigenfunctions. """
+"""
+    compute_laplace_eig(mesh, domain, eiglim, neig_max)
+
+Compute the Laplace eigenvalues, eigenfunctions and first order moments of products of pairs of eigenfunctions.
+"""
 function compute_laplace_eig(mesh, domain, eiglim=Inf, neig_max=Inf)
 
     # Extract parameters

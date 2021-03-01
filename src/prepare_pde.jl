@@ -1,9 +1,9 @@
 """ Prepare PDE compartments """
 function prepare_pde(cellsetup::CellSetup, domainsetup::DomainSetup)
-    @unpack shape, ncell, include_nucleus, nucleus_radiusratio, include_ecs, ecs_shape = cellsetup
+    @unpack shape, ncell, include_in, in_ratio, include_ecs, ecs_shape = cellsetup
 
     # Determine number of compartments and boundaries
-    ncompartment = (1 + include_nucleus) * ncell + include_ecs
+    ncompartment = (1 + include_in) * ncell + include_ecs
     if shape == "sphere"
         nboundary = ncell
     elseif shape == "cylinder"
@@ -11,17 +11,17 @@ function prepare_pde(cellsetup::CellSetup, domainsetup::DomainSetup)
     elseif shape == "neuron"
         nboundary = 1
     end
-    nboundary = (1 + include_nucleus) * nboundary + include_ecs
+    nboundary = (1 + include_in) * nboundary + include_ecs
 
     # Label compartments
     compartments = String[]
-    include_nucleus && append!(compartments, repeat(["in"], ncell))
+    include_in && append!(compartments, repeat(["in"], ncell))
     append!(compartments, repeat(["out"], ncell))
     include_ecs && push!(compartments, "ecs")
 
     boundaries = String[]
     boundary_markers = fill(false, ncompartment, nboundary)
-    if include_nucleus
+    if include_in
         if shape == "cylinder"
             append!(boundaries, repeat(["in"], ncell))
             append!(boundaries, repeat(["out"], ncell))

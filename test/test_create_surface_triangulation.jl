@@ -10,11 +10,11 @@ cellsetup = CellSetup(
     dmin = 0.2,
     dmax = 0.3,
     height = 3.,
-    include_nucleus = true,
-    nucleus_radiusratio = 0.7,
+    include_in = true,
+    in_ratio = 0.7,
     include_ecs = true,
     ecs_shape = "convexhull",
-    ecs_gap = 0.3,
+    ecs_ratio = 0.3,
 )
 domainsetup = DomainSetup(
     σ_in = 0.002,
@@ -26,11 +26,11 @@ domainsetup = DomainSetup(
     ρ_in = 1.,
     ρ_out = 1.,
     ρ_ecs = 1.,
+    κ_in_out = 1e-4,
+    κ_out_ecs = 1e-4,
     κ_in = 0.,
     κ_out = 0.,
     κ_ecs = 0.,
-    κ_in_out = 1e-4,
-    κ_out_ecs = 1e-4,
 )
 
 cells = create_cells(cellsetup)

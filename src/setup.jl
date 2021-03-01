@@ -8,11 +8,11 @@
     dmax::Union{Float64, Nothing} = nothing
     deformation::Tuple{Float64, Float64} = (0., 0.)
     height::Union{Float64, Nothing} = nothing
-    include_nucleus::Bool = false
-    nucleus_radiusratio::Float64 = 0.
+    include_in::Bool = false
+    in_ratio::Float64 = 0.
     include_ecs::Bool = false
     ecs_shape::String = "box"
-    ecs_gap::Float64 = 0.
+    ecs_ratio::Float64 = 0.
     refinement::Union{Float64, Nothing} = nothing
 end
 
@@ -37,7 +37,7 @@ function check_consistency(setup::CellSetup)
     else
         error("""CellSetup shape must be "sphere", "cylinder" or "neuron".""")
     end
-    setup.include_nucleus ? (@assert setup.nucleus_radiusratio > 0.) : nothing
+    setup.include_in ? (@assert setup.in_ratio > 0.) : nothing
     @assert setup.ecs_shape ∈ ["no_ecs", "box", "convexhull", "tightwrap"]
 end
 
@@ -51,11 +51,11 @@ end
     ρ_in::Float64
     ρ_out::Float64
     ρ_ecs::Float64
+    κ_in_out::Float64
+    κ_out_ecs::Float64
     κ_in::Float64
     κ_out::Float64
     κ_ecs::Float64
-    κ_in_out::Float64
-    κ_out_ecs::Float64
 end
 
 @with_kw struct BTPDE

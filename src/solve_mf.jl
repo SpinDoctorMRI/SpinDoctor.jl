@@ -42,7 +42,7 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
     ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
 
     # Project initial spin density onto Laplace eigenfunction basis
-    T0 = ϕ' * (M * ρ)
+    ν0 = ϕ' * (M * ρ)
 
     # Q-values and b-values
     if values_type == 'q'
@@ -84,33 +84,32 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
         A = sum(dir[i] * moments[:, :, i] for i = 1:3)
 
         # Create array for magnetization coefficients
-        T = copy(T0)
+        ν = copy(ν0)
 
         if typeof(f) == PGSE
             # Constant Bloch-Torrey operator in Laplace eigenfunction basis
             K = L + im * q * A
-            T = expmv!(-f.δ, K, T)
-            @. T *= exp(-(f.Δ - f.δ)λ)
-            T = expmv!(-f.δ, K', T)
+            ν = expmv!(-f.δ, K, ν)
+            @. ν *= exp(-(f.Δ - f.δ)λ)
+            ν = expmv!(-f.δ, K', ν)
             # edK = exp(-f.δ * K)
             # edL = @. exp(-(f.Δ - f.δ)λ)
-            # T = edK' * (edL .* (edK * T))
+            # ν = edK' * (edL .* (edK * ν))
         else
             # Bloch-Torrey operator in Laplace eigenfunction basis for given
             # time profile value
-            display("toto")
             K(fi) = L + im * q * fi * A
             t = LinRange(0, echotime(f), ninterval + 1)
             for i = 1:ninterval
                 δi = t[i+1] - t[i]
                 fi = (f(t[i+1]) + f(t[i])) / 2
-                # T .= exp(-δi * K(fi)) * T
-                expmv!(-δi, K(fi), T)
+                # ν .= exp(-δi * K(fi)) * ν
+                expmv!(-δi, K(fi), ν)
             end
         end
 
         # Final magnetization coefficients in finite element nodal basis
-        mag = ϕ * T;
+        mag = ϕ * ν;
 
         # Store results
         for icmpt = 1:ncompartment
