@@ -15,9 +15,10 @@ function assemble_flux_matrix(facets, nodes, weights=1)
         M2 = M1[[3, 1, 2], [3, 1, 2]]
         M3 = M2[[3, 1, 2], [3, 1, 2]]
 
-        z =  kron(areas .* weights[facets[:, 1]], reshape(M1, 1, 9))
+        z = (kron(areas .* weights[facets[:, 1]], reshape(M1, 1, 9))
            + kron(areas .* weights[facets[:, 2]], reshape(M2, 1, 9))
            + kron(areas .* weights[facets[:, 3]], reshape(M3, 1, 9))
+        )
     end
 
     # Assure symmetry
