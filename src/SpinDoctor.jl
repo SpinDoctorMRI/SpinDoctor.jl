@@ -1,3 +1,4 @@
+"Diffusion MRI modelling"
 module SpinDoctor
 
 using Printf
