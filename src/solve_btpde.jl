@@ -93,7 +93,7 @@ function solve_btpde(mesh, domain, experiment, directions)
     )
 
     # Iterate over gradient amplitudes, time profiles and directions
-    for (iamp, iseq, idir) ∈ Iterators.product(1:namplitude, 1:nsequence, 1:ndirection)
+    for iamp = 1:namplitude, iseq = 1:nsequence, idir = 1:ndirection
 
         # Gradient amplitude
         q = qvalues[iamp, iseq]

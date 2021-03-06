@@ -48,7 +48,7 @@ if !isnothing(experiment.btpde)
     btpde = @time solve_btpde(mesh, domain, experiment, directions)
 
     if experiment.btpde.nsave == 1
-        savefield(mesh, btpde.magnetization[:, 1, 1, 1],
+        savefield(mesh, btpde.magnetization[:, end, 1, 1],
             "output/$(cellsetup.name)/magnetization_btpde")
     else
         save_btpde_results(mesh, btpde, experiment, directions,
