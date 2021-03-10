@@ -48,7 +48,7 @@ In addition, a variety of neuron meshes is available, whose surface geometries w
 
 ## How to cite us
 
-The paper about SpinDoctor can be found at https://www.sciencedirect.com/science/article/pii/S1053811919307116.
+The paper about SpinDoctor can be found at https://arxiv.org/abs/1902.01025.
 
 If you use our software for research, please consider citing us:
 
