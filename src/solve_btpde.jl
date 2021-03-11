@@ -115,7 +115,7 @@ function solve_btpde(mesh, domain, experiment, directions)
         # Display state of iterations
         @printf "Solving BTPDE with size %d\n" (sum(npoint_cmpts))
         @printf "  Direction %d of %d: g = [%.2f, %.2f, %.2f]\n" idir ndirection dir...
-        @printf "  Sequence %d of %d: f = %s\n" iseq nsequence f
+        @printf "  Sequence  %d of %d: f = %s\n" iseq nsequence f
         @printf "  Amplitude %d of %d: q = %g, b = %g\n" iamp namplitude q b
 
         # Gradient direction dependent finite element matrix

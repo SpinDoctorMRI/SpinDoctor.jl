@@ -84,8 +84,8 @@ function create_surface_triangulation_cylinder(cellsetup::CellSetup, cells, doma
 
         if ecs_shape == "box"
             # Determine bounds of domain
-            emin = minimum(hcat(circles_out...); dims=2)
-            emax = maximum(hcat(circles_out...); dims=2)
+            emin = minimum(hcat(circles_out...), dims=2)
+            emax = maximum(hcat(circles_out...), dims=2)
 
             # Extend bounds by ECS gap
             @. emin = emin - ecs_ratio * rmean
@@ -272,8 +272,8 @@ function create_surface_triangulation_sphere(cellsetup::CellSetup, cells, domain
     if include_ecs
         if ecs_shape == "box"
             # Determine bounds of domain
-            emin = minimum(hcat(points_out...); dims=2)
-            emax = maximum(hcat(points_out...); dims=2)
+            emin = minimum(hcat(points_out...), dims=2)
+            emax = maximum(hcat(points_out...), dims=2)
 
             # Extend bounds by ECS gap
             @. emin = emin - ecs_ratio * rmean

@@ -15,7 +15,7 @@ function deform_domain!(points, deformation)
     thvec = points[[3], :] / height * twist
 
     # Twist around center
-    center = (maximum(points[1:2, :]; dims=2) .+ minimum(points[1:2, :]; dims=2)) ./ 2
+    center = (maximum(points[1:2, :], dims=2) .+ minimum(points[1:2, :], dims=2)) ./ 2
     points[1:2, :] .-= center
 
     points[1:2, :] .= [

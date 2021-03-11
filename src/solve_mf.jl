@@ -123,7 +123,7 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
         end
     end
 
-    signal_allcmpts[:] = sum(signal; dims=1)
+    signal_allcmpts[:] = sum(signal, dims=1)
 
     (; magnetization, signal, signal_allcmpts)
 end

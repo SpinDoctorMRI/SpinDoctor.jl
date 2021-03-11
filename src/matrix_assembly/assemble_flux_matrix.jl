@@ -35,10 +35,10 @@ function compute_areas(facets, nodes)
     v2 = nodes[facets[:, 3], :] - nodes[facets[:, 1], :]
 
     matrix_3D = zeros(2, 2, size(facets, 1))
-    matrix_3D[1, 1, :] = sum(v1 .* v1; dims=2)
-    matrix_3D[1, 2, :] = sum(v1 .* v2; dims=2)
-    matrix_3D[2, 1, :] = sum(v1 .* v2; dims=2)
-    matrix_3D[2, 2, :] = sum(v2 .* v2; dims=2)
+    matrix_3D[1, 1, :] = sum(v1 .* v1, dims=2)
+    matrix_3D[1, 2, :] = sum(v1 .* v2, dims=2)
+    matrix_3D[2, 1, :] = sum(v1 .* v2, dims=2)
+    matrix_3D[2, 2, :] = sum(v2 .* v2, dims=2)
 
     areas = ([√abs(det(matrix_3D[:, :, i])) / 2 for i = 1:nfacet])
 end

@@ -44,9 +44,9 @@ function create_cells(setup::CellSetup)
         end
 
         # Distance from point to the (already determined) cells
-        # dist = sqrt.(sum(abs2, centers .- point; dims=1)) .- radii
+        # dist = sqrt.(sum(abs2, centers .- point, dims=1)) .- radii
         # dist = dist[1:icell]
-        dist = sqrt.(sum(abs2, centers[:, 1:icell] .- point; dims=1)) .- radii[:, 1:icell]
+        dist = sqrt.(sum(abs2, centers[:, 1:icell] .- point, dims=1)) .- radii[:, 1:icell]
 
         # Distance from point to nearest cell
         dist = minimum(dist)
@@ -82,8 +82,8 @@ function create_cells(setup::CellSetup)
     icell == ncell || error("Did not find enough cell centers.")
 
     # Center cell collection
-    pmin = minimum(centers .- radii; dims=2)
-    pmax = maximum(centers .+ radii; dims=2)
+    pmin = minimum(centers .- radii, dims=2)
+    pmax = maximum(centers .+ radii, dims=2)
     pmean = (pmin + pmax) / 2
     centers = centers .- pmean
 

@@ -13,7 +13,7 @@ function get_mesh_volumes(points, elements)
     x = reshape(points[:, elements], 3, 4, nelement);
 
     # Element centers
-    centers = mean(x; dims=2)[:, 1, :];
+    centers = mean(x, dims=2)[:, 1, :];
 
     # Element volumes
     areavectors = [cross(x[:, 2, i] - x[:, 4, i], x[:, 3, i] - x[:, 4, i]) for i = 1:nelement];

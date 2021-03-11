@@ -63,10 +63,10 @@ function compute_laplace_eig(mesh, domain, eiglim=Inf, neig_max=Inf)
     isinf(eiglim) || length(λ) < neig || @warn "No eigenvalues were outside the interval. Consider increasing `neig_max`." eiglim neig_max
 
     # Normalize eigenfunctions with mass weighting
-    ϕ ./= .√sum(ϕ .* (M * ϕ); dims=1)
+    ϕ ./= .√sum(ϕ .* (M * ϕ), dims=1)
 
     # Compute first order moments of product of pairs of eigenfunctions
-    moments = cat([ϕ' * Mx[dim] * ϕ for dim = 1:3]...; dims=3)
+    moments = cat([ϕ' * Mx[dim] * ϕ for dim = 1:3]..., dims=3)
 
     values = λ
     funcs = ϕ
