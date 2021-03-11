@@ -72,5 +72,7 @@ export integral, bvalue_no_q, echotime, PGSE, CosOGSE, SinOGSE, DoublePGSE, echo
     solve_btpde,
     solve_mf,
     savefield, savefield_time, save_btpde_results,
-    fit_adc
+    fit_adc,
+    Trapezoid, ImplicitEuler, ABDF2, QNDF, QNDF1, QNDF2, QBDF, QBDF1, QBDF2
+
 end

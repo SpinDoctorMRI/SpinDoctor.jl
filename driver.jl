@@ -1,6 +1,5 @@
 
 using SpinDoctor
-using DifferentialEquations: Trapezoid
 
 ## Choose setup script
 
