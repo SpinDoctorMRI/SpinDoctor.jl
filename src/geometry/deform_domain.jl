@@ -26,4 +26,5 @@ function deform_domain!(points, deformation)
     # points[1, :] = points[1, :] - rmax
     points[1:2, :] .+= center
 
+    nothing
 end

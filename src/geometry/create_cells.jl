@@ -1,15 +1,15 @@
 """
-    create_cells(cellsetup)
+    create_cells(setup)
 
 Create geometrical configuration of cells. Return mathematical description (radii, centers).
 """
-function create_cells(setup::CellSetup)
-    @unpack shape, ncell, rmin, rmax, dmin, dmax = setup
+function create_cells(setup)
+    @unpack cell_shape, ncell, rmin, rmax, dmin, dmax = setup.geometry
 
     # Choose between spheres and cylinders
-    if shape == "sphere"
+    if cell_shape == "sphere"
         ndim = 3
-    elseif shape == "cylinder"
+    elseif cell_shape == "cylinder"
         ndim = 2
     else
         return nothing
@@ -37,7 +37,7 @@ function create_cells(setup::CellSetup)
 
         # Generate a random point using a uniform distribution with zero mean and
         # variance proportional to rmean
-        if shape == "sphere"
+        if cell_shape == "sphere"
             point = (rand(ndim) .- 0.5) * rmean * max(10, ncell^(1 / 3))
         else # cylinder
             point = (rand(ndim) .- 0.5) * rmean * max(10., sqrt(ncell)) * 40.

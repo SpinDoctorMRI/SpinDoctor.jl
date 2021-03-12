@@ -1,22 +1,27 @@
 """
-    M, S_cmpts, S_total = solve_mf(mesh, domain, experiment, lap_eig, directions)
+    M, S_cmpts, S_total = solve_mf(mesh, setup, lap_eig)
 
 Solve for magnetization using Matrix Formalism.
 """
-function solve_mf(mesh, domain, experiment, lap_eig, directions)
+function solve_mf(mesh, setup, lap_eig)
+
+    # Measure time of function evaluation
+    starttime = Base.time()
 
     # Extract parameters
-    @unpack ncompartment = mesh
-    @unpack ρ, κ = domain
-    @unpack ndirection, sequences, values, values_type, mf = experiment
-    @unpack ninterval = mf
+    @unpack ρ, κ = setup.pde
+    @unpack directions, sequences, values, values_type = setup.gradient
+    @unpack ninterval = setup.mf
 
     # Laplace eigenmodes
     λ, ϕ, moments = lap_eig.values, lap_eig.funcs, lap_eig.moments
 
+    # Sizes
+    ndirection = size(directions, 2)
     namplitude = length(values)
     nsequence = length(sequences)
     npoint_cmpts = size.(mesh.points, 2)
+    ncompartment = length(mesh.points)
 
     # Compartment index ranges
     inds_start = cumsum([1; npoint_cmpts[1:end-1]])
@@ -47,22 +52,26 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
     # Q-values and b-values
     if values_type == 'q'
         qvalues = repeat(values, 1, nsequence)
-        bvalues = values.^2 .* bvalue_no_q.(sequences')
+        bvalues = values.^2 .* bvalue_no_q.(sequences)'
     else
         bvalues = repeat(values, 1, nsequence)
-        qvalues = .√(values ./ bvalue_no_q.(sequences'))
+        qvalues = .√(values ./ bvalue_no_q.(sequences)')
     end
 
     # Allocate arrays
     signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndirection)
     signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndirection)
     magnetization = fill(ComplexF64[], ncompartment, namplitude, nsequence, ndirection)
+    itertimes = zeros(namplitude, nsequence, ndirection)
 
     # Laplace operator in Laplace eigenfunction basis
     L = diagm(λ)
 
     # Iterate over gradient amplitudes, time profiles and directions
     for iamp = 1:namplitude, iseq = 1:nsequence, idir = 1:ndirection
+
+        # Measure time of iteration
+        itertime = time()
 
         # Gradient amplitude
         q = qvalues[iamp, iseq]
@@ -121,9 +130,13 @@ function solve_mf(mesh, domain, experiment, lap_eig, directions)
             # Integrate magnetization over compartment
             signal[icmpt, iamp, iseq, idir] = sum(M_cmpts[icmpt] * mag[inds])
         end
+
+        itertimes[iamp, iseq, idir] = Base.time() - itertime
     end
 
     signal_allcmpts[:] = sum(signal, dims=1)
 
-    (; magnetization, signal, signal_allcmpts)
+    totaltime = Base.time() - starttime
+
+    (; magnetization, signal, signal_allcmpts, totaltime, itertimes)
 end

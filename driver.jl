@@ -1,74 +1,73 @@
-
 using SpinDoctor
+
 
 ## Choose setup script
 
-include("setups/cylinders.jl")
-# include("setups/spheres.jl")
+# include("setups/cylinders.jl")
+include("setups/spheres.jl")
+# include("setups/neuron.jl")
 
 
 ## Prepare experiments
 
-cells = create_cells(cellsetup)
-domain = prepare_pde(cellsetup, domainsetup)
+prepare_pde!(setup)
 
-tri = create_surface_triangulation(cellsetup, cells, domain)
+mesh, surfaces, cells = create_geometry(setup)
 
-tetgenmesh = create_mesh(cellsetup, domain, tri)
-if any(cellsetup.deformation .> 1e-16)
-    deform_domain!(tetgenmesh.pointlist, cellsetup.deformation)
-end
-mesh = split_mesh(domain, tetgenmesh)
-
-directions = create_directions(experiment)
 volumes = get_cmpt_volumes(mesh)
 
-σ_avg = domain.σ' * volumes / sum(volumes)
+σ_avg = setup.pde[:σ]' * volumes / sum(volumes)
 
 # Sizes
-ncompartment = domain.ncompartment
-namplitude = length(experiment.values)
-nsequence = length(experiment.sequences)
-ndirection = experiment.ndirection
+ncompartment = length(mesh.points)
+namplitude = length(setup.gradient[:values])
+nsequence = length(setup.gradient[:sequences])
+ndirection = size(setup.gradient[:directions], 2)
 
 # Q-values and b-values
-if experiment.values_type == 'q'
-    qvalues = repeat(experiment.values, 1, nsequence)
-    bvalues = experiment.values.^2 .* bvalue_no_q.(experiment.sequences)'
+if setup.gradient[:values_type] == 'q'
+    qvalues = repeat(setup.gradient[:values], 1, nsequence)
+    bvalues = setup.gradient[:values].^2 .* bvalue_no_q.(setup.gradient[:sequences])'
 else
-    bvalues = repeat(experiment.values, 1, nsequence)
-    qvalues = .√(experiment.values ./ bvalue_no_q.(experiment.sequences)')
+    bvalues = repeat(setup.gradient[:values], 1, nsequence)
+    qvalues = .√(setup.gradient[:values] ./ bvalue_no_q.(setup.gradient[:sequences])')
 end
 
+##
+btpde = @time solve_btpde(mesh, setup)
 
-## Solve
 
-if !isnothing(experiment.btpde)
-    btpde = @time solve_btpde(mesh, domain, experiment, directions)
+## Solve BTPDE
+if !isnothing(setup.btpde)
+    btpde = @time solve_btpde(mesh, setup)
 
-    if experiment.btpde.nsave == 1
+    name = split(setup.name, "/")[end]
+    if setup.btpde[:nsave] == 1
         savefield(mesh, btpde.magnetization[:, end, 1, 1],
-            "output/$(cellsetup.name)/magnetization_btpde")
+            "output/$name/magnetization_btpde")
     else
-        save_btpde_results(mesh, btpde, experiment, directions,
-            "output/$(cellsetup.name)/magnetization_btpde")
+        save_btpde_results(mesh, btpde, setup,
+            "output/$name/magnetization_btpde")
     end
     
     adc = [fit_adc(bvalues[:, iseq],
-        real(btpde.signal[icmpt, :, iseq, idir]) / (domain.ρ' * volumes))
+        real(btpde.signal[icmpt, :, iseq, idir]) / (setup.pde[:ρ]' * volumes))
         for idir = 1:ndirection for iseq = 1:nsequence for icmpt = 1:ncompartment]
 end
 
-if !isnothing(experiment.mf)
-    λ_max = length2eig(experiment.mf.length_scale, σ_avg)
-    lap_eig = compute_laplace_eig(mesh, domain, λ_max, experiment.mf.neig_max)
-    length_scales = eig2length.(lap_eig.values, σ_avg)
-    mf = solve_mf(mesh, domain, experiment, lap_eig, directions)
 
-    savefield(mesh, mf.magnetization[:, 1, 1, 1], "output/$(cellsetup.name)/magnetization_mf")
+## Solve MF
+if !isnothing(setup.mf)
+    λ_max = length2eig(setup.mf[:length_scale], σ_avg)
+    lap_eig = compute_laplace_eig(mesh, setup.pde, λ_max, setup.mf[:neig_max])
+    length_scales = eig2length.(lap_eig.values, σ_avg)
+    mf = solve_mf(mesh, setup, lap_eig)
+
+    name = split(setup.name, "/")[end]
+    savefield(mesh, mf.magnetization[:, 1, 1, 1], "output/$name/magnetization_mf")
 
     npoint_cmpts = size.(mesh.points, 2)
     bounds = cumsum([0; npoint_cmpts])
     ϕ_cmpts = [lap_eig.funcs[bounds[i]+1:bounds[i+1], :] for i = 1:mesh.ncompartment]
-    savefield(mesh, ϕ_cmpts, "output/$(cellsetup.name)/laplace_eig", "Laplace eigenfunction")
+    savefield(mesh, ϕ_cmpts, "output/$name/laplace_eig", "Laplace eigenfunction")
 end

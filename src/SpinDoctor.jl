@@ -19,8 +19,9 @@ using TetGen
 using WriteVTK
 using Polynomials: fit
 
-# using ForwardDiff
-# can_dual(::Type{ComplexF64}) = true
+
+# import ForwardDiff
+# ForwardDiff.can_dual(::Type{ComplexF64}) = true
 
 # Setups
 include("sequences.jl")
@@ -28,14 +29,23 @@ include("setup.jl")
 include("prepare_pde.jl")
 
 # Geometry
+include("geometry/call_tetgen.jl")
 include("geometry/create_cells.jl")
-include("geometry/create_surface_triangulation.jl")
-include("geometry/create_mesh.jl")
-include("geometry/deform_domain.jl")
-include("geometry/split_mesh.jl")
-include("geometry/create_fibonacci_sphere.jl")
 include("geometry/create_directions.jl")
+include("geometry/create_fibonacci_sphere.jl")
+include("geometry/create_geometry.jl")
+include("geometry/create_surfaces_cylinder.jl")
+include("geometry/create_surfaces_neuron.jl")
+include("geometry/create_surfaces_sphere.jl")
+include("geometry/deform_domain.jl")
 include("geometry/get_volumes.jl")
+include("geometry/read_cells.jl")
+include("geometry/read_surfaces.jl")
+include("geometry/read_tetgen.jl")
+include("geometry/save_cells.jl")
+include("geometry/save_surfaces.jl")
+include("geometry/save_tetgen.jl")
+include("geometry/split_mesh.jl")
 
 # Matrix assembly
 include("matrix_assembly/assemble_mass_matrix.jl")
@@ -57,15 +67,12 @@ include("fit_adc.jl")
 include("savefield.jl")
 
 
-export integral, bvalue_no_q, echotime, PGSE, CosOGSE, SinOGSE, DoublePGSE, echotime,
-    CellSetup, DomainSetup, ExperimentSetup, BTPDE, HADC, MF,
-    prepare_pde,
-    create_cells,
-    create_surface_triangulation,
-    create_mesh,
-    deform_domain!,
+export integral, bvalue_no_q, echotime, PGSE, CosOGSE, SinOGSE, DoublePGSE,
+    Setup,
+    prepare_pde!,
+    prepare_experiments!,
+    create_geometry,
     split_mesh,
-    create_fibonacci_sphere,
     create_directions,
     get_cmpt_volumes,
     compute_laplace_eig, length2eig, eig2length,

@@ -1,22 +1,23 @@
-function split_mesh(domain, mesh)
-    @unpack boundary_markers, compartments, boundaries, ncompartment, nboundary = domain
+function split_mesh(mesh_all, setup)
+    @unpack boundary_markers, compartments, boundaries = setup.pde
+    nboundary, ncompartment = size(boundary_markers)
 
-    # Extract mesh in global numbering system (tag: "all")
-    points_all = mesh.pointlist
-    facets_all = Int.(mesh.trifacelist)
-    elements_all = Int.(mesh.tetrahedronlist)
-    cmptmarkers_all = Int.(mesh.tetrahedronattributelist[:])
-    boundarymarkers_all = Int.(mesh.trifacemarkerlist)
+    # Extract mesh_all in global numbering system (tag: "all")
+    points_all = mesh_all.points
+    facets_all = mesh_all.facets
+    facetmarkers_all = mesh_all.facetmarkers
+    elements_all = mesh_all.elements
+    elementmarkers_all = mesh_all.elementmarkers
 
-    ncompartment = maximum(cmptmarkers_all)
-    nboundary = maximum(boundarymarkers_all)
+    ncompartment = maximum(elementmarkers_all)
+    nboundary = maximum(facetmarkers_all)
     npoint_all = size(points_all, 2)
 
-    elements = [elements_all[:, cmptmarkers_all .== icmpt] for icmpt = 1:ncompartment]
+    elements = [elements_all[:, elementmarkers_all .== icmpt] for icmpt = 1:ncompartment]
     cmpt_inds = sort.(unique.(elements))
     ncompartment_inds = length.(cmpt_inds)
 
-    facets_boundary = [facets_all[:, boundarymarkers_all .== iboundary] for iboundary = 1:nboundary]
+    facets_boundary = [facets_all[:, facetmarkers_all .== iboundary] for iboundary = 1:nboundary]
     boundary_inds = sort.(unique.(facets_boundary))
     nboundary_inds = length.(boundary_inds)
 

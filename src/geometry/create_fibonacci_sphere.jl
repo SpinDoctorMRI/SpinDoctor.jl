@@ -1,3 +1,8 @@
+"""
+    create_fibonacci_sphere(npoint)
+
+Create `npoint` evenly distributed points on the sphere.
+"""
 function create_fibonacci_sphere(npoint)
     φ = (1 + √5) / 2
     inds = collect(0:npoint-1)'

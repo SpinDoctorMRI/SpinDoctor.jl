@@ -1,13 +1,13 @@
 """
-    compute_laplace_eig(mesh, domain, eiglim, neig_max)
+    compute_laplace_eig(mesh, pde, eiglim, neig_max)
 
 Compute the Laplace eigenvalues, eigenfunctions and first order moments of products of pairs of eigenfunctions.
 """
-function compute_laplace_eig(mesh, domain, eiglim=Inf, neig_max=Inf)
+function compute_laplace_eig(mesh, pde, eiglim=Inf, neig_max=Inf)
 
     # Extract parameters
     @unpack ncompartment = mesh
-    @unpack σ, κ, T₂ = domain
+    @unpack σ, κ, T₂ = pde
 
     # Assemble finite element matrices compartment-wise
     fem_mat_cmpts = (
@@ -43,13 +43,13 @@ function compute_laplace_eig(mesh, domain, eiglim=Inf, neig_max=Inf)
     # Compute at most all eigenvalues in the given domain
     neig = Int(min(neig_max, size(M, 1)));
 
-    display("Solving Laplace eigenvalue problem, computing $neig eigenvalues.")
-    display("Problem size: $(size(M, 1)) points.")
+    println("Solving Laplace eigenvalue problem, computing $neig eigenvalues.")
+    println("Problem size: $(size(M, 1)) points.")
 
     # Solve generalized eigenproblem, computing the smallest eigenvalues only.
     # If 2 * neig_max_domain >= nnode, a full decomposition is performed,
     # calling the eig function inside eigs
-    λ, ϕ = eigs(S+Q, M, nev=neig, which=:SR);
+    λ, ϕ = eigs(S + Q, M, nev=neig, which=:SR);
     # λ, ϕ = eigs(Hermitian(S+Q), Hermitian(M), nev=neig, which=:SR);
     # λ, ϕ = eigen(Hermitian(Matrix(S+Q)), Hermitian(Matrix(M)))
 

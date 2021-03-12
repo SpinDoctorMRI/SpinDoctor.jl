@@ -1,5 +1,8 @@
 function savefield(mesh, field, filename::String, fieldname="Magnetization")
 
+    # Make sure that directory exists
+    isdir(dirname(filename)) || mkdir(dirname(filename))
+
     vtmfile = vtk_multiblock(filename)
 
     for icmpt = 1:mesh.ncompartment
@@ -26,6 +29,9 @@ end
 
 
 function savefield_time(mesh, time, field, filename::String, fieldname="Magnetization")
+
+    # Make sure that directory exists
+    isdir(dirname(filename)) || mkdir(dirname(filename))
 
     ncompartment = mesh.ncompartment
 
@@ -56,11 +62,11 @@ function savefield_time(mesh, time, field, filename::String, fieldname="Magnetiz
 end
 
 
-function save_btpde_results(mesh, btpde, experiment, directions, filename)
+function save_btpde_results(mesh, btpde, setup, filename)
 
     ncompartment = mesh.ncompartment
-    g = directions[:, 1]
-    f = experiment.sequences[1]
+    g = setup.gradient[:directions][:, 1]
+    f = setup.gradient[:sequences][1]
 
     time = btpde.time[1, 1, 1]
     magnetization = btpde.magnetization[:, 1, 1, 1]

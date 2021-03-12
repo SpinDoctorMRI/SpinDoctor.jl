@@ -1,22 +1,25 @@
 """
-    results = solve_btpde(mesh, domain, experiment, directions)
+    results = solve_btpde(mesh, setup)
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 """
-function solve_btpde(mesh, domain, experiment, directions)
+function solve_btpde(mesh, setup)
+
+    # Measure time of function evaluation
+    starttime = Base.time()
 
     # Extract input parameters
-    @unpack boundary_markers, compartments, boundaries, ncompartment, nboundary, σ, T₂, κ, ρ = domain
-    @unpack ndirection, flat_dirs, direction, sequences, values, values_type, btpde = experiment
-
-    # Extract solver scheme
-    @unpack odesolver, reltol, abstol, nsave = btpde
+    @unpack boundary_markers, compartments, boundaries, σ, T₂, κ, ρ = setup.pde
+    @unpack directions, sequences, values, values_type = setup.gradient
+    @unpack odesolver, reltol, abstol, nsave = setup.btpde
 
     # Deduce sizes
-    nsequence = length(sequences)
-    namplitude = length(values)
+    ncompartment, nboundary = size(boundary_markers)
     npoint_cmpts = size.(mesh.points, 2)
     inds_cmpts = cumsum([0; npoint_cmpts])
+    ndirection = size(directions, 2)
+    nsequence = length(sequences)
+    namplitude = length(values)
 
     # Assemble finite element matrices compartment-wise
     fem_mat_cmpts = (
@@ -57,6 +60,7 @@ function solve_btpde(mesh, domain, experiment, directions)
     signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndirection)
     magnetization = fill(Array{ComplexF64, 2}(undef, 0, 0), ncompartment, namplitude, nsequence, ndirection)
     time = fill(Float64[], namplitude, nsequence, ndirection)
+    itertimes = zeros(namplitude, nsequence, ndirection)
 
     # Q-values and b-values
     if values_type == 'q'
@@ -67,13 +71,19 @@ function solve_btpde(mesh, domain, experiment, directions)
         qvalues = .√(values ./ bvalue_no_q.(sequences)')
     end
 
-    save_everystep = nsave > 1
-
     # ODE function
     function M∂u∂t!(du, u, p, t)
-        J, S, Q, A, q, f = p
+        J, S, Q, A, q, f, _ = p
         @. J = -S - Q - im * f(t) * q * A
         mul!(du, J, u)
+        nothing
+    end
+    function M∂u∂t!2(du, u, p, t)
+        _, S, Q, A, q, f, Su, Qu, Au = p
+        mul!(Su, S, u)
+        mul!(Qu, Q, u)
+        mul!(Au, A, u)
+        @. du = -Su - Qu - im * f(t) * q * Au
         nothing
     end
 
@@ -86,7 +96,8 @@ function solve_btpde(mesh, domain, experiment, directions)
 
     # Gather ODE function
     odefunction = ODEFunction(
-        M∂u∂t!,
+        # M∂u∂t!,
+        M∂u∂t!2,
         jac = Jac!,
         jac_prototype = -(S + Q + im * sum(Mx)),
         mass_matrix = M,
@@ -123,21 +134,25 @@ function solve_btpde(mesh, domain, experiment, directions)
 
         # ODE problem
         J = -(S + Q + im * q * A)
-        p = (J, S, Q, A, q, f)
+        p = (J, S, Q, A, q, f, S*ρ, Q*ρ, A*ρ)
         odeproblem = ODEProblem(
             odefunction, ρ, interval, p,
-            progress = true,
-            reltol = reltol,
-            abstol = abstol,
+            progress = false,
         )
+
+        # Measure solving time
+        itertime = Base.time()
 
         # Solve ODE problem
         if isnothing(odesolver)
-            sol = solve(odeproblem, saveat=saveat, tstops = [f.δ, f.Δ])
+            sol = solve(odeproblem, saveat = saveat, tstops = [f.δ, f.Δ],
+                reltol=reltol, abstol=abstol)
         else
-            sol = solve(odeproblem, odesolver, saveat=saveat, tstops = [f.δ, f.Δ])
+            sol = solve(odeproblem, odesolver, saveat=saveat, tstops=[f.δ, f.Δ],
+                reltol=reltol, abstol=abstol)
         end
-        @show size(sol.u)
+
+        itertimes[iamp, iseq, idir] = Base.time() - itertime
 
         # Extract solution
         time[iamp, iseq, idir] = sol.t
@@ -158,7 +173,9 @@ function solve_btpde(mesh, domain, experiment, directions)
 
     signal_allcmpts = sum(signal, dims=1)[1, :, :, :]
 
+    totaltime = Base.time() - starttime
+
     # Return named tuple
-    (; magnetization, signal, signal_allcmpts, time)
+    (; magnetization, signal, signal_allcmpts, time, itertimes, totaltime)
 
 end # solve_btpde
