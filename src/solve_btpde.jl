@@ -33,7 +33,7 @@ function solve_btpde(mesh, setup)
         points = mesh.points[icmpt];
         facets = mesh.facets[icmpt, :];
         elements = mesh.elements[icmpt];
-        volumes = get_mesh_volumes(points, elements);
+        volumes, _ = get_mesh_volumes(points, elements);
 
         # Assemble mass, stiffness and flux matrices
         push!(fem_mat_cmpts.M, assemble_mass_matrix(elements', volumes))
@@ -73,17 +73,9 @@ function solve_btpde(mesh, setup)
 
     # ODE function
     function M∂u∂t!(du, u, p, t)
-        J, S, Q, A, q, f, _ = p
+        J, S, Q, A, q, f = p
         @. J = -S - Q - im * f(t) * q * A
         mul!(du, J, u)
-        nothing
-    end
-    function M∂u∂t!2(du, u, p, t)
-        _, S, Q, A, q, f, Su, Qu, Au = p
-        mul!(Su, S, u)
-        mul!(Qu, Q, u)
-        mul!(Au, A, u)
-        @. du = -Su - Qu - im * f(t) * q * Au
         nothing
     end
 
@@ -96,8 +88,7 @@ function solve_btpde(mesh, setup)
 
     # Gather ODE function
     odefunction = ODEFunction(
-        # M∂u∂t!,
-        M∂u∂t!2,
+        M∂u∂t!,
         jac = Jac!,
         jac_prototype = -(S + Q + im * sum(Mx)),
         mass_matrix = M,

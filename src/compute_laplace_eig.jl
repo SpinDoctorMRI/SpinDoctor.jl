@@ -21,7 +21,7 @@ function compute_laplace_eig(mesh, pde, eiglim=Inf, neig_max=Inf)
         points = mesh.points[icmpt];
         facets = mesh.facets[icmpt, :];
         elements = mesh.elements[icmpt];
-        volumes = get_mesh_volumes(points, elements);
+        volumes, _ = get_mesh_volumes(points, elements);
 
         # Assemble mass, stiffness and flux matrices
         push!(fem_mat_cmpts.M, assemble_mass_matrix(elements', volumes))

@@ -34,7 +34,7 @@ function solve_mf(mesh, setup, lap_eig)
         # Finite elements
         points = mesh.points[icmpt];
         elements = mesh.elements[icmpt];
-        volumes = get_mesh_volumes(points, elements);
+        volumes, _ = get_mesh_volumes(points, elements);
 
         # Assemble mass matrix
         push!(M_cmpts, assemble_mass_matrix(elements', volumes))

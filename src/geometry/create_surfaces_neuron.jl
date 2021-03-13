@@ -41,21 +41,21 @@ function create_surfaces_neuron(filename, setup::Setup)
         elements
     end
 
-    # Extract facets from elements
+    # Extract boundary facets from elements (remove interior facets)
     facets = [elements[[1, 2, 3], :] elements[[1, 2, 4], :] elements[[1, 3, 4], :] elements[[2, 3, 4], :]]
     sort!(facets, dims = 1)
     facets_unq = unique(facets, dims = 2)
-    ikeep = axes(facets_unq, 2) .|> i -> sum(prod(facets_unq[:, i] .== facets, dims = 1)) == 1
-    facets = facet_unq[:, ikeep]
+    ikeep = [count(f -> f == fu, eachcol(facets)) == 1 for fu ∈ eachcol(facets_unq)]
+    facets = facets_unq[:, ikeep]
 
-    total_volume, volumes, centers = get_volume_mesh(points, elements)
-    centermass = centers * volumes' / total_volume
+    volumes, centers = get_mesh_volumes(points, elements)
+    centermass = centers * volumes / sum(volumes)
 
     facetmarkers = ones(Int, size(facets, 2))
     regions = centermass
 
-    pmin = min(points, [], 2)
-    pmax = max(points, [], 2)
+    pmin = minimum(points, dims = 2)
+    pmax = maximum(points, dims = 2)
 
     if ecs_shape != "no_ecs"
         
