@@ -6,14 +6,14 @@ using DifferentialEquations
 using Expokit: expmv!
 using GLPK: Optimizer
 using LinearAlgebra
-using SparseArrays
-using Statistics: mean
-using QHull: chull # GenericLinearAlgebra problem
-using QuadGK
 using Parameters
 using Polyhedra: DefaultLibrary, polyhedron, removevredundancy!, vrep # GenericLinearAlgebra problem
 using Polynomials: fit
 using Printf
+using QHull: chull # GenericLinearAlgebra problem
+using QuadGK
+using SparseArrays
+using Statistics: mean
 using TetGen
 using Triangle: constrained_triangulation
 using WriteVTK
