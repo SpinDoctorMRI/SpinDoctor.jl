@@ -162,14 +162,12 @@ function solve_btpde(mesh, setup)
             signal[icmpt, iamp, iseq, idir] =
                 sum(fem_mat_cmpts.M[icmpt] * mag[inds, end], dims = 1)[1]
 
-        end # Compartments split
-    end # Experiment iterations
+        end
+    end
 
     signal_allcmpts = sum(signal, dims = 1)[1, :, :, :]
 
     totaltime = Base.time() - starttime
 
-    # Return named tuple
     (; magnetization, signal, signal_allcmpts, time, itertimes, totaltime)
-
-end # solve_btpde
+end

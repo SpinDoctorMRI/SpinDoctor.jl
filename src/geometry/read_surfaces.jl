@@ -59,6 +59,5 @@ function read_surfaces(filename)
         facets, facetmarkers, regions
     end
 
-    # Return named tuple
     (; points, facets, facetmarkers, regions)
 end

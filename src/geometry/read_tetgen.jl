@@ -43,6 +43,5 @@ function read_tetgen(filename)
         elements, elementmarkers
     end
 
-    # Return named tuple
     (; points, facets, facetmarkers, elements, elementmarkers)
 end

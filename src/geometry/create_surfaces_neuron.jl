@@ -94,7 +94,5 @@ function create_surfaces_neuron(filename, setup::Setup)
         append!(regions, regions_ecs)
     end
 
-
-    # Return named tuple
     (; points, facets, facetmarkers, regions)
 end

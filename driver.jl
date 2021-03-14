@@ -1,21 +1,14 @@
 using SpinDoctor
 
-
 ## Choose setup script
-
 # include("setups/cylinders.jl")
 # include("setups/spheres.jl")
 include("setups/neuron.jl")
 
-
 ## Prepare experiments
-
 prepare_pde!(setup)
-
 mesh, surfaces, cells = create_geometry(setup)
-
 volumes = get_cmpt_volumes(mesh)
-
 σ_avg = setup.pde[:σ]' * volumes / sum(volumes)
 
 # Sizes
@@ -35,7 +28,6 @@ end
 
 ##
 btpde = @time solve_btpde(mesh, setup)
-
 
 ## Solve BTPDE
 if !isnothing(setup.btpde)
@@ -59,7 +51,6 @@ if !isnothing(setup.btpde)
         ) for idir = 1:ndirection, iseq = 1:nsequence, icmpt = 1:ncompartment
     ]
 end
-
 
 ## Solve MF
 if !isnothing(setup.mf)
