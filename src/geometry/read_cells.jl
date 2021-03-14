@@ -6,7 +6,7 @@ Read cell configuration (centers and radii).
 function read_cells(cellfilename)
 
     # Read geometry from file
-    println("Loading cell configuration from " * cellfilename);
+    println("Loading cell configuration from " * cellfilename)
 
     open(cellfilename, "r") do io
         readline(io)
@@ -19,9 +19,9 @@ function read_cells(cellfilename)
         for icell = 1:ncell
             vec = parse.(Float64, split(readline(io)))
             centers[:, icell] = vec[2:1+d]
-            radii[icell] = vec[2 + d]
+            radii[icell] = vec[2+d]
         end
         (; centers, radii)
     end
-    
+
 end

@@ -48,7 +48,7 @@ function create_geometry(setup::Setup)
     elseif cell_shape ∈ ["sphere", "cylinder"]
         # Create cells
         cells = create_cells(setup)
-        
+
         # Save cell configuration
         save_cells(cells, cellfilename)
     else
@@ -68,40 +68,42 @@ function create_geometry(setup::Setup)
     if !isdir(save_meshdir_path)
         mkdir(save_meshdir_path)
     end
-    
-    
+
+
     # Use an existing finite elements mesh or create a new finite
     # elements mesh. The name of the finite elements mesh is stored in the string
     # fname_tetgen_femesh
-    refinement_str = isnothing(refinement) ? "" : "_refinement$(setup.geometry[:refinement])"
-    fname_tetgen = save_meshdir_path * "/" * split(filename, "/")[end] * refinement_str * "_mesh"
-    
+    refinement_str =
+        isnothing(refinement) ? "" : "_refinement$(setup.geometry[:refinement])"
+    fname_tetgen =
+        save_meshdir_path * "/" * split(filename, "/")[end] * refinement_str * "_mesh"
+
     # Read or create surface triangulation
     if isfile(fname_tetgen * ".node") && isfile(fname_tetgen * ".poly")
         surfaces = read_surfaces(fname_tetgen)
     else
-        if cell_shape ==  "sphere"
+        if cell_shape == "sphere"
             # Create surface geometry of spheres
             surfaces = create_surfaces_sphere(cells, setup)
-        elseif cell_shape ==  "cylinder"
+        elseif cell_shape == "cylinder"
             # Create surface geometry of cylinders
             surfaces = create_surfaces_cylinder(cells, setup)
-        elseif cell_shape ==  "neuron"
+        elseif cell_shape == "neuron"
             if is_stl
                 surfaces = nothing
             else
                 surfaces = create_surfaces_neuron(filename, setup)
             end
         end
-    
+
         if !is_stl
-            save_surfaces(fname_tetgen, surfaces);
+            save_surfaces(fname_tetgen, surfaces)
         end
     end
 
     # Add ".1" suffix to output file name, since this is what Tetgen does
-    fname_tetgen_femesh = fname_tetgen * ".1";
-    
+    fname_tetgen_femesh = fname_tetgen * ".1"
+
     if isfile(fname_tetgen_femesh * ".node")
         # Read global mesh from Tetgen output
         mesh_all = read_tetgen(fname_tetgen_femesh)
@@ -111,21 +113,23 @@ function create_geometry(setup::Setup)
         mesh_all = call_tetgen(surfaces, refinement)
         save_tetgen(mesh_all, fname_tetgen_femesh)
     end
-    
+
     # Check that at correct number of compartments and boundaries has been found
     compartments_new = unique(mesh_all.elementmarkers)
     boundaries_new = unique(mesh_all.facetmarkers)
 
     solution = "use smaller refinement or change surface triangulation."
-    length(compartments_new) == length(compartments) || @error "Incorrect number of compartments, " * solution
-    length(boundaries_new)  == length(boundaries) || @error "Incorrect number of boundaries, " * solution
-    
+    length(compartments_new) == length(compartments) ||
+        @error "Incorrect number of compartments, " * solution
+    length(boundaries_new) == length(boundaries) ||
+        @error "Incorrect number of boundaries, " * solution
+
     # Deform domain
     if any(deformation .> 1e-16)
         @printf "Deforming domain with bend %g and twist %g\n" deformation...
         deform_domain!(mesh_all.points, deformation)
     end
-    
+
     # Split mesh into compartments
     mesh = split_mesh(mesh_all, setup)
 

@@ -21,7 +21,11 @@ function call_tetgen(surfaces, refinement = nothing)
         repeat([0.1], 1, nregion)
     ]
 
-    tetgen = isnothing(refinement) ? tetrahedralize(input, "pqA") : tetrahedralize(input, "pqAa$(refinement)")
+    if isnothing(refinement)
+        tetgen = tetrahedralize(input, "pqA")
+    else
+        tetgen = tetrahedralize(input, "pqAa$(refinement)")
+    end
 
     points = tetgen.pointlist
     facets = Int.(tetgen.trifacelist)
@@ -29,6 +33,5 @@ function call_tetgen(surfaces, refinement = nothing)
     elements = Int.(tetgen.tetrahedronlist)
     elementmarkers = Int.(tetgen.tetrahedronattributelist[:])
 
-    # Return named tuple
     (; points, facets, facetmarkers, elements, elementmarkers)
 end

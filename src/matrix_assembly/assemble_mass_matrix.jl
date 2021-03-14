@@ -1,5 +1,5 @@
 """ Assemble 3D mass matrix using P1 finite elements. """
-function assemble_mass_matrix(elements, volumes, weights=1)
+function assemble_mass_matrix(elements, volumes, weights = 1)
     x = kron(ones(1, 4), elements)
     y = kron(elements, ones(1, 4))
     if length(weights) == 1 || length(weights) == size(elements, 1)
@@ -11,10 +11,11 @@ function assemble_mass_matrix(elements, volumes, weights=1)
         M2 = M1[[4, 1, 2, 3], [4, 1, 2, 3]]
         M3 = M2[[4, 1, 2, 3], [4, 1, 2, 3]]
         M4 = M3[[4, 1, 2, 3], [4, 1, 2, 3]]
-        z = (kron(volumes .* weights[elements[:, 1]], reshape(M1, 1, 16))
-           + kron(volumes .* weights[elements[:, 2]], reshape(M2, 1, 16))
-           + kron(volumes .* weights[elements[:, 3]], reshape(M3, 1, 16))
-           + kron(volumes .* weights[elements[:, 4]], reshape(M4, 1, 16))
+        z = (
+            kron(volumes .* weights[elements[:, 1]], reshape(M1, 1, 16)) +
+            kron(volumes .* weights[elements[:, 2]], reshape(M2, 1, 16)) +
+            kron(volumes .* weights[elements[:, 3]], reshape(M3, 1, 16)) +
+            kron(volumes .* weights[elements[:, 4]], reshape(M4, 1, 16))
         )
     end
 

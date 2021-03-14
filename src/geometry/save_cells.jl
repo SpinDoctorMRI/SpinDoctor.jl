@@ -8,13 +8,13 @@ function save_cells(cells, cellfilename)
 
     # Extract cell parameters
     @unpack centers, radii = cells
-    
+
     # Sizes
     d, ncell = size(centers)
-    
+
     # Save cell geometry to file
     println("Writing cell geometry to " * cellfilename)
-    
+
     open(cellfilename, "w") do io
         write(io, "Number of cells:\n")
         write(io, "$ncell\n")

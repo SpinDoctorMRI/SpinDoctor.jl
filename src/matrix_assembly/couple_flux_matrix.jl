@@ -2,7 +2,8 @@
 function couple_flux_matrix(mesh, Q)
 
     # Extract mesh fields
-    @unpack ncompartment, nboundary, cmpt_inds, points, facets, elements, boundary_markers = mesh
+    @unpack ncompartment, nboundary, cmpt_inds, points, facets, elements, boundary_markers =
+        mesh
 
     # Sizes (not the same as `mesh.cmpt_inds`)
     inds_cmpts = cumsum([0; size.(points, 2)])

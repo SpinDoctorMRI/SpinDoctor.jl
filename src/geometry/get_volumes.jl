@@ -25,7 +25,8 @@ function get_mesh_volumes(points, elements)
     centers = mean(x, dims = 2)[:, 1, :]
 
     # Element volumes
-    areavectors = [cross(x[:, 2, i] - x[:, 4, i], x[:, 3, i] - x[:, 4, i]) for i = 1:nelement]
+    areavectors =
+        [cross(x[:, 2, i] - x[:, 4, i], x[:, 3, i] - x[:, 4, i]) for i = 1:nelement]
 
     volumes = [1 / 6 * abs(dot(x[:, 1, i] - x[:, 4, i], areavectors[i])) for i = 1:nelement]
 

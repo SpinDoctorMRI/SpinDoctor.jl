@@ -8,8 +8,16 @@ the top surface is copied from the ground surface.
 """
 function create_surfaces_cylinder(cells, setup::Setup)
     @unpack radii, centers = cells
-    @unpack ncell, rmin, rmax, height, include_in, in_ratio, include_ecs, ecs_shape, ecs_ratio = setup.geometry
-    
+    @unpack ncell,
+    rmin,
+    rmax,
+    height,
+    include_in,
+    in_ratio,
+    include_ecs,
+    ecs_shape,
+    ecs_ratio = setup.geometry
+
     # Choose approximate cylinder side length
     nside = 30
     nside_min = 12
@@ -24,7 +32,7 @@ function create_surfaces_cylinder(cells, setup::Setup)
     create_circle(r, angles, center) = r * [cos.(angles'); sin.(angles')] .+ center
     create_circle_edges(n) = [(1:n-1)' n; (2:n)' 1]
 
-    centers_columns = reshape([centers[:, i] for i=1:ncell], (1, ncell))
+    centers_columns = reshape([centers[:, i] for i = 1:ncell], (1, ncell))
 
     # Create points for IN compartments
     if include_in
@@ -72,8 +80,8 @@ function create_surfaces_cylinder(cells, setup::Setup)
 
         if ecs_shape == "box"
             # Determine bounds of domain
-            pmin = minimum(points_ecs, dims=2)
-            pmax = maximum(points_ecs, dims=2)
+            pmin = minimum(points_ecs, dims = 2)
+            pmax = maximum(points_ecs, dims = 2)
 
             # Define four corners of box ECS and their corresponding edges
             points_ecs = [
@@ -112,19 +120,25 @@ function create_surfaces_cylinder(cells, setup::Setup)
     npoint_out = size(points_out, 2)
     npoint_ecs = size(points_ecs, 2)
     points = [points_in points_out points_ecs]
-    edges = [edges_in edges_out.+npoint_in edges_ecs.+npoint_in.+npoint_out]
+    edges = [edges_in edges_out .+ npoint_in edges_ecs .+ npoint_in .+ npoint_out]
     npoint = size(points, 2)
     nedge = size(edges, 2)
 
     # Perform Delaynay triangulation of entire domain
-    triangles = constrained_triangulation(collect(points'), collect(1:npoint), collect(edges'), fill(true, nedge))
+    triangles = constrained_triangulation(
+        collect(points'),
+        collect(1:npoint),
+        collect(edges'),
+        fill(true, nedge),
+    )
     ntriangle = length(triangles)
 
-    boundary_bounds = cumsum([0 nside_in nside_out nedge_ecs], dims=2)
+    boundary_bounds = cumsum([0 nside_in nside_out nedge_ecs], dims = 2)
 
     ncell_in = ncell * include_in
 
-    find_boundary(node) = findfirst(boundary_bounds[1:end-1] .+ 1 .≤ node .≤ boundary_bounds[2:end])
+    find_boundary(node) =
+        findfirst(boundary_bounds[1:end-1] .+ 1 .≤ node .≤ boundary_bounds[2:end])
 
     # Create boundary numbers
     facetmarkers = zeros(Int, ntriangle)
@@ -155,23 +169,26 @@ function create_surfaces_cylinder(cells, setup::Setup)
 
     function create_sidefacets(le, ri)
         [
-            (le:ri-1)'         ri         (le+1:ri)'.+npoint le.+npoint
+            (le:ri-1)' ri (le+1:ri)'.+npoint le.+npoint
             (le:ri-1)'.+npoint ri.+npoint (le:ri-1)'.+npoint ri.+npoint
-            (le+1:ri)'         le         (le+1:ri)'         le
+            (le+1:ri)' le (le+1:ri)' le
         ]
     end
 
-    sidefacets = hcat(create_sidefacets.(boundary_bounds[1:end-1] .+ 1, boundary_bounds[2:end])...)
+    sidefacets =
+        hcat(create_sidefacets.(boundary_bounds[1:end-1] .+ 1, boundary_bounds[2:end])...)
 
     sidefacetmarkers_in = 1:ncell_in
-    sidefacetmarkers_in = vcat([repeat([m, m], nside_in[i]) for (i, m) ∈ enumerate(sidefacetmarkers_in)]...)
+    sidefacetmarkers_in =
+        vcat([repeat([m, m], nside_in[i]) for (i, m) ∈ enumerate(sidefacetmarkers_in)]...)
 
-    sidefacetmarkers_out = (1 + !include_ecs)ncell_in+1:(1 + !include_ecs)ncell_in+ncell
-    sidefacetmarkers_out = vcat([repeat([m, m], nside_out[i]) for (i, m) ∈ enumerate(sidefacetmarkers_out)]...)
+    sidefacetmarkers_out = (1+!include_ecs)ncell_in+1:(1+!include_ecs)ncell_in+ncell
+    sidefacetmarkers_out =
+        vcat([repeat([m, m], nside_out[i]) for (i, m) ∈ enumerate(sidefacetmarkers_out)]...)
 
     sidefacetmarkers_ecs = fill(nboundary, 2npoint_ecs)
 
-    facets = [facets facets.+npoint sidefacets]
+    facets = [facets facets .+ npoint sidefacets]
     facetmarkers = [
         facetmarkers
         facetmarkers
@@ -189,13 +206,13 @@ function create_surfaces_cylinder(cells, setup::Setup)
     end
     if include_ecs
         xmin = argmin(points_ecs[1, :])
-        region_ecs = [points_ecs[:, xmin]; 0] + [ecs_ratio*rmean/2; 0; 0]
+        region_ecs = [points_ecs[:, xmin]; 0] + [ecs_ratio * rmean / 2; 0; 0]
     else
         region_ecs = zeros(3, 0)
     end
     regions = [regions_in regions_out region_ecs]
     @show size(facets)
     @show size(facetmarkers)
-    
+
     (; points, facets, facetmarkers, regions)
 end

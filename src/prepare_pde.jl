@@ -40,38 +40,42 @@ function prepare_pde!(setup)
         ncompartment_old = 0
         nboundary_old = 0
     end
-    
+
     # Add out-compartments
     append!(compartments, repeat(["out"], ncell))
-    
+
     if include_ecs
         # Add ecs-compartment and out-ecs interfaces
         push!(compartments, "ecs")
         append!(boundaries, repeat(["out,ecs"], ncell))
         boundary_markers[CartesianIndex.(
             [ncompartment_old+1:ncompartment_old+ncell; fill(ncompartment, ncell)],
-            repeat(nboundary_old+1:nboundary_old+ncell, 2)
+            repeat(nboundary_old+1:nboundary_old+ncell, 2),
         )] .= true
         nboundary_old = nboundary_old + ncell
     end
-    
+
     if cell_shape == "cylinder"
         if include_in
             # Add in boundary
             append!(boundaries, repeat(["in"], ncell))
             ncompartment_old = ncell
-            boundary_markers[CartesianIndex.(1:ncell, nboundary_old+1:nboundary_old+ncell)] .= true
+            boundary_markers[CartesianIndex.(
+                1:ncell,
+                nboundary_old+1:nboundary_old+ncell,
+            )] .= true
             nboundary_old = nboundary_old + ncell
         else
             ncompartment_old = 0
         end
-        
+
         # Add out boundary
         append!(boundaries, repeat(["out"], ncell))
         boundary_markers[CartesianIndex.(
-            ncompartment_old+1:ncompartment_old+ncell, nboundary_old+1:nboundary_old+ncell
+            ncompartment_old+1:ncompartment_old+ncell,
+            nboundary_old+1:nboundary_old+ncell,
         )] .= true
-    
+
         if include_ecs
             # Add ecs boundary
             push!(boundaries, "ecs")
@@ -94,20 +98,20 @@ function prepare_pde!(setup)
     ρ = zeros(ncompartment)
 
     # Distribute material properties to compartments and boundaries
-    ρ[compartments .== "in"] .= setup.pde[:ρ_in]
-    ρ[compartments .== "out"] .= setup.pde[:ρ_out]
-    ρ[compartments .== "ecs"] .= setup.pde[:ρ_ecs]
-    σ[compartments .== "in"] .= setup.pde[:σ_in]
-    σ[compartments .== "out"] .= setup.pde[:σ_out]
-    σ[compartments .== "ecs"] .= setup.pde[:σ_ecs]
-    T₂[compartments .== "in"] .= setup.pde[:T₂_in]
-    T₂[compartments .== "out"] .= setup.pde[:T₂_out]
-    T₂[compartments .== "ecs"] .= setup.pde[:T₂_ecs]
-    κ[boundaries .== "in,out"] .= setup.pde[:κ_in_out]
-    κ[boundaries .== "out,ecs"] .= setup.pde[:κ_out_ecs]
-    κ[boundaries .== "in"] .= setup.pde[:κ_in]
-    κ[boundaries .== "out"] .= setup.pde[:κ_out]
-    κ[boundaries .== "ecs"] .= setup.pde[:κ_ecs]
+    ρ[compartments.=="in"] .= setup.pde[:ρ_in]
+    ρ[compartments.=="out"] .= setup.pde[:ρ_out]
+    ρ[compartments.=="ecs"] .= setup.pde[:ρ_ecs]
+    σ[compartments.=="in"] .= setup.pde[:σ_in]
+    σ[compartments.=="out"] .= setup.pde[:σ_out]
+    σ[compartments.=="ecs"] .= setup.pde[:σ_ecs]
+    T₂[compartments.=="in"] .= setup.pde[:T₂_in]
+    T₂[compartments.=="out"] .= setup.pde[:T₂_out]
+    T₂[compartments.=="ecs"] .= setup.pde[:T₂_ecs]
+    κ[boundaries.=="in,out"] .= setup.pde[:κ_in_out]
+    κ[boundaries.=="out,ecs"] .= setup.pde[:κ_out_ecs]
+    κ[boundaries.=="in"] .= setup.pde[:κ_in]
+    κ[boundaries.=="out"] .= setup.pde[:κ_out]
+    κ[boundaries.=="ecs"] .= setup.pde[:κ_ecs]
 
     # Add fields to dictinary
     setup.pde[:ρ] = ρ

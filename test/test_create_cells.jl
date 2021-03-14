@@ -5,11 +5,11 @@ cellsetup = CellSetup(
     name = "test",
     shape = "cylinder",
     ncell = 10,
-    rmin = 1.,
-    rmax = 5.,
+    rmin = 1.0,
+    rmax = 5.0,
     dmin = 0.2,
     dmax = 0.3,
-    height = 3.,
+    height = 3.0,
 )
 cells = create_cells(cellsetup)
 @test cells isa NamedTuple
@@ -23,8 +23,8 @@ cellsetup = CellSetup(
     name = "test",
     shape = "sphere",
     ncell = 20,
-    rmin = 2.,
-    rmax = 7.,
+    rmin = 2.0,
+    rmax = 7.0,
     dmin = 0.2,
     dmax = 0.3,
 )

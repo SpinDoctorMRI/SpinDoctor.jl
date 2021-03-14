@@ -1,4 +1,4 @@
-function savefield(mesh, field, filename::String, fieldname="Magnetization")
+function savefield(mesh, field, filename::String, fieldname = "Magnetization")
 
     # Make sure that directory exists
     isdir(dirname(filename)) || mkdir(dirname(filename))
@@ -6,12 +6,12 @@ function savefield(mesh, field, filename::String, fieldname="Magnetization")
     vtmfile = vtk_multiblock(filename)
 
     for icmpt = 1:mesh.ncompartment
-
         f = field[icmpt]
         points = mesh.points[icmpt]
         elements = mesh.elements[icmpt]
 
-        cells = [MeshCell(VTKCellTypes.VTK_TETRA, elements[:, i]) for i = 1:size(elements, 2)]
+        cells =
+            [MeshCell(VTKCellTypes.VTK_TETRA, elements[:, i]) for i = 1:size(elements, 2)]
 
         vtkfile = vtk_grid(vtmfile, points, cells)
         if size(f, 2) == 1
@@ -28,7 +28,7 @@ function savefield(mesh, field, filename::String, fieldname="Magnetization")
 end
 
 
-function savefield_time(mesh, time, field, filename::String, fieldname="Magnetization")
+function savefield_time(mesh, time, field, filename::String, fieldname = "Magnetization")
 
     # Make sure that directory exists
     isdir(dirname(filename)) || mkdir(dirname(filename))
@@ -38,7 +38,6 @@ function savefield_time(mesh, time, field, filename::String, fieldname="Magnetiz
     pvd = paraview_collection(filename)
 
     for (it, t) ∈ enumerate(time)
-
         vtmfile = vtk_multiblock(filename * "_$it")
 
 
@@ -46,7 +45,10 @@ function savefield_time(mesh, time, field, filename::String, fieldname="Magnetiz
             points = mesh.points[icmpt]
             elements = mesh.elements[icmpt]
 
-            cells = [MeshCell(VTKCellTypes.VTK_TETRA, elements[:, i]) for i = 1:size(elements, 2)]
+            cells = [
+                MeshCell(VTKCellTypes.VTK_TETRA, elements[:, i]) for
+                i = 1:size(elements, 2)
+            ]
 
             # vtkfile = vtk_grid(vtmfile, points, cells)
             vtkfile = vtk_grid(vtmfile, points, cells)
@@ -75,14 +77,16 @@ function save_btpde_results(mesh, btpde, setup, filename)
     pvd = paraview_collection(filename)
 
     for (it, t) ∈ enumerate(time)
-
         vtmfile = vtk_multiblock(filename * "_$it")
 
         for icmpt = 1:ncompartment
             points = mesh.points[icmpt]
             elements = mesh.elements[icmpt]
 
-            cells = [MeshCell(VTKCellTypes.VTK_TETRA, elements[:, i]) for i = 1:size(elements, 2)]
+            cells = [
+                MeshCell(VTKCellTypes.VTK_TETRA, elements[:, i]) for
+                i = 1:size(elements, 2)
+            ]
 
             # vtkfile = vtk_grid(vtmfile, points, cells)
             vtkfile = vtk_grid(vtmfile, points, cells)

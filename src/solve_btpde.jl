@@ -22,18 +22,13 @@ function solve_btpde(mesh, setup)
     namplitude = length(values)
 
     # Assemble finite element matrices compartment-wise
-    fem_mat_cmpts = (
-        M = [],
-        S = [],
-        Q = [],
-        Mx = [[] for idim=1:3]
-    )
+    fem_mat_cmpts = (M = [], S = [], Q = [], Mx = [[] for idim = 1:3])
     for icmpt = 1:ncompartment
         # Finite elements
-        points = mesh.points[icmpt];
-        facets = mesh.facets[icmpt, :];
-        elements = mesh.elements[icmpt];
-        volumes, _ = get_mesh_volumes(points, elements);
+        points = mesh.points[icmpt]
+        facets = mesh.facets[icmpt, :]
+        elements = mesh.elements[icmpt]
+        volumes, _ = get_mesh_volumes(points, elements)
 
         # Assemble mass, stiffness and flux matrices
         push!(fem_mat_cmpts.M, assemble_mass_matrix(elements', volumes))
@@ -42,7 +37,10 @@ function solve_btpde(mesh, setup)
 
         # Assemble first order product moment matrices
         for dim = 1:3
-            push!(fem_mat_cmpts.Mx[dim], assemble_mass_matrix(elements', volumes, points[dim, :]))
+            push!(
+                fem_mat_cmpts.Mx[dim],
+                assemble_mass_matrix(elements', volumes, points[dim, :]),
+            )
         end
     end
 
@@ -54,18 +52,24 @@ function solve_btpde(mesh, setup)
 
     # Create initial conditions (enforce complex values)
     ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
-    
+
     # Allocate output arrays
     signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndirection)
     signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndirection)
-    magnetization = fill(Array{ComplexF64, 2}(undef, 0, 0), ncompartment, namplitude, nsequence, ndirection)
+    magnetization = fill(
+        Array{ComplexF64,2}(undef, 0, 0),
+        ncompartment,
+        namplitude,
+        nsequence,
+        ndirection,
+    )
     time = fill(Float64[], namplitude, nsequence, ndirection)
     itertimes = zeros(namplitude, nsequence, ndirection)
 
     # Q-values and b-values
     if values_type == 'q'
         qvalues = repeat(values, 1, nsequence)
-        bvalues = values.^2 .* bvalue_no_q.(sequences)'
+        bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
     else
         bvalues = repeat(values, 1, nsequence)
         qvalues = .√(values ./ bvalue_no_q.(sequences)')
@@ -125,23 +129,21 @@ function solve_btpde(mesh, setup)
 
         # ODE problem
         J = -(S + Q + im * q * A)
-        p = (J, S, Q, A, q, f, S*ρ, Q*ρ, A*ρ)
-        odeproblem = ODEProblem(
-            odefunction, ρ, interval, p,
-            progress = false,
-        )
+        p = (J, S, Q, A, q, f)
+        odeproblem = ODEProblem(odefunction, ρ, interval, p, progress = false)
 
         # Measure solving time
         itertime = Base.time()
 
         # Solve ODE problem
-        if isnothing(odesolver)
-            sol = solve(odeproblem, saveat = saveat, tstops = [f.δ, f.Δ],
-                reltol=reltol, abstol=abstol)
-        else
-            sol = solve(odeproblem, odesolver, saveat=saveat, tstops=[f.δ, f.Δ],
-                reltol=reltol, abstol=abstol)
-        end
+        sol = solve(
+            odeproblem,
+            odesolver,
+            saveat = saveat,
+            tstops = [f.δ, f.Δ],
+            reltol = reltol,
+            abstol = abstol,
+        )
 
         itertimes[iamp, iseq, idir] = Base.time() - itertime
 
@@ -157,12 +159,13 @@ function solve_btpde(mesh, setup)
             magnetization[icmpt, iamp, iseq, idir] = mag[inds, :]
 
             # Integrate final magnetization over compartment
-            signal[icmpt, iamp, iseq, idir] = sum(fem_mat_cmpts.M[icmpt] * mag[inds, end], dims=1)[1]
+            signal[icmpt, iamp, iseq, idir] =
+                sum(fem_mat_cmpts.M[icmpt] * mag[inds, end], dims = 1)[1]
 
         end # Compartments split
     end # Experiment iterations
 
-    signal_allcmpts = sum(signal, dims=1)[1, :, :, :]
+    signal_allcmpts = sum(signal, dims = 1)[1, :, :, :]
 
     totaltime = Base.time() - starttime
 

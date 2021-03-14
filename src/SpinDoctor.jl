@@ -1,27 +1,43 @@
 "Diffusion MRI modelling"
 module SpinDoctor
 
-using Printf
-using Parameters
-using LinearAlgebra
 using Arpack: eigs
-using SparseArrays
-using Statistics: mean
-
 using DifferentialEquations
 using Expokit: expmv!
+using GLPK: Optimizer
+using LinearAlgebra
+using SparseArrays
+using Statistics: mean
+using QHull: chull # GenericLinearAlgebra problem
 using QuadGK
-using Polyhedra: polyhedron, vrep, removevredundancy!, DefaultLibrary
-using QHull: chull
-import GLPK: Optimizer
-using Triangle: constrained_triangulation
-using TetGen
-using WriteVTK
+using Parameters
+using Polyhedra: DefaultLibrary, polyhedron, removevredundancy!, vrep # GenericLinearAlgebra problem
 using Polynomials: fit
+using Printf
+using TetGen
+using Triangle: constrained_triangulation
+using WriteVTK
 
-
-# import ForwardDiff
-# ForwardDiff.can_dual(::Type{ComplexF64}) = true
+export integral, bvalue_no_q, echotime, PGSE, CosOGSE, SinOGSE, DoublePGSE
+export Setup
+export prepare_pde!
+export prepare_experiments!
+export create_geometry
+export split_mesh
+export create_directions
+export get_cmpt_volumes
+export compute_laplace_eig
+export length2eig
+export eig2length
+export solve_btpde
+export solve_mf
+export savefield
+export savefield_time
+export save_btpde_results
+export fit_adc
+export Trapezoid
+export ImplicitEuler
+export ABDF2, QBDF, QBDF1, QBDF2, QNDF, QNDF1, QNDF2
 
 # Setups
 include("sequences.jl")
@@ -65,21 +81,5 @@ include("solve_mf.jl")
 # Postprocessing
 include("fit_adc.jl")
 include("savefield.jl")
-
-
-export integral, bvalue_no_q, echotime, PGSE, CosOGSE, SinOGSE, DoublePGSE,
-    Setup,
-    prepare_pde!,
-    prepare_experiments!,
-    create_geometry,
-    split_mesh,
-    create_directions,
-    get_cmpt_volumes,
-    compute_laplace_eig, length2eig, eig2length,
-    solve_btpde,
-    solve_mf,
-    savefield, savefield_time, save_btpde_results,
-    fit_adc,
-    Trapezoid, ImplicitEuler, ABDF2, QNDF, QNDF1, QNDF2, QBDF, QBDF1, QBDF2
 
 end

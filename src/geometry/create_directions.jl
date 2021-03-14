@@ -28,5 +28,3 @@ Get one normalized direction.
 function create_directions(direction::Vector)
     direction / norm(direction)
 end
-
-

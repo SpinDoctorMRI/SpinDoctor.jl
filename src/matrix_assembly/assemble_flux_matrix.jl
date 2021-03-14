@@ -1,5 +1,5 @@
 """ Assemble 3D flux matrix using P1 finite elements. """
-function assemble_flux_matrix(facets, nodes, weights=1)
+function assemble_flux_matrix(facets, nodes, weights = 1)
     nfacet = size(facets, 1)
     nnode = size(nodes, 1)
     areas = compute_areas(facets, nodes)
@@ -15,15 +15,16 @@ function assemble_flux_matrix(facets, nodes, weights=1)
         M2 = M1[[3, 1, 2], [3, 1, 2]]
         M3 = M2[[3, 1, 2], [3, 1, 2]]
 
-        z = (kron(areas .* weights[facets[:, 1]], reshape(M1, 1, 9))
-           + kron(areas .* weights[facets[:, 2]], reshape(M2, 1, 9))
-           + kron(areas .* weights[facets[:, 3]], reshape(M3, 1, 9))
+        z = (
+            kron(areas .* weights[facets[:, 1]], reshape(M1, 1, 9)) +
+            kron(areas .* weights[facets[:, 2]], reshape(M2, 1, 9)) +
+            kron(areas .* weights[facets[:, 3]], reshape(M3, 1, 9))
         )
     end
 
     # Assure symmetry
     sym(x) = (x + x') / 2
-    
+
     sym(sparse(x[:], y[:], z[:], nnode, nnode))
 end
 
@@ -35,10 +36,10 @@ function compute_areas(facets, nodes)
     v2 = nodes[facets[:, 3], :] - nodes[facets[:, 1], :]
 
     matrix_3D = zeros(2, 2, size(facets, 1))
-    matrix_3D[1, 1, :] = sum(v1 .* v1, dims=2)
-    matrix_3D[1, 2, :] = sum(v1 .* v2, dims=2)
-    matrix_3D[2, 1, :] = sum(v1 .* v2, dims=2)
-    matrix_3D[2, 2, :] = sum(v2 .* v2, dims=2)
+    matrix_3D[1, 1, :] = sum(v1 .* v1, dims = 2)
+    matrix_3D[1, 2, :] = sum(v1 .* v2, dims = 2)
+    matrix_3D[2, 1, :] = sum(v1 .* v2, dims = 2)
+    matrix_3D[2, 2, :] = sum(v2 .* v2, dims = 2)
 
     areas = ([√abs(det(matrix_3D[:, :, i])) / 2 for i = 1:nfacet])
 end

@@ -75,25 +75,20 @@ end
 
 function (f::CosOGSE)(t)
     (
-          (t < f.δ) * cos(2π * f.nperiod * t / f.δ )
-        - (f.Δ ≤ t) * cos(2π * f.nperiod * (t - f.Δ) / f.δ)
+        (t < f.δ) * cos(2π * f.nperiod * t / f.δ) -
+        (f.Δ ≤ t) * cos(2π * f.nperiod * (t - f.Δ) / f.δ)
     )
 end
 
 function (f::SinOGSE)(t)
     (
-          (t < f.δ) * sin(2π * f.nperiod * t / f.δ)
-        - (f.Δ ≤ t) * sin(2π * f.nperiod * (t - f.Δ) / f.δ)
+        (t < f.δ) * sin(2π * f.nperiod * t / f.δ) -
+        (f.Δ ≤ t) * sin(2π * f.nperiod * (t - f.Δ) / f.δ)
     )
 end
 
 function (f::DoublePGSE)(t)
-    (
-          (t < f.δ)
-        - (f.Δ ≤ t < f.Δ + f.δ)
-        + (f.Δ + f.δ ≤ t < 2f.Δ + f.δ)
-        - (2f.Δ + f.δ ≤ t)
-    )
+    ((t < f.δ) - (f.Δ ≤ t < f.Δ + f.δ) + (f.Δ + f.δ ≤ t < 2f.Δ + f.δ) - (2f.Δ + f.δ ≤ t))
 end
 
 
@@ -124,44 +119,32 @@ is used as the upper integral limit.
 For the `PGSE`, `SinOGSE`, `CosOGSE` and `DoublePGSE` sequences, analytical
 expressions are available. Otherwise a numerical integral is computed.
 """
-function integral(f::TimeProfile, t=echotime(f))
+function integral(f::TimeProfile, t = echotime(f))
     quadgk(f, 0, t)
 end
 
-function integral(f::PGSE, t=echotime(f))
-    (
-          (t < f.δ) * t
-        + (f.δ ≤ t) * f.δ
-        - (f.Δ ≤ t) * (t - f.Δ)
-    )
+function integral(f::PGSE, t = echotime(f))
+    ((t < f.δ) * t + (f.δ ≤ t) * f.δ - (f.Δ ≤ t) * (t - f.Δ))
 end
 
-function integral(f::CosOGSE, t=echotime(f))
+function integral(f::CosOGSE, t = echotime(f))
     δ, Δ, n = f.δ, f.Δ, f.nperiod
-    (
-          (t < δ) * sin(2π * n * t / δ)
-        - (Δ ≤ t) * sin(2π * n * (t - Δ) / δ)
-    ) * δ / (2π * n)
+    ((t < δ) * sin(2π * n * t / δ) - (Δ ≤ t) * sin(2π * n * (t - Δ) / δ)) * δ / (2π * n)
 end
 
-function integral(f::SinOGSE, t=echotime(f))
+function integral(f::SinOGSE, t = echotime(f))
     δ, Δ, n = f.δ, f.Δ, f.nperiod
-    (
-          (t < δ) * (1 - cos(2π * n * t / δ))
-        - (Δ ≤ t) * (1 - cos(2π * n * (t - Δ) / δ))
-    ) * δ / (2π * n)
+    ((t < δ) * (1 - cos(2π * n * t / δ)) - (Δ ≤ t) * (1 - cos(2π * n * (t - Δ) / δ))) * δ /
+    (2π * n)
 end
 
-function integral(f::DoublePGSE, t=echotime(f))
+function integral(f::DoublePGSE, t = echotime(f))
     δ, Δ = f.δ, f.Δ
-    tmid = Δ + δ;
+    tmid = Δ + δ
     (
-          (t < δ) * t
-        + (δ ≤ t < tmid) * δ
-        - (Δ ≤ t < tmid) * (t - Δ)
-        + (tmid ≤ t < tmid + δ) * (t - tmid)
-        + (tmid + δ ≤ t) * δ
-        - (tmid + Δ ≤ t) * (t - (tmid + Δ))
+        (t < δ) * t + (δ ≤ t < tmid) * δ - (Δ ≤ t < tmid) * (t - Δ) +
+        (tmid ≤ t < tmid + δ) * (t - tmid) +
+        (tmid + δ ≤ t) * δ - (tmid + Δ ≤ t) * (t - (tmid + Δ))
     )
 end
 
@@ -175,7 +158,7 @@ water proton, g is the gradient amplitude, and b(q, f) = q^2 * bvalue_no_q(f).
 
 """
 function bvalue_no_q(f::TimeProfile)
-    quadgk(s->integral(f, s)^2, 0, echotime(f))
+    quadgk(s -> integral(f, s)^2, 0, echotime(f))
 end
 
 function bvalue_no_q(f::PGSE)

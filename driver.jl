@@ -4,8 +4,8 @@ using SpinDoctor
 ## Choose setup script
 
 # include("setups/cylinders.jl")
-include("setups/spheres.jl")
-# include("setups/neuron.jl")
+# include("setups/spheres.jl")
+include("setups/neuron.jl")
 
 
 ## Prepare experiments
@@ -27,7 +27,7 @@ ndirection = size(setup.gradient[:directions], 2)
 # Q-values and b-values
 if setup.gradient[:values_type] == 'q'
     qvalues = repeat(setup.gradient[:values], 1, nsequence)
-    bvalues = setup.gradient[:values].^2 .* bvalue_no_q.(setup.gradient[:sequences])'
+    bvalues = setup.gradient[:values] .^ 2 .* bvalue_no_q.(setup.gradient[:sequences])'
 else
     bvalues = repeat(setup.gradient[:values], 1, nsequence)
     qvalues = .√(setup.gradient[:values] ./ bvalue_no_q.(setup.gradient[:sequences])')
@@ -43,16 +43,21 @@ if !isnothing(setup.btpde)
 
     name = split(setup.name, "/")[end]
     if setup.btpde[:nsave] == 1
-        savefield(mesh, btpde.magnetization[:, end, 1, 1],
-            "output/$name/magnetization_btpde")
+        savefield(
+            mesh,
+            btpde.magnetization[:, end, 1, 1],
+            "output/$name/magnetization_btpde",
+        )
     else
-        save_btpde_results(mesh, btpde, setup,
-            "output/$name/magnetization_btpde")
+        save_btpde_results(mesh, btpde, setup, "output/$name/magnetization_btpde")
     end
-    
-    adc = [fit_adc(bvalues[:, iseq],
-        real(btpde.signal[icmpt, :, iseq, idir]) / (setup.pde[:ρ]' * volumes))
-        for idir = 1:ndirection for iseq = 1:nsequence for icmpt = 1:ncompartment]
+
+    adc = [
+        fit_adc(
+            bvalues[:, iseq],
+            real(btpde.signal[icmpt, :, iseq, idir]) / (setup.pde[:ρ]' * volumes),
+        ) for idir = 1:ndirection, iseq = 1:nsequence, icmpt = 1:ncompartment
+    ]
 end
 
 

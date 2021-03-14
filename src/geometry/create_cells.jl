@@ -19,7 +19,7 @@ function create_cells(setup)
     npoint_max = 100000 * ncell
 
     # Mean allowed radius
-    rmean = (rmin + rmax ) / 2
+    rmean = (rmin + rmax) / 2
 
     # Cell centers (firsts is zero)
     centers = zeros(ndim, ncell)
@@ -40,13 +40,13 @@ function create_cells(setup)
         if cell_shape == "sphere"
             point = (rand(ndim) .- 0.5) * rmean * max(10, ncell^(1 / 3))
         else # cylinder
-            point = (rand(ndim) .- 0.5) * rmean * max(10., sqrt(ncell)) * 40.
+            point = (rand(ndim) .- 0.5) * rmean * max(10.0, sqrt(ncell)) * 40.0
         end
 
         # Distance from point to the (already determined) cells
-        # dist = sqrt.(sum(abs2, centers .- point, dims=1)) .- radii
+        # dist = sqrt.(sum(abs2, centers .- point, dims = 1)) .- radii
         # dist = dist[1:icell]
-        dist = sqrt.(sum(abs2, centers[:, 1:icell] .- point, dims=1)) .- radii[:, 1:icell]
+        dist = sqrt.(sum(abs2, centers[:, 1:icell] .- point, dims = 1)) .- radii[:, 1:icell]
 
         # Distance from point to nearest cell
         dist = minimum(dist)
@@ -82,8 +82,8 @@ function create_cells(setup)
     icell == ncell || error("Did not find enough cell centers.")
 
     # Center cell collection
-    pmin = minimum(centers .- radii, dims=2)
-    pmax = maximum(centers .+ radii, dims=2)
+    pmin = minimum(centers .- radii, dims = 2)
+    pmax = maximum(centers .+ radii, dims = 2)
     pmean = (pmin + pmax) / 2
     centers = centers .- pmean
 

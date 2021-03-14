@@ -32,9 +32,9 @@ function solve_mf(mesh, setup, lap_eig)
     M_cmpts = []
     for icmpt = 1:ncompartment
         # Finite elements
-        points = mesh.points[icmpt];
-        elements = mesh.elements[icmpt];
-        volumes, _ = get_mesh_volumes(points, elements);
+        points = mesh.points[icmpt]
+        elements = mesh.elements[icmpt]
+        volumes, _ = get_mesh_volumes(points, elements)
 
         # Assemble mass matrix
         push!(M_cmpts, assemble_mass_matrix(elements', volumes))
@@ -52,7 +52,7 @@ function solve_mf(mesh, setup, lap_eig)
     # Q-values and b-values
     if values_type == 'q'
         qvalues = repeat(values, 1, nsequence)
-        bvalues = values.^2 .* bvalue_no_q.(sequences)'
+        bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
     else
         bvalues = repeat(values, 1, nsequence)
         qvalues = .√(values ./ bvalue_no_q.(sequences)')
@@ -118,7 +118,7 @@ function solve_mf(mesh, setup, lap_eig)
         end
 
         # Final magnetization coefficients in finite element nodal basis
-        mag = ϕ * ν;
+        mag = ϕ * ν
 
         # Store results
         for icmpt = 1:ncompartment
@@ -134,7 +134,7 @@ function solve_mf(mesh, setup, lap_eig)
         itertimes[iamp, iseq, idir] = Base.time() - itertime
     end
 
-    signal_allcmpts[:] = sum(signal, dims=1)
+    signal_allcmpts[:] = sum(signal, dims = 1)
 
     totaltime = Base.time() - starttime
 

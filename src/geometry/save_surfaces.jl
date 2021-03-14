@@ -52,7 +52,10 @@ function save_surfaces(filename, surfaces)
         write(io, "# Part 4 - region list\n")
         write(io, "$nregion\n")
         for i = 1:nregion
-            write(io, @sprintf "%d %f %f %f %d %f\n" i regions[:, i]... i default_refinement)
+            write(
+                io,
+                @sprintf "%d %f %f %f %d %f\n" i regions[:, i]... i default_refinement
+            )
         end
 
     end

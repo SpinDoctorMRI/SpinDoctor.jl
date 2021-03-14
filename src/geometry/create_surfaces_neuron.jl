@@ -42,7 +42,10 @@ function create_surfaces_neuron(filename, setup::Setup)
     end
 
     # Extract boundary facets from elements (remove interior facets)
-    facets = [elements[[1, 2, 3], :] elements[[1, 2, 4], :] elements[[1, 3, 4], :] elements[[2, 3, 4], :]]
+    facets = [elements[[1, 2, 3], :] elements[[1, 2, 4], :] elements[[1, 3, 4], :] elements[
+        [2, 3, 4],
+        :,
+    ]]
     sort!(facets, dims = 1)
     facets_unq = unique(facets, dims = 2)
     ikeep = [count(f -> f == fu, eachcol(facets)) == 1 for fu ∈ eachcol(facets_unq)]
@@ -58,7 +61,7 @@ function create_surfaces_neuron(filename, setup::Setup)
     pmax = maximum(points, dims = 2)
 
     if ecs_shape != "no_ecs"
-        
+
         # ecs_gap = ecs_ratio * min(pmax - pmin)
         ecs_gap = ecs_ratio * 10
 
@@ -78,15 +81,15 @@ function create_surfaces_neuron(filename, setup::Setup)
         elseif ecs_shape == "tight_wrap"
             error("Not implemented")
         end
-        
+
         facetmarkers_ecs = 2 * ones(Int, size(facets_ecs, 2))
         _, ind = sort(points[1, :])
         ind = ind[1]
         regions_ecs = points[:, ind] - ecs_gap / 10 * [1; 0; 0]
-        
+
         npoint_out = size(points, 2)
         points = [points points_ecs]
-        facets = [facets facets_ecs+npoint_out]
+        facets = [facets facets_ecs + npoint_out]
         append!(facetmarkers, facetmarkers_ecs)
         append!(regions, regions_ecs)
     end

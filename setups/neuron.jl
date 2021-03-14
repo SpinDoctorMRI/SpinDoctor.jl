@@ -9,7 +9,7 @@ setup.geometry = Dict(
     :in_ratio => 0.7,
     :ecs_shape => "no_ecs",
     :ecs_ratio => 0.3,
-    :deformation => (0., 0.),
+    :deformation => (0.0, 0.0),
     # :refinement => 0.5,
 )
 
@@ -21,40 +21,31 @@ setup.pde = Dict(
     :T₂_in => Inf,
     :T₂_out => Inf,
     :T₂_ecs => Inf,
-    :ρ_in => 1.,
-    :ρ_out => 1.,
-    :ρ_ecs => 1.,
+    :ρ_in => 1.0,
+    :ρ_out => 1.0,
+    :ρ_ecs => 1.0,
     :κ_in_out => 1e-4,
     :κ_out_ecs => 1e-4,
-    :κ_in => 0.,
-    :κ_out => 0.,
-    :κ_ecs => 0.,
+    :κ_in => 0.0,
+    :κ_out => 0.0,
+    :κ_ecs => 0.0,
 )
 
 # Gradient sequences
 setup.gradient = Dict(
-    :directions => create_directions([1.; 0.; 0.]),
-    #:directions => create_directions(10, flat=false),
-    :sequences => [PGSE(2000., 6000.)],
+    :directions => create_directions([1.0; 0.0; 0.0]),
+    # :directions => create_directions(10, flat=false),
+    :sequences => [PGSE(2000.0, 6000.0)],
     # :values => 0:500:2000,
-    :values => [1000.],
+    :values => [1000.0],
     :values_type => 'b',
 )
 
 # BTPDE solver
-setup.btpde = Dict(
-    :odesolver => QBDF(),
-    :reltol => 1e-4,
-    :abstol => 1e-6,
-    :nsave => 1,
-)
+setup.btpde = Dict(:odesolver => QBDF(), :reltol => 1e-4, :abstol => 1e-6, :nsave => 1)
 
 # MF solver
-setup.mf = Dict(
-    :length_scale => 3,
-    :neig_max => 400,
-    :ninterval => 500,
-)
+setup.mf = Dict(:length_scale => 3, :neig_max => 400, :ninterval => 500)
 
 # ImplicitEuler
 # Trapezoid
