@@ -24,7 +24,7 @@ function create_geometry(setup::Setup)
 
     # Make sure that folder exists
     dir = dirname(filename)
-    isdir(dir) || mkdir(dir)
+    isdir(dir) || mkpath(dir)
 
     # Check correct input format
     @assert cell_shape ∈ ["sphere", "cylinder", "neuron"]
@@ -66,7 +66,7 @@ function create_geometry(setup::Setup)
     end
     save_meshdir_path = filename * "_dir"
     if !isdir(save_meshdir_path)
-        mkdir(save_meshdir_path)
+        mkpath(save_meshdir_path)
     end
 
 

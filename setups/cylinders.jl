@@ -1,10 +1,10 @@
 # Create setup
-setup = Setup(name = "cylinders/4axons_flat")
+setup = Setup(name = "cylinders/20axons_flat")
 
 # Geometry paramters
 setup.geometry = Dict(
     :cell_shape => "cylinder",
-    :ncell => 4,
+    :ncell => 20,
     :rmin => 2.0,
     :rmax => 6.0,
     :dmin => 0.2,
@@ -20,9 +20,9 @@ setup.geometry = Dict(
 
 # PDE paramaters
 setup.pde = Dict(
-    :σ_in => 0.002,
-    :σ_out => 0.002,
-    :σ_ecs => 0.002,
+    :σ_in => 0.00,
+    :σ_out => 0.00,
+    :σ_ecs => 0.00,
     :T₂_in => Inf,
     :T₂_out => Inf,
     :T₂_ecs => Inf,
@@ -47,7 +47,8 @@ setup.gradient = Dict(
 )
 
 # BTPDE solver
-setup.btpde = Dict(:odesolver => ABDF2(), :reltol => 1e-4, :abstol => 1e-6, :nsave => 1)
+setup.btpde =
+    Dict(:odesolver => Trapezoid(), :reltol => 1e-4, :abstol => 1e-6, :nsave => 200)
 
 # MF solver
 setup.mf = Dict(:length_scale => 3, :neig_max => 400, :ninterval => 500)

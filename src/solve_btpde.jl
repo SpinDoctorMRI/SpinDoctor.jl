@@ -49,6 +49,15 @@ function solve_btpde(mesh, setup)
     S = blockdiag(fem_mat_cmpts.S...)
     Q = couple_flux_matrix(mesh, fem_mat_cmpts.Q)
     Mx = [blockdiag(fem_mat_cmpts.Mx[dim]...) for dim = 1:3]
+    R = blockdiag((fem_mat_cmpts.M ./ T₂)...)
+
+    # Display sparsity
+    println("Mass matrix:")
+    display(spy(M))
+    println("Stiffness matrix:")
+    display(spy(S))
+    println("Flux matrix:")
+    display(spy(Q))
 
     # Create initial conditions (enforce complex values)
     ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
@@ -77,10 +86,9 @@ function solve_btpde(mesh, setup)
 
     # Time dependent ODE function
     function M∂u∂t!(du, u, p, t)
-        J, S, Q, A, q, f = p
-        @. J = -S - Q - im * f(t) * q * A
+        J, S, Q, A, R, q, f = p
+        @. J = -(S + Q + R + im * f(t) * q * A)
         mul!(du, J, u)
-        nothing
     end
 
     # Time independent ODE function, given jacobian `J` 
@@ -91,8 +99,8 @@ function solve_btpde(mesh, setup)
 
     # Time dependent Jacobian of ODE function with respect to the state `u`
     function Jac!(J, u, p, t)
-        _, S, Q, A, q, f = p
-        @. J = -(S + Q + im * f(t) * q * A)
+        _, S, Q, A, R, q, f = p
+        @. J = -(S + Q + R + im * f(t) * q * A)
     end
 
     # Jacobian sparsity pattern
@@ -129,26 +137,23 @@ function solve_btpde(mesh, setup)
 
         # ODE problem
         J = -(S + Q + im * q * A)
-        p = (; J, S, Q, A, q, f)
+        p = (; J, S, Q, A, R, q, f)
 
         # Gather ODE function
         function get_odefunction(u, t, p)
             print("    t = $t: ")
             if all(constant_intervals(p.f)) # is_constant(p.f, t)
-                println("constant ODE Jacobian")
+                println("constant time profile, f = $(p.f(t))")
                 func = M∂u∂t_constant!
-                jac = Jac!(p.J, u, p, t)
+                Jac!(p.J, u, p, t)
+                jac = (J, u, p, t) -> (J .= p.J)
             else
-                println("time dependent ODE Jacobian")
+                println("time dependent time profile")
                 func = M∂u∂t!
                 jac = Jac!
             end
-            odefunction = ODEFunction(
-                func,
-                jac = Jac!,
-                jac_prototype = jac_prototype,
-                mass_matrix = M,
-            )
+            odefunction =
+                ODEFunction(func, jac = jac, jac_prototype = jac_prototype, mass_matrix = M)
         end
         odeproblem = ODEProblem(get_odefunction(ρ, 0, p), ρ, interval, p, progress = false)
 

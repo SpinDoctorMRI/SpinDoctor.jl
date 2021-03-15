@@ -24,6 +24,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TetGen = "c5d3f3f7-f850-59f6-8a2e-ffc6dc1317ea"
 Triangle = "56f361f5-126b-55db-87fb-1c71988fcde4"
+UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [extras]

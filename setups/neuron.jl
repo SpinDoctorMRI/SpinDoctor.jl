@@ -38,12 +38,12 @@ setup.gradient = Dict(
     :sequences => [PGSE(2000.0, 6000.0)],
     # :sequences => [CosOGSE(3000.0, 5000.0, 3)],
     # :values => 0:500:2000,
-    :values => [2000.0],
+    :values => [1000.0],
     :values_type => 'b',
 )
 
 # BTPDE solver
-setup.btpde = Dict(:odesolver => QBDF(), :reltol => 1e-4, :abstol => 1e-6, :nsave => 1)
+setup.btpde = Dict(:odesolver => Trapezoid(), :reltol => 1e-4, :abstol => 1e-6, :nsave => 100)
 
 # MF solver
 setup.mf = Dict(:length_scale => 3, :neig_max => 400, :ninterval => 500)

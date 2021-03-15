@@ -33,15 +33,17 @@ btpde = @time solve_btpde(mesh, setup)
 if !isnothing(setup.btpde)
     btpde = @time solve_btpde(mesh, setup)
 
-    name = split(setup.name, "/")[end]
+    output_dir = "output/$(setup.name)"
+    isdir(output_dir) || mkpath(output_dir)
+
     if setup.btpde[:nsave] == 1
         savefield(
             mesh,
             btpde.magnetization[:, end, 1, 1],
-            "output/$name/magnetization_btpde",
+            "$output_dir/magnetization_btpde",
         )
     else
-        save_btpde_results(mesh, btpde, setup, "output/$name/magnetization_btpde")
+        save_btpde_results(mesh, btpde, setup, "$output_dir/magnetization_btpde")
     end
 
     adc = [
@@ -59,11 +61,12 @@ if !isnothing(setup.mf)
     length_scales = eig2length.(lap_eig.values, σ_avg)
     mf = solve_mf(mesh, setup, lap_eig)
 
-    name = split(setup.name, "/")[end]
-    savefield(mesh, mf.magnetization[:, 1, 1, 1], "output/$name/magnetization_mf")
+    output_dir = "output/$(setup.name)"
+    isdir(output_dir) || mkpath(output_dir)
+    savefield(mesh, mf.magnetization[:, 1, 1, 1], "$output_dir/magnetization_mf")
 
     npoint_cmpts = size.(mesh.points, 2)
     bounds = cumsum([0; npoint_cmpts])
     ϕ_cmpts = [lap_eig.funcs[bounds[i]+1:bounds[i+1], :] for i = 1:mesh.ncompartment]
-    savefield(mesh, ϕ_cmpts, "output/$name/laplace_eig", "Laplace eigenfunction")
+    savefield(mesh, ϕ_cmpts, "$output_dir/laplace_eig", "Laplace eigenfunction")
 end
