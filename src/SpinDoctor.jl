@@ -18,7 +18,18 @@ using TetGen
 using Triangle: constrained_triangulation
 using WriteVTK
 
-export integral, bvalue_no_q, echotime, PGSE, CosOGSE, SinOGSE, DoublePGSE
+export TimeProfile,
+    PGSE,
+    CosOGSE,
+    SinOGSE,
+    DoublePGSE,
+    integral,
+    bvalue_no_q,
+    intervals,
+    get_interval,
+    constant_intervals,
+    is_constant,
+    echotime
 export Setup
 export prepare_pde!
 export prepare_experiments!

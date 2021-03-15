@@ -10,7 +10,6 @@ overwritten.
 """
 abstract type TimeProfile end
 
-
 """
     f = PGSE(δ, Δ)
 
@@ -21,7 +20,6 @@ struct PGSE <: TimeProfile
     δ::Float64
     Δ::Float64
 end
-
 
 """
     f = CosOGSE(δ, Δ, nperiod)
@@ -35,7 +33,6 @@ struct CosOGSE <: TimeProfile
     nperiod::Int
 end
 
-
 """
     f = SinOGSE(δ, Δ, nperiod)
 
@@ -47,7 +44,6 @@ struct SinOGSE <: TimeProfile
     nperiod::Int
 end
 
-
 """
     f = DoublePGSE(δ, Δ)
 
@@ -58,6 +54,7 @@ struct DoublePGSE <: TimeProfile
     δ::Float64
     Δ::Float64
 end
+
 
 
 """
@@ -89,23 +86,6 @@ end
 
 function (f::DoublePGSE)(t)
     ((t < f.δ) - (f.Δ ≤ t < f.Δ + f.δ) + (f.Δ + f.δ ≤ t < 2f.Δ + f.δ) - (2f.Δ + f.δ ≤ t))
-end
-
-
-"""
-    TE = echotime(f)
-
-Get echo time `TE` of time profile `f`. By default, it returns `f.Δ+f.δ`.
-
-For the double gradient spin echo (`DoublePGSE`) sequence, the echo time is
-doubled.
-"""
-function echotime(f::TimeProfile)
-    f.Δ + f.δ
-end
-
-function echotime(f::DoublePGSE)
-    2f.Δ + 2f.δ
 end
 
 
@@ -155,7 +135,6 @@ end
 Compute the time profile contribution to the b-value. To obtain the b-value,
 multiply the result by q^2 = (γg)^2, where γ is the gyromagnetic ratio of the
 water proton, g is the gradient amplitude, and b(q, f) = q^2 * bvalue_no_q(f).
-
 """
 function bvalue_no_q(f::TimeProfile)
     quadgk(s -> integral(f, s)^2, 0, echotime(f))
@@ -175,4 +154,93 @@ end
 
 function bvalue_no_q(f::DoublePGSE)
     2 * f.δ^2 * (f.Δ - f.δ / 3)
+end
+
+
+"""
+    intervals(f)
+
+Get characteristic intervals of the time profile `f`.
+"""
+function intervals(f::TimeProfile)
+    error("Not implemented")
+end
+
+function intervals(f::Union{PGSE,CosOGSE,SinOGSE})
+    if f.δ < f.Δ
+        i = [0, f.δ, f.Δ, f.Δ + f.δ]
+    else
+        # No pause between pulses
+        i = [0, f.δ, 2f.δ]
+    end
+    i
+end
+
+function intervals(f::DoublePGSE)
+    if f.δ < f.Δ
+        i = [0, f.δ, f.Δ, f.Δ + f.δ, f.Δ + 2f.δ, 2f.Δ + f.δ, 2f.Δ + 2f.δ]
+    else
+        # No pause between pulses
+        i = [0, f.δ, 2f.δ, 3f.δ, 4f.δ]
+    end
+    i
+end
+
+
+"""
+    TE = echotime(f)
+
+Get echo time `TE` of the time profile `f`, which is the end of the last characteristic
+interval.
+"""
+function echotime(f::TimeProfile)
+    intervals(f)[end]
+end
+
+
+"""
+    get_interval(f, t)
+
+Get the characteristic interval number of time profile `f` containing time `t`.
+If `intervals[i] ≤ t < intervals[i+1]`, `i` is returned.
+"""
+function get_interval(f::TimeProfile, t)
+    i = intervals(f)
+    findfirst(i[1:end-1] .≤ t .< i[2:end])
+end
+
+
+"""
+    markers = constant_intervals(f)
+
+Get markers for constant intervals. Default is false on all intervals.
+"""
+function constant_intervals(f::TimeProfile)
+    fill(false, length(intervals(f)) - 1)
+end
+
+function constant_intervals(f::Union{PGSE,DoublePGSE})
+    fill(true, length(intervals(f)) - 1)
+end
+
+function constant_intervals(f::Union{CosOGSE,SinOGSE})
+    if f.δ < f.Δ
+        # OGSE is constant between the pulses
+        c = [false, true, false]
+    else
+        # No pause between pulses
+        c = [false, false]
+    end
+    c
+end
+
+
+"""
+    is_constant(f, t)
+
+Return `true` if time profile `f` is constant on the characteristic interval containing or
+starting at `t`.
+"""
+function is_constant(f::TimeProfile, t)
+    constant_intervals(f)[get_interval(f, t)]
 end

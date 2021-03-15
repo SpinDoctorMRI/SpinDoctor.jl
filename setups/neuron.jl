@@ -36,8 +36,9 @@ setup.gradient = Dict(
     :directions => create_directions([1.0; 0.0; 0.0]),
     # :directions => create_directions(10, flat=false),
     :sequences => [PGSE(2000.0, 6000.0)],
+    # :sequences => [CosOGSE(3000.0, 5000.0, 3)],
     # :values => 0:500:2000,
-    :values => [1000.0],
+    :values => [2000.0],
     :values_type => 'b',
 )
 

@@ -75,7 +75,7 @@ function solve_btpde(mesh, setup)
         qvalues = .√(values ./ bvalue_no_q.(sequences)')
     end
 
-    # ODE function
+    # Time dependent ODE function
     function M∂u∂t!(du, u, p, t)
         J, S, Q, A, q, f = p
         @. J = -S - Q - im * f(t) * q * A
@@ -83,20 +83,20 @@ function solve_btpde(mesh, setup)
         nothing
     end
 
-    # Jacobian of ODE function with respect to the state `u`
+    # Time independent ODE function, given jacobian `J` 
+    function M∂u∂t_constant!(du, u, p, t)
+        J, _ = p
+        mul!(du, J, u)
+    end
+
+    # Time dependent Jacobian of ODE function with respect to the state `u`
     function Jac!(J, u, p, t)
         _, S, Q, A, q, f = p
         @. J = -(S + Q + im * f(t) * q * A)
-        nothing
     end
 
-    # Gather ODE function
-    odefunction = ODEFunction(
-        M∂u∂t!,
-        jac = Jac!,
-        jac_prototype = -(S + Q + im * sum(Mx)),
-        mass_matrix = M,
-    )
+    # Jacobian sparsity pattern
+    jac_prototype = -(S + Q + im * sum(Mx))
 
     # Iterate over gradient amplitudes, time profiles and directions
     for iamp = 1:namplitude, iseq = 1:nsequence, idir = 1:ndirection
@@ -129,8 +129,36 @@ function solve_btpde(mesh, setup)
 
         # ODE problem
         J = -(S + Q + im * q * A)
-        p = (J, S, Q, A, q, f)
-        odeproblem = ODEProblem(odefunction, ρ, interval, p, progress = false)
+        p = (; J, S, Q, A, q, f)
+
+        # Gather ODE function
+        function get_odefunction(u, t, p)
+            print("    t = $t: ")
+            if all(constant_intervals(p.f)) # is_constant(p.f, t)
+                println("constant ODE Jacobian")
+                func = M∂u∂t_constant!
+                jac = Jac!(p.J, u, p, t)
+            else
+                println("time dependent ODE Jacobian")
+                func = M∂u∂t!
+                jac = Jac!
+            end
+            odefunction = ODEFunction(
+                func,
+                jac = Jac!,
+                jac_prototype = jac_prototype,
+                mass_matrix = M,
+            )
+        end
+        odeproblem = ODEProblem(get_odefunction(ρ, 0, p), ρ, interval, p, progress = false)
+
+        tstops = intervals(f)[2:end-1]
+
+        # Callback for updating problem
+        function affect!(integrator)
+            integrator.f = get_odefunction(integrator.u, integrator.t, integrator.p)
+        end
+        callback = PresetTimeCallback(tstops, affect!)
 
         # Measure solving time
         itertime = Base.time()
@@ -140,9 +168,9 @@ function solve_btpde(mesh, setup)
             odeproblem,
             odesolver,
             saveat = saveat,
-            tstops = [f.δ, f.Δ],
             reltol = reltol,
             abstol = abstol,
+            callback = callback,
         )
 
         itertimes[iamp, iseq, idir] = Base.time() - itertime
