@@ -15,10 +15,13 @@ function savefield(mesh, field, filename::String, fieldname = "Magnetization")
 
         vtkfile = vtk_grid(vtmfile, points, cells)
         if size(f, 2) == 1
-            vtkfile[fieldname] = real(f)
+            vtkfile[fieldname*" (real part)"] = real(f)
+            vtkfile[fieldname*" (imaginary part)"] = imag(f)
         else
             for ifield = 1:min(size(f, 2), 99)
-                vtkfile["$(fieldname) $(@sprintf("%2d",ifield))"] = real(f[:, ifield])
+                fieldfieldname = "$fieldname $(@sprintf("%2d",ifield))"
+                vtkfile[fieldfieldname*" (real part)"] = real(f[:, ifield])
+                vtkfile[fieldfieldname*" (imaginary part)"] = imag(f[:, ifield])
             end
         end
 
@@ -52,7 +55,8 @@ function savefield_time(mesh, time, field, filename::String, fieldname = "Magnet
 
             # vtkfile = vtk_grid(vtmfile, points, cells)
             vtkfile = vtk_grid(vtmfile, points, cells)
-            vtkfile[fieldname] = real(field[icmpt][:, it])
+            vtkfile[fieldname*" (real part)"] = real(field[icmpt][:, it])
+            vtkfile[fieldname*" (imaginary part)"] = imag(field[icmpt][:, it])
         end
 
         pvd[t] = vtmfile
@@ -90,7 +94,10 @@ function save_btpde_results(mesh, btpde, setup, filename)
 
             # vtkfile = vtk_grid(vtmfile, points, cells)
             vtkfile = vtk_grid(vtmfile, points, cells)
-            vtkfile["Magnetization", VTKPointData()] = real(magnetization[icmpt][:, it])
+            vtkfile["Magnetization (real part)", VTKPointData()] =
+                real(magnetization[icmpt][:, it])
+            vtkfile["Magnetization (imaginary part)", VTKPointData()] =
+                imag(magnetization[icmpt][:, it])
             vtkfile["Gradient", VTKFieldData()] = f(t) * g
             vtkfile["Sequence", VTKFieldData()] = f(t)
             # vtkfile["Signal", VTKFieldData()] = real(signal_allcmpts[it])

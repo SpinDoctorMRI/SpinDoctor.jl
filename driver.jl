@@ -33,7 +33,11 @@ btpde = @time solve_btpde(mesh, setup)
 if !isnothing(setup.btpde)
     btpde = @time solve_btpde(mesh, setup)
 
-    output_dir = "output/$(setup.name)"
+    refinement_str = ""
+    if haskey(setup.geometry, :refinement)
+        refinement_str = "_refinement$(setup.geometry[:refinement])"
+    end
+    output_dir = "output/" * setup.name * refinement_str
     isdir(output_dir) || mkpath(output_dir)
 
     if setup.btpde[:nsave] == 1
