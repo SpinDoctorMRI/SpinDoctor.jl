@@ -2,10 +2,9 @@
 function couple_flux_matrix(mesh, Q)
 
     # Extract mesh fields
-    @unpack ncompartment, nboundary, cmpt_inds, points, facets, elements, boundary_markers =
-        mesh
+    @unpack ncompartment, nboundary, point_map, points, facets, elements = mesh
 
-    # Sizes (not the same as `mesh.cmpt_inds`)
+    # Sizes
     inds_cmpts = cumsum([0; size.(points, 2)])
     get_inds(icmpt) = inds_cmpts[icmpt]+1:inds_cmpts[icmpt+1]
 
@@ -16,7 +15,7 @@ function couple_flux_matrix(mesh, Q)
     for iboundary = 1:nboundary
 
         # Check if boundary is an interface between two compartments
-        cmpts_touch = findall(boundary_markers[:, iboundary])
+        cmpts_touch = findall(~isempty(facets[:, iboundary]))
         if length(cmpts_touch) == 2
             # Extract flux matrices from corresponding compartments
             cmpt1, cmpt2 = cmpts_touch[1], cmpts_touch[2]
@@ -29,7 +28,7 @@ function couple_flux_matrix(mesh, Q)
             inds1 = unique(facets[cmpt1, iboundary])
             inds2 = unique(facets[cmpt2, iboundary])
             nind = length(inds1)
-            pairs = cmpt_inds[cmpt1][inds1] .== cmpt_inds[cmpt2][inds2]'
+            pairs = point_map[cmpt1][inds1] .== point_map[cmpt2][inds2]'
 
             # Couple matrices
             for i = 1:nind

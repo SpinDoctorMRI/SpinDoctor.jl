@@ -1,6 +1,4 @@
-function split_mesh(mesh_all, setup)
-    @unpack boundary_markers, compartments, boundaries = setup.pde
-    nboundary, ncompartment = size(boundary_markers)
+function split_mesh(mesh_all)
 
     # Extract mesh_all in global numbering system (tag: "all")
     points_all = mesh_all.points
@@ -14,33 +12,49 @@ function split_mesh(mesh_all, setup)
     npoint_all = size(points_all, 2)
 
     elements = [elements_all[:, elementmarkers_all.==icmpt] for icmpt = 1:ncompartment]
-    cmpt_inds = sort.(unique.(elements))
-    ncompartment_inds = length.(cmpt_inds)
+    point_map = sort.(unique.(elements))
+    ncompartment_inds = length.(point_map)
 
-    facets_boundary =
+    boundary_facets =
         [facets_all[:, facetmarkers_all.==iboundary] for iboundary = 1:nboundary]
-    boundary_inds = sort.(unique.(facets_boundary))
+    boundary_inds = sort.(unique.(boundary_facets))
     nboundary_inds = length.(boundary_inds)
 
-    points = [points_all[:, cmpt_inds[icmpt]] for icmpt = 1:ncompartment]
+    points = [points_all[:, point_map[icmpt]] for icmpt = 1:ncompartment]
 
     facets = fill(zeros(Int, 3, 0), ncompartment, nboundary)
     for icmpt = 1:ncompartment
-        for ipoint = 1:ncompartment_inds[icmpt]
-            elements[icmpt][elements[icmpt].==cmpt_inds[icmpt][ipoint]] .= ipoint
-        end
+        println("Separating compartment $icmpt of $ncompartment")
+        # old_new = Pair.(point_map[icmpt], 1:length(point_map[icmpt]))
+
+        # replace!(elements[icmpt], old_new...)
+
+        replace!(x -> findfirst(x .== point_map[icmpt]), elements[icmpt])
+
+        # for ipoint = 1:ncompartment_inds[icmpt]
+        #     elements[icmpt][elements[icmpt].==point_map[icmpt][ipoint]] .= ipoint
+        # end
+
         for iboundary = 1:nboundary
-            if boundary_markers[icmpt, iboundary]
-                facets[icmpt, iboundary] = deepcopy(facets_boundary[iboundary])
-                for ipoint = 1:ncompartment_inds[icmpt]
-                    facets[icmpt, iboundary][facets[
-                        icmpt,
-                        iboundary,
-                    ].==cmpt_inds[icmpt][ipoint]] .= ipoint
-                end
+            println("Separating boundary $iboundary of $nboundary")
+            if all(boundary_facets[iboundary] .∈ [point_map[icmpt]])
+                # facets[icmpt, iboundary] = replace(boundary_facets[iboundary], old_new...)
+
+                facets[icmpt, iboundary] = replace(
+                    x -> findfirst(x .== point_map[icmpt]),
+                    boundary_facets[iboundary],
+                )
+
+                # facets[icmpt, iboundary] = deepcopy(boundary_facets[iboundary])
+                # for ipoint = 1:ncompartment_inds[icmpt]
+                #     facets[icmpt, iboundary][facets[
+                #         icmpt,
+                #         iboundary,
+                #     ].==point_map[icmpt][ipoint]] .= ipoint
+                # end
             end
         end
     end
 
-    (; ncompartment, nboundary, cmpt_inds, points, facets, elements, boundary_markers)
+    (; ncompartment, nboundary, point_map, points, facets, elements)
 end
