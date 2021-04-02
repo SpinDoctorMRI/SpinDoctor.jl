@@ -51,13 +51,13 @@ function solve_btpde(mesh, setup)
     Mx = [blockdiag(fem_mat_cmpts.Mx[dim]...) for dim = 1:3]
     R = blockdiag((fem_mat_cmpts.M ./ T₂)...)
 
-    # Display sparsity
-    println("Mass matrix:")
-    display(spy(M))
-    println("Stiffness matrix:")
-    display(spy(S))
-    println("Flux matrix:")
-    display(spy(Q))
+    # # Display sparsity
+    # println("Mass matrix:")
+    # display(spy(M))
+    # println("Stiffness matrix:")
+    # display(spy(S))
+    # println("Flux matrix:")
+    # display(spy(Q))
 
     # Create initial conditions (enforce complex values)
     ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
@@ -117,7 +117,7 @@ function solve_btpde(mesh, setup)
         f = sequences[iseq]
         interval = (0, echotime(f))
         if nsave == 1
-            saveat = interval[2]
+            saveat = [interval[2]]
             # saveat = [interval[1], interval[2]]
         else
             saveat = LinRange(interval..., nsave)
@@ -183,6 +183,10 @@ function solve_btpde(mesh, setup)
         # Extract solution
         time[iamp, iseq, idir] = sol.t
         mag = hcat(sol.u...)
+
+        if nsave == 1
+            mag = mag[:, [end]]
+        end
 
         # Split solution into compartments
         for icmpt = 1:ncompartment
