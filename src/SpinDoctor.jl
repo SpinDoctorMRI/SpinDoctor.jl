@@ -12,7 +12,9 @@ using Polynomials: fit
 using Printf
 using QHull: chull # GenericLinearAlgebra problem
 using QuadGK
+using Roots: find_zeros
 using SparseArrays
+using SpecialFunctions
 using Statistics: mean
 using TetGen
 using Triangle: constrained_triangulation
@@ -47,6 +49,7 @@ export solve_mf
 export savefield
 export savefield_time
 export save_btpde_results
+export solve_analytical
 export fit_adc
 export Trapezoid
 export ImplicitEuler
@@ -93,9 +96,22 @@ include("matrix_assembly/couple_flux_matrix.jl")
 include("eig2length.jl")
 include("compute_laplace_eig.jl")
 
+# Analytical
+include("analytical/alpha_func.jl")
+include("analytical/compute_bc.jl")
+include("analytical/compute_beta.jl")
+include("analytical/compute_int_I.jl")
+include("analytical/compute_int_J.jl")
+include("analytical/compute_int_K.jl")
+include("analytical/compute_JY.jl")
+include("analytical/compute_nu.jl")
+include("analytical/compute_v.jl")
+include("analytical/find_alpha.jl")
+
 # Solvers
 include("solve_btpde.jl")
 include("solve_mf.jl")
+include("solve_analytical.jl")
 
 # Postprocessing
 include("fit_adc.jl")

@@ -4,6 +4,8 @@ using LinearAlgebra
 
 
 ## Choose setup script
+# include("setups/1axon_analytical.jl")
+# include("setups/1sphere_analytical.jl")
 include("setups/cylinders.jl")
 # include("setups/spheres.jl")
 # include("setups/neuron.jl")
@@ -80,8 +82,10 @@ if !isnothing(experiment.mf)
     bounds = cumsum([0; npoint_cmpts])
     ϕ_cmpts = [lap_eig.funcs[bounds[i]+1:bounds[i+1], :] for i = 1:ncompartment]
     savefield(model.mesh, ϕ_cmpts, "$output_dir/laplace_eig", "Laplace eigenfunction")
-    ϕ_cmpts = [lap_eig.funcs[bounds[i]+1:bounds[i+1], :] for i = 1:mesh.ncompartment]
-    savefield(mesh, ϕ_cmpts, "$output_dir/laplace_eig", "Laplace eigenfunction")
+end
 
 
+## Solve analytical model
+if !isnothing(experiment.analytical)
+    analytical_signal = solve_analytical(setup, experiment, volumes)
 end
