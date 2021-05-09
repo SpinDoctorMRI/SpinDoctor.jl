@@ -10,7 +10,6 @@ function split_mesh(mesh_all)
     ncompartment = maximum(elementmarkers_all)
     nboundary = maximum(facetmarkers_all)
     npoint_all = size(points_all, 2)
-
     elements = [elements_all[:, elementmarkers_all.==icmpt] for icmpt = 1:ncompartment]
     point_map = sort.(unique.(elements))
     ncompartment_inds = length.(point_map)
@@ -56,5 +55,5 @@ function split_mesh(mesh_all)
         end
     end
 
-    (; ncompartment, nboundary, point_map, points, facets, elements)
+    FEMesh(; point_map, points, facets, elements)
 end

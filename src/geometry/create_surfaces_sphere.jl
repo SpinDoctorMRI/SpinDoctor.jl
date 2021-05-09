@@ -7,11 +7,9 @@ function create_surfaces_sphere(cells, setup::Setup)
 
     # Extract parameters
     @unpack radii, centers = cells
-    @unpack ncell, rmin, rmax, include_in, in_ratio, ecs_shape, ecs_ratio = setup.geometry
-    @unpack compartments, boundaries, boundary_markers = setup.pde
+    @unpack ncell, rmin, rmax, include_in, in_ratio, ecs_shape, ecs_ratio = setup
 
     include_ecs = ecs_shape != "no_ecs"
-    ncompartment, nboundary = size(boundary_markers)
 
     rmean = (rmin + rmax) / 2
 

@@ -14,10 +14,7 @@ directly instead. This requires facet and element labels.
 """
 function create_geometry(setup::Setup)
 
-    @unpack ncell, cell_shape, ecs_shape, deformation = setup.geometry
-    @unpack compartments, boundaries = setup.pde
-
-    refinement = haskey(setup.geometry, :refinement) ? setup.geometry[:refinement] : nothing
+    @unpack ncell, ecs_shape, refinement = setup
 
     # File name for saving or loading geometry
     filename = "meshfiles" * "/" * setup.name
@@ -27,15 +24,8 @@ function create_geometry(setup::Setup)
     isdir(dir) || mkpath(dir)
 
     # Check correct input format
-    @assert cell_shape ∈ ["sphere", "cylinder", "neuron"]
-    if cell_shape == "neuron"
-        # We do not deform the finite elements mesh of neurons
-        if haskey(setup.geometry, :deformation) && any(deformation .> 1e-16)
-            @error "Deformation is not available for neurons. Set deformation to (0, 0)."
-        end
-        if ncell != 1
-            error("Neuron cell type is only available for ncell=1.")
-        end
+    if isa(setup, NeuronSetup) && ncell != 1
+        error("Neuron cell type is only available for ncell=1.")
     end
     !(ecs_shape == "no_ecs" && ncell > 1) ||
         @error "Geometry must include ECS if more than one cell"
@@ -45,7 +35,7 @@ function create_geometry(setup::Setup)
     cellfilename = filename * "_cells"
     if isfile(cellfilename)
         cells = read_cells(cellfilename)
-    elseif cell_shape ∈ ["sphere", "cylinder"]
+    elseif isa(setup, SphereSetup) || isa(setup, CylinderSetup)
         # Create cells
         cells = create_cells(setup)
 
@@ -73,8 +63,7 @@ function create_geometry(setup::Setup)
     # Use an existing finite elements mesh or create a new finite
     # elements mesh. The name of the finite elements mesh is stored in the string
     # fname_tetgen_femesh
-    refinement_str =
-        isnothing(refinement) ? "" : "_refinement$(setup.geometry[:refinement])"
+    refinement_str = isnothing(refinement) ? "" : "_refinement$refinement"
     fname_tetgen =
         save_meshdir_path * "/" * split(filename, "/")[end] * refinement_str * "_mesh"
 
@@ -82,13 +71,13 @@ function create_geometry(setup::Setup)
     if isfile(fname_tetgen * ".node") && isfile(fname_tetgen * ".poly")
         surfaces = read_surfaces(fname_tetgen)
     else
-        if cell_shape == "sphere"
+        if isa(setup, SphereSetup)
             # Create surface geometry of spheres
             surfaces = create_surfaces_sphere(cells, setup)
-        elseif cell_shape == "cylinder"
+        elseif isa(setup, CylinderSetup)
             # Create surface geometry of cylinders
             surfaces = create_surfaces_cylinder(cells, setup)
-        elseif cell_shape == "neuron"
+        elseif isa(setup, NeuronSetup)
             if is_stl
                 surfaces = nothing
             else
@@ -114,24 +103,24 @@ function create_geometry(setup::Setup)
         save_tetgen(mesh_all, fname_tetgen_femesh)
     end
 
-    # Check that at correct number of compartments and boundaries has been found
-    compartments_new = unique(mesh_all.elementmarkers)
-    boundaries_new = unique(mesh_all.facetmarkers)
+    # # Check that at correct number of compartments and boundaries has been found
+    # compartments_new = unique(mesh_all.elementmarkers)
+    # boundaries_new = unique(mesh_all.facetmarkers)
 
-    solution = "use smaller refinement or change surface triangulation."
-    length(compartments_new) == length(compartments) ||
-        @error "Incorrect number of compartments, " * solution
-    length(boundaries_new) == length(boundaries) ||
-        @error "Incorrect number of boundaries, " * solution
+    # solution = "use smaller refinement or change surface triangulation."
+    # length(compartments_new) == ncompartment ||
+    #     @error "Incorrect number of compartments, " * solution
+    # length(boundaries_new) == nboundary ||
+    #     @error "Incorrect number of boundaries, " * solution
 
     # Deform domain
-    if any(deformation .> 1e-16)
-        @printf "Deforming domain with bend %g and twist %g\n" deformation...
-        deform_domain!(mesh_all.points, deformation)
+    if isa(setup, CylinderSetup) && (setup.bend > 1e-16 || setup.twist > 1e-16)
+        println("Deforming domain with bend $(setup.bend) and twist $(setup.twist)")
+        deform_domain!(mesh_all.points, setup.bend, setup.twist)
     end
 
     # Split mesh into compartments
-    mesh = split_mesh(mesh_all, setup)
+    @time mesh = split_mesh(mesh_all)
 
     mesh, surfaces, cells
 end

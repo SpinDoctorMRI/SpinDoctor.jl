@@ -1,51 +1,99 @@
-# Create global flux matrix with coupling between compartments
-function couple_flux_matrix(mesh, Q)
+"""
+    couple_flux_matrix(model, Q_blocks[, symmetrical])
+
+Create global flux matrix with coupling between compartments.
+"""
+function couple_flux_matrix(model, Q_blocks, symmetrical = false)
 
     # Extract mesh fields
-    @unpack ncompartment, nboundary, point_map, points, facets, elements = mesh
+    @unpack mesh, ρ, κ = model
+    @unpack point_map, points, facets, elements = mesh
 
     # Sizes
+    ncompartment, nboundary = size(facets)
     inds_cmpts = cumsum([0; size.(points, 2)])
+    npoint = inds_cmpts[end]
     get_inds(icmpt) = inds_cmpts[icmpt]+1:inds_cmpts[icmpt+1]
 
+
     # Assemble sparse block diagonal flux matrix
-    couple_Q = blockdiag(Q...)
+    Q = spzeros(npoint, npoint)
 
     # Couple flux matrix at boundaries
     for iboundary = 1:nboundary
 
         # Check if boundary is an interface between two compartments
-        cmpts_touch = findall(~isempty(facets[:, iboundary]))
-        if length(cmpts_touch) == 2
+        cmpts_touch = findall(.!isempty.(facets[:, iboundary]))
+        ntouch = length(cmpts_touch)
+        if ntouch == 1
+            # Only one compartment touches boundary. It is thus an outer boundary,
+            # and may possibly have a boundary relaxation coefficient
+            cmpt = cmpts_touch[1]
+
+            # Global indices of the boundary
+            inds = get_inds(cmpt)
+
+            # Add boundary contribution to global flux matrix for compartment
+            Q[inds, inds] += κ[iboundary] * Q_blocks[cmpt, iboundary]
+        elseif ntouch == 2
             # Extract flux matrices from corresponding compartments
-            cmpt1, cmpt2 = cmpts_touch[1], cmpts_touch[2]
-            Q1 = Q[cmpt1]
-            Q2 = Q[cmpt2]
-            Q12 = spzeros(size(Q1, 1), size(Q2, 2))
-            Q21 = spzeros(size(Q2, 1), size(Q1, 2))
+            cmpt₁, cmpt₂ = cmpts_touch[1], cmpts_touch[2]
+            Q₁₁ = Q_blocks[cmpt₁, iboundary]
+            Q₂₂ = Q_blocks[cmpt₂, iboundary]
+            Q₁₂ = spzeros(size(Q₁₁, 1), size(Q₂₂, 2))
+            Q₂₁ = spzeros(size(Q₂₂, 1), size(Q₁₁, 2))
 
             # Identify pairs of points using global numbering
-            inds1 = unique(facets[cmpt1, iboundary])
-            inds2 = unique(facets[cmpt2, iboundary])
-            nind = length(inds1)
-            pairs = point_map[cmpt1][inds1] .== point_map[cmpt2][inds2]'
+            inds₁ = unique(facets[cmpt₁, iboundary])
+            inds₂ = unique(facets[cmpt₂, iboundary])
 
-            # Couple matrices
-            for i = 1:nind
-                # Loacal incdices of coupled points
-                i1 = inds1[i]
-                i2 = inds2[findfirst(pairs[i, :])]
-
-                # Create flux coupling between points
-                Q12[:, i2] = -Q1[:, i1]
-                Q21[:, i1] = -Q2[:, i2]
+            # Check if local indices are already sorted with a one-to-one correspondence
+            if all(point_map[cmpt₁][inds₁] .== point_map[cmpt₂][inds₂])
+                indinds₁ = 1:length(inds₁)
+                indinds₂ = 1:length(inds₂)
+            else
+                pairs = point_map[cmpt₁][inds₁] .== point_map[cmpt₂][inds₂]'
+                indinds₁ = 1:length(inds₁)
+                indinds₂ = [findfirst(pairs[i, :]) for i ∈ indinds₁]
             end
 
-            # Store compartment interface coupling in global matrix
-            couple_Q[get_inds(cmpt1), get_inds(cmpt2)] = Q12
-            couple_Q[get_inds(cmpt2), get_inds(cmpt1)] = Q21
+            # Create coupling blocks
+            Q₁₂[:, inds₂[indinds₂]] = Q₁₁[:, inds₁[indinds₁]]
+            Q₂₁[:, inds₁[indinds₁]] = Q₂₂[:, inds₂[indinds₂]]
+
+            # Check whether to use same permeability coefficients on both sides
+            if symmetrical
+                # Use the same permeability coefficient on each side of the boundary
+                c₁₂ = 1
+                c₂₁ = 1
+            else
+                # Weigh permeability coefficients on each side of the boundary with
+                # initial spin density equilibrium
+                ρ₁ = ρ[cmpt₁]
+                ρ₂ = ρ[cmpt₂]
+                c₂₁ = 2 * ρ₂ / (ρ₁ + ρ₂)
+                c₁₂ = 2 * ρ₁ / (ρ₁ + ρ₂)
+            end
+
+            # Adjust permeability coefficients
+            κ₁ = c₂₁ * κ[iboundary]
+            κ₂ = c₁₂ * κ[iboundary]
+
+            # Global indices of the boundary in each of the compartments
+            inds₁ = get_inds(cmpt₁)
+            inds₂ = get_inds(cmpt₂)
+
+            # Add interface contribution to global flux matrix for compartment 1
+            Q[inds₁, inds₁] += +κ₁ * Q₁₁
+            Q[inds₁, inds₂] += -κ₂ * Q₁₂
+
+            # Add interface contribution to global flux matrix for compartment 2
+            Q[inds₂, inds₁] += -κ₁ * Q₂₁
+            Q[inds₂, inds₂] += +κ₂ * Q₂₂
+        else
+            error("Each interface only touches 1 or 2 compartments")
         end
     end
 
-    couple_Q
+    Q
 end

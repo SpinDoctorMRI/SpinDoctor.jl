@@ -3,18 +3,21 @@
 
 Solve for magnetization using Matrix Formalism.
 """
-function solve_mf(mesh, setup, lap_eig)
+function solve_mf(model, lap_eig, experiment)
 
     # Measure time of function evaluation
     starttime = Base.time()
 
     # Extract parameters
-    @unpack ρ, κ = setup.pde
-    @unpack directions, sequences, values, values_type = setup.gradient
-    @unpack ninterval = setup.mf
+    @unpack mesh, ρ, κ = model
+    @unpack directions, sequences, values, values_type = experiment.gradient
+    @unpack ninterval = experiment.mf
 
     # Laplace eigenmodes
-    λ, ϕ, moments = lap_eig.values, lap_eig.funcs, lap_eig.moments
+    λ = lap_eig.values
+    ϕ = lap_eig.funcs
+    Ax = lap_eig.moments
+    T = lap_eig.massrelax
 
     # Sizes
     ndirection = size(directions, 2)
@@ -47,10 +50,10 @@ function solve_mf(mesh, setup, lap_eig)
     ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
 
     # Project initial spin density onto Laplace eigenfunction basis
-    ν0 = ϕ' * (M * ρ)
+    ν₀ = ϕ' * (M * ρ)
 
     # Q-values and b-values
-    if values_type == 'q'
+    if values_type == "q"
         qvalues = repeat(values, 1, nsequence)
         bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
     else
@@ -90,30 +93,30 @@ function solve_mf(mesh, setup, lap_eig)
         @printf "  Amplitude %d of %d: q = %g, b = %g\n" iamp namplitude q b
 
         # Gradient direction dependent finite element matrix
-        A = sum(dir[i] * moments[:, :, i] for i = 1:3)
+        A = sum(dir[i] * Ax[:, :, i] for i = 1:3)
 
         # Create array for magnetization coefficients
-        ν = copy(ν0)
+        ν = copy(ν₀)
 
         if typeof(f) == PGSE
             # Constant Bloch-Torrey operator in Laplace eigenfunction basis
-            K = L + im * q * A
+            K = L + T + im * q * A
             ν = expmv!(-f.δ, K, ν)
-            @. ν *= exp(-(f.Δ - f.δ)λ)
+            ν = expmv!(-(f.Δ - f.δ), L + T, ν)
             ν = expmv!(-f.δ, K', ν)
             # edK = exp(-f.δ * K)
-            # edL = @. exp(-(f.Δ - f.δ)λ)
-            # ν = edK' * (edL .* (edK * ν))
+            # edL = exp(-(f.Δ - f.δ) * (L + T))
+            # ν = edK' * (edL * (edK * ν))
         else
             # Bloch-Torrey operator in Laplace eigenfunction basis for given
             # time profile value
-            K(fi) = L + im * q * fi * A
+            K(fᵢ) = L + T + im * q * fᵢ * A
             t = LinRange(0, echotime(f), ninterval + 1)
             for i = 1:ninterval
-                δi = t[i+1] - t[i]
-                fi = (f(t[i+1]) + f(t[i])) / 2
-                # ν .= exp(-δi * K(fi)) * ν
-                expmv!(-δi, K(fi), ν)
+                δᵢ = t[i+1] - t[i]
+                fᵢ = (f(t[i+1]) + f(t[i])) / 2
+                # ν .= exp(-δᵢ * K(fᵢ)) * ν
+                expmv!(-δᵢ, K(fᵢ), ν)
             end
         end
 

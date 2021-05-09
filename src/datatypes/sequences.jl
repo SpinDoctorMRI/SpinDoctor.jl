@@ -14,7 +14,7 @@ abstract type TimeProfile end
     f = PGSE(δ, Δ)
 
 Pulsed Gradient Spin Echo sequence with pulse duration `δ` and time between
-pulses `Δ-δ`.
+pulses `Δ - δ`.
 """
 struct PGSE <: TimeProfile
     δ::Float64
@@ -25,7 +25,7 @@ end
     f = CosOGSE(δ, Δ, nperiod)
 
 Oscillating Gradient Spin Echo sequence with two cos-pulses of duration `δ`
-separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
+separated by a pause of duration `Δ - δ` for `nperiod` periods per pulse.
 """
 struct CosOGSE <: TimeProfile
     δ::Float64
@@ -37,7 +37,8 @@ end
     f = SinOGSE(δ, Δ, nperiod)
 
 Oscillating Gradient Spin Echo sequence with two sin-pulses of duration `δ`
-separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse."""
+separated by a pause of duration `Δ - δ` for `nperiod` periods per pulse.
+"""
 struct SinOGSE <: TimeProfile
     δ::Float64
     Δ::Float64
@@ -48,7 +49,7 @@ end
     f = DoublePGSE(δ, Δ)
 
 Double Pulsed Gradient Spin Echo sequence with four pulses of duration `δ`,
-separated by pauses of duration `Δ-δ`, `0`, and `Δ-δ` repsectively.
+separated by pauses of duration `Δ - δ`, `0`, and `Δ - δ` repsectively.
 """
 struct DoublePGSE <: TimeProfile
     δ::Float64
@@ -70,6 +71,10 @@ function (f::PGSE)(t)
     (t < f.δ) - (f.Δ ≤ t)
 end
 
+function (f::DoublePGSE)(t)
+    ((t < f.δ) - (f.Δ ≤ t < f.Δ + f.δ) + (f.Δ + f.δ ≤ t < 2f.Δ + f.δ) - (2f.Δ + f.δ ≤ t))
+end
+
 function (f::CosOGSE)(t)
     (
         (t < f.δ) * cos(2π * f.nperiod * t / f.δ) -
@@ -82,10 +87,6 @@ function (f::SinOGSE)(t)
         (t < f.δ) * sin(2π * f.nperiod * t / f.δ) -
         (f.Δ ≤ t) * sin(2π * f.nperiod * (t - f.Δ) / f.δ)
     )
-end
-
-function (f::DoublePGSE)(t)
-    ((t < f.δ) - (f.Δ ≤ t < f.Δ + f.δ) + (f.Δ + f.δ ≤ t < 2f.Δ + f.δ) - (2f.Δ + f.δ ≤ t))
 end
 
 
@@ -107,6 +108,16 @@ function integral(f::PGSE, t = echotime(f))
     ((t < f.δ) * t + (f.δ ≤ t) * f.δ - (f.Δ ≤ t) * (t - f.Δ))
 end
 
+function integral(f::DoublePGSE, t = echotime(f))
+    δ, Δ = f.δ, f.Δ
+    tmid = Δ + δ
+    (
+        (t < δ) * t + (δ ≤ t < tmid) * δ - (Δ ≤ t < tmid) * (t - Δ) +
+        (tmid ≤ t < tmid + δ) * (t - tmid) +
+        (tmid + δ ≤ t) * δ - (tmid + Δ ≤ t) * (t - (tmid + Δ))
+    )
+end
+
 function integral(f::CosOGSE, t = echotime(f))
     δ, Δ, n = f.δ, f.Δ, f.nperiod
     ((t < δ) * sin(2π * n * t / δ) - (Δ ≤ t) * sin(2π * n * (t - Δ) / δ)) * δ / (2π * n)
@@ -116,16 +127,6 @@ function integral(f::SinOGSE, t = echotime(f))
     δ, Δ, n = f.δ, f.Δ, f.nperiod
     ((t < δ) * (1 - cos(2π * n * t / δ)) - (Δ ≤ t) * (1 - cos(2π * n * (t - Δ) / δ))) * δ /
     (2π * n)
-end
-
-function integral(f::DoublePGSE, t = echotime(f))
-    δ, Δ = f.δ, f.Δ
-    tmid = Δ + δ
-    (
-        (t < δ) * t + (δ ≤ t < tmid) * δ - (Δ ≤ t < tmid) * (t - Δ) +
-        (tmid ≤ t < tmid + δ) * (t - tmid) +
-        (tmid + δ ≤ t) * δ - (tmid + Δ ≤ t) * (t - (tmid + Δ))
-    )
 end
 
 
@@ -144,16 +145,16 @@ function bvalue_no_q(f::PGSE)
     f.δ^2 * (f.Δ - f.δ / 3)
 end
 
+function bvalue_no_q(f::DoublePGSE)
+    2 * f.δ^2 * (f.Δ - f.δ / 3)
+end
+
 function bvalue_no_q(f::CosOGSE)
     f.δ^3 / (2π * f.nperiod)^2
 end
 
 function bvalue_no_q(f::SinOGSE)
     3f.δ^3 / (2π * f.nperiod)^2
-end
-
-function bvalue_no_q(f::DoublePGSE)
-    2 * f.δ^2 * (f.Δ - f.δ / 3)
 end
 
 

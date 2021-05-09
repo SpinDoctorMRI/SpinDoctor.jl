@@ -3,18 +3,19 @@
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 """
-function solve_btpde(mesh, setup)
+function solve_btpde(model::Model, experiment::Experiment)
 
-    # Measure time of function evaluation
+    # Measure function evalutation time
     starttime = Base.time()
 
     # Extract input parameters
-    @unpack boundary_markers, compartments, boundaries, σ, T₂, κ, ρ = setup.pde
-    @unpack directions, sequences, values, values_type = setup.gradient
-    @unpack odesolver, reltol, abstol, nsave = setup.btpde
+    @unpack mesh, D, T₂, κ, ρ = model
+    @unpack directions, sequences, values, values_type = experiment.gradient
+    @unpack odesolver, reltol, abstol, nsave = experiment.btpde
 
     # Deduce sizes
-    ncompartment, nboundary = size(boundary_markers)
+    ncompartment = length(ρ)
+    nboundary = length(κ)
     npoint_cmpts = size.(mesh.points, 2)
     inds_cmpts = cumsum([0; npoint_cmpts])
     ndirection = size(directions, 2)
@@ -22,7 +23,9 @@ function solve_btpde(mesh, setup)
     namplitude = length(values)
 
     # Assemble finite element matrices compartment-wise
-    fem_mat_cmpts = (M = [], S = [], Q = [], Mx = [[] for idim = 1:3])
+    M_cmpts = []
+    S_cmpts = []
+    Mx_cmpts = [[] for dim = 1:3]
     for icmpt = 1:ncompartment
         # Finite elements
         points = mesh.points[icmpt]
@@ -31,33 +34,22 @@ function solve_btpde(mesh, setup)
         volumes, _ = get_mesh_volumes(points, elements)
 
         # Assemble mass, stiffness and flux matrices
-        push!(fem_mat_cmpts.M, assemble_mass_matrix(elements', volumes))
-        push!(fem_mat_cmpts.S, assemble_stiffness_matrix(elements', points', σ[icmpt]))
-        push!(fem_mat_cmpts.Q, assemble_flux_matrix_cmpt(points, facets, κ))
+        push!(M_cmpts, assemble_mass_matrix(elements', volumes))
+        push!(S_cmpts, assemble_stiffness_matrix(elements', points', D[icmpt]))
 
         # Assemble first order product moment matrices
         for dim = 1:3
-            push!(
-                fem_mat_cmpts.Mx[dim],
-                assemble_mass_matrix(elements', volumes, points[dim, :]),
-            )
+            push!(Mx_cmpts[dim], assemble_mass_matrix(elements', volumes, points[dim, :]))
         end
     end
 
     # Assemble global finite element matrices
-    M = blockdiag(fem_mat_cmpts.M...)
-    S = blockdiag(fem_mat_cmpts.S...)
-    Q = couple_flux_matrix(mesh, fem_mat_cmpts.Q)
-    Mx = [blockdiag(fem_mat_cmpts.Mx[dim]...) for dim = 1:3]
-    R = blockdiag((fem_mat_cmpts.M ./ T₂)...)
-
-    # # Display sparsity
-    # println("Mass matrix:")
-    # display(spy(M))
-    # println("Stiffness matrix:")
-    # display(spy(S))
-    # println("Flux matrix:")
-    # display(spy(Q))
+    M = blockdiag(M_cmpts...)
+    S = blockdiag(S_cmpts...)
+    R = blockdiag((M_cmpts ./ T₂)...)
+    Mx = [blockdiag(Mx_cmpts[dim]...) for dim = 1:3]
+    Q_blocks = assemble_flux_matrices(mesh.points, mesh.facets)
+    Q = couple_flux_matrix(model, Q_blocks, false)
 
     # Create initial conditions (enforce complex values)
     ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
@@ -76,7 +68,7 @@ function solve_btpde(mesh, setup)
     itertimes = zeros(namplitude, nsequence, ndirection)
 
     # Q-values and b-values
-    if values_type == 'q'
+    if values_type == "q"
         qvalues = repeat(values, 1, nsequence)
         bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
     else
@@ -93,7 +85,8 @@ function solve_btpde(mesh, setup)
 
     # Time independent ODE function, given jacobian `J` 
     function M∂u∂t_constant!(du, u, p, t)
-        J, _ = p
+        # @show t
+        J, = p
         mul!(du, J, u)
     end
 
@@ -107,7 +100,7 @@ function solve_btpde(mesh, setup)
     jac_prototype = -(S + Q + im * sum(Mx))
 
     # Iterate over gradient amplitudes, time profiles and directions
-    for iamp = 1:namplitude, iseq = 1:nsequence, idir = 1:ndirection
+    for idir = 1:ndirection, iseq = 1:nsequence, iamp = 1:namplitude
 
         # Gradient amplitude
         q = qvalues[iamp, iseq]
@@ -197,7 +190,7 @@ function solve_btpde(mesh, setup)
 
             # Integrate final magnetization over compartment
             signal[icmpt, iamp, iseq, idir] =
-                sum(fem_mat_cmpts.M[icmpt] * mag[inds, end], dims = 1)[1]
+                sum(M_cmpts[icmpt] * mag[inds, end], dims = 1)[1]
 
         end
     end

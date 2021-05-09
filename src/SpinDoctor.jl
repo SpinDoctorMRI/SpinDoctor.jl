@@ -31,16 +31,17 @@ export TimeProfile,
     constant_intervals,
     is_constant,
     echotime
-export Setup
-export prepare_pde!
-export prepare_experiments!
+export Setup, CylinderSetup, SphereSetup, NeuronSetup, Experiment
+export get_coefficients
 export create_geometry
+export create_model
 export split_mesh
 export create_directions
 export get_cmpt_volumes
 export compute_laplace_eig
 export length2eig
 export eig2length
+export Model
 export solve_btpde
 export solve_mf
 export savefield
@@ -52,9 +53,14 @@ export ImplicitEuler
 export ABDF2, QBDF, QBDF1, QBDF2, QNDF, QNDF1, QNDF2
 
 # Setups
-include("sequences.jl")
-include("setup.jl")
-include("prepare_pde.jl")
+include("datatypes/sequences.jl")
+include("datatypes/experiment.jl")
+include("datatypes/femesh.jl")
+include("datatypes/gradient.jl")
+include("datatypes/model.jl")
+include("datatypes/create_model.jl")
+include("datatypes/setup.jl")
+include("get_coefficients.jl")
 
 # Geometry
 include("geometry/call_tetgen.jl")
@@ -67,6 +73,7 @@ include("geometry/create_surfaces_neuron.jl")
 include("geometry/create_surfaces_sphere.jl")
 include("geometry/deform_domain.jl")
 include("geometry/get_volumes.jl")
+include("geometry/gmesh2fem.jl")
 include("geometry/read_cells.jl")
 include("geometry/read_surfaces.jl")
 include("geometry/read_tetgen.jl")
@@ -78,8 +85,8 @@ include("geometry/split_mesh.jl")
 # Matrix assembly
 include("matrix_assembly/assemble_mass_matrix.jl")
 include("matrix_assembly/assemble_stiffness_matrix.jl")
+include("matrix_assembly/assemble_flux_matrices.jl")
 include("matrix_assembly/assemble_flux_matrix.jl")
-include("matrix_assembly/assemble_flux_matrix_cmpt.jl")
 include("matrix_assembly/couple_flux_matrix.jl")
 
 # Eigendecomposition

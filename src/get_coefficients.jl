@@ -1,26 +1,26 @@
 """
-    prepare_pde!(setup)
+    get_coefficients(setup)
 
 Prepare PDE compartments.
 """
-function prepare_pde!(setup)
-    @unpack cell_shape, ncell, include_in, in_ratio, ecs_shape, ecs_ratio = setup.geometry
+function get_coefficients(setup)
+    @unpack ncell, include_in, in_ratio, ecs_shape, ecs_ratio = setup
 
     include_ecs = ecs_shape != "no_ecs"
 
     # Check for correct radius ratios and that neurons do not have in-compartments
-    @assert !include_in || 0 < in_ratio && in_ratio < 1 && cell_shape != "neuron"
+    @assert !include_in || 0 < in_ratio && in_ratio < 1 && !isa(setup, NeuronSetup)
     @assert !include_ecs || 0 < ecs_ratio
 
     # Determine number of compartments and boundaries
     ncompartment = (1 + include_in) * ncell + include_ecs
-    if cell_shape == "sphere"
+    if isa(setup, SphereSetup)
         # For a sphere, there is one interface
         nboundary = (include_in + 1) * ncell + include_ecs
-    elseif cell_shape == "cylinder"
+    elseif isa(setup, CylinderSetup)
         # An axon has a side interface, and a top-bottom boundary
         nboundary = (2 * include_in + 1 + include_ecs) * ncell + include_ecs
-    elseif cell_shape == "neuron"
+    elseif isa(setup, NeuronSetup)
         # For a neuron, there is one interface
         nboundary = 1 + include_ecs
     end
@@ -55,7 +55,7 @@ function prepare_pde!(setup)
         nboundary_old = nboundary_old + ncell
     end
 
-    if cell_shape == "cylinder"
+    if isa(setup, CylinderSetup)
         if include_in
             # Add in boundary
             append!(boundaries, repeat(["in"], ncell))
@@ -92,34 +92,26 @@ function prepare_pde!(setup)
     end
 
     # Initialize output arrays
-    σ = zeros(ncompartment)
+    D = fill(zeros(3, 3), ncompartment)
     T₂ = zeros(ncompartment)
     κ = zeros(nboundary)
     ρ = zeros(ncompartment)
 
     # Distribute material properties to compartments and boundaries
-    ρ[compartments.=="in"] .= setup.pde[:ρ_in]
-    ρ[compartments.=="out"] .= setup.pde[:ρ_out]
-    ρ[compartments.=="ecs"] .= setup.pde[:ρ_ecs]
-    σ[compartments.=="in"] .= setup.pde[:σ_in]
-    σ[compartments.=="out"] .= setup.pde[:σ_out]
-    σ[compartments.=="ecs"] .= setup.pde[:σ_ecs]
-    T₂[compartments.=="in"] .= setup.pde[:T₂_in]
-    T₂[compartments.=="out"] .= setup.pde[:T₂_out]
-    T₂[compartments.=="ecs"] .= setup.pde[:T₂_ecs]
-    κ[boundaries.=="in,out"] .= setup.pde[:κ_in_out]
-    κ[boundaries.=="out,ecs"] .= setup.pde[:κ_out_ecs]
-    κ[boundaries.=="in"] .= setup.pde[:κ_in]
-    κ[boundaries.=="out"] .= setup.pde[:κ_out]
-    κ[boundaries.=="ecs"] .= setup.pde[:κ_ecs]
+    ρ[compartments.=="in"] .= setup.ρ_in
+    ρ[compartments.=="out"] .= setup.ρ_out
+    ρ[compartments.=="ecs"] .= setup.ρ_ecs
+    D[compartments.=="in"] .= [setup.D_in]
+    D[compartments.=="out"] .= [setup.D_out]
+    D[compartments.=="ecs"] .= [setup.D_ecs]
+    T₂[compartments.=="in"] .= setup.T₂_in
+    T₂[compartments.=="out"] .= setup.T₂_out
+    T₂[compartments.=="ecs"] .= setup.T₂_ecs
+    κ[boundaries.=="in,out"] .= setup.κ_in_out
+    κ[boundaries.=="out,ecs"] .= setup.κ_out_ecs
+    κ[boundaries.=="in"] .= setup.κ_in
+    κ[boundaries.=="out"] .= setup.κ_out
+    κ[boundaries.=="ecs"] .= setup.κ_ecs
 
-    # Add fields to dictinary
-    setup.pde[:ρ] = ρ
-    setup.pde[:σ] = σ
-    setup.pde[:T₂] = T₂
-    setup.pde[:κ] = κ
-    setup.pde[:compartments] = compartments
-    setup.pde[:boundaries] = boundaries
-    setup.pde[:boundary_markers] = boundary_markers
-
+    (; ρ, D, T₂, κ)
 end

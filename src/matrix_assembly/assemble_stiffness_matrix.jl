@@ -1,9 +1,7 @@
 """ Assemble 3D stiffness matrix using P1 finite elements. """
-function assemble_stiffness_matrix(elements, nodes, weights = 1)
+function assemble_stiffness_matrix(elements, nodes, D = I(3))
     nelement = size(elements, 1)
     nnode = size(nodes, 1)
-    @assert length(size(weights)) ≤ 1
-    nweight = size(weights, 1)
     nodes = permutedims(nodes[elements, :], [3, 2, 1])
 
     integration_point = [1 // 4; 1 // 4; 1 // 4]
@@ -14,8 +12,7 @@ function assemble_stiffness_matrix(elements, nodes, weights = 1)
 
     z = zeros(4, 4, nelement)
     for ielement = 1:nelement
-        z[:, :, ielement] =
-            volumes[ielement] * weights * ∇φ[:, :, ielement]' * ∇φ[:, :, ielement]
+        z[:, :, ielement] = volumes[ielement] * ∇φ[:, :, ielement]' * D * ∇φ[:, :, ielement]
     end
     y = reshape(repeat(elements, 1, 4)', 4, 4, nelement)
     x = permutedims(y, [2, 1, 3])

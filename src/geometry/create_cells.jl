@@ -4,12 +4,12 @@
 Create geometrical configuration of cells. Return mathematical description (radii, centers).
 """
 function create_cells(setup)
-    @unpack cell_shape, ncell, rmin, rmax, dmin, dmax = setup.geometry
+    @unpack ncell, rmin, rmax, dmin, dmax = setup
 
     # Choose between spheres and cylinders
-    if cell_shape == "sphere"
+    if isa(setup, SphereSetup)
         ndim = 3
-    elseif cell_shape == "cylinder"
+    elseif isa(setup, CylinderSetup)
         ndim = 2
     else
         return nothing
@@ -37,7 +37,7 @@ function create_cells(setup)
 
         # Generate a random point using a uniform distribution with zero mean and
         # variance proportional to rmean
-        if cell_shape == "sphere"
+        if ndim == 3 # sphere
             point = (rand(ndim) .- 0.5) * rmean * max(10, ncell^(1 / 3))
         else # cylinder
             point = (rand(ndim) .- 0.5) * rmean * max(10.0, sqrt(ncell)) * 40.0

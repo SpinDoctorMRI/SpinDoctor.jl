@@ -1,13 +1,13 @@
 """
-    eig2length(λ, σ)
+    eig2length(λ, D)
 
 Convert Laplace eigenvalue to length scale.
 """
-eig2length(λ, σ) = λ > 0 ? π * √(σ / λ) : Inf
+eig2length(λ, D) = λ > 0 ? π * √(D / λ) : Inf
 
 """
-    length2eig(length, σ)
+    length2eig(length, D)
 
 Convert length scale to Laplace eigenvalue.
 """
-length2eig(length, σ) = σ * (π / length)^2
+length2eig(length, D) = D * (π / length)^2
