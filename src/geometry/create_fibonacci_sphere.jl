@@ -10,7 +10,7 @@ function create_fibonacci_sphere(npoint)
     ϕ = acos.(1 .- 2 .* (inds .+ 0.5) ./ npoint)
 
     # Create Fibonacci directions (uniformly distributed on unit sphere)
-    points = [
+    [
         cos.(θ) .* sin.(ϕ)
         sin.(θ) .* sin.(ϕ)
         cos.(ϕ)

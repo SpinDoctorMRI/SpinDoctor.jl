@@ -1,6 +1,6 @@
-@with_kw struct Gradient
-    directions::Array
+@with_kw struct Gradient{T}
+    directions::Matrix{T}
     sequences::Vector{TimeProfile}
-    values::Vector{Float64}
+    values::Vector{T}
     values_type::String
 end

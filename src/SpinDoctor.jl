@@ -15,6 +15,7 @@ using QuadGK
 using Roots: find_zeros
 using SparseArrays
 using SpecialFunctions
+using StaticArrays
 using Statistics: mean
 using TetGen
 using Triangle: constrained_triangulation
@@ -39,21 +40,21 @@ export create_geometry
 export create_model
 export split_mesh
 export create_directions
-export get_cmpt_volumes
+export get_cmpt_volumes, get_mesh_volumes
 export compute_laplace_eig
 export length2eig
 export eig2length
 export Model
-export solve_btpde
-export solve_mf
 export savefield
 export savefield_time
 export save_btpde_results
 export solve_analytical
+export solve_btpde
+export solve_mf
 export fit_adc
 export Trapezoid
 export ImplicitEuler
-export ABDF2, QBDF, QBDF1, QBDF2, QNDF, QNDF1, QNDF2
+export QNDF
 
 # Setups
 include("datatypes/sequences.jl")

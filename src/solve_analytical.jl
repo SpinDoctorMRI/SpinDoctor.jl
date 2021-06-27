@@ -172,8 +172,8 @@ function solve_analytical(setup, experiment, volumes = nothing)
     for m1 = 1:N
         for m2 = m1:N
             if n[m1] == n[m2]
-                I = compute_int_I(params, α[m1], α[m2], n[m1])
-                Bri[m1, m2, :] = 2 * β[m1] * β[m2] * I
+                int_I = compute_int_I(params, α[m1], α[m2], n[m1])
+                Bri[m1, m2, :] = 2 * β[m1] * β[m2] * int_I
                 Bri[m2, m1, :] = Bri[m1, m2, :]
             end
         end
@@ -181,7 +181,7 @@ function solve_analytical(setup, experiment, volumes = nothing)
 
     Br = zeros(N, N)
     for i = 1:L
-        Br += Bri[:, :, i] / T[i]
+        Br .+= Bri[:, :, i] / T[i]
     end
 
     # Iterate over experiments

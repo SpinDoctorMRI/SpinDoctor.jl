@@ -1,6 +1,17 @@
-""" Assemble 3D flux matrix using P1 finite elements. """
+"""
+    assemble_flux_matrix(facets, nodes[, weights])
+
+Assemble 3D flux matrix using P1 finite elements.
+
+This function is based on the Matlab function `flux_matrixP1_3D.m` from the Matlab
+nodal matrix assembly toolbox by Jan Valdman and Talal Rahman.
+
+https://uk.mathworks.com/matlabcentral/fileexchange/27826-fast-fem-assembly-nodal-elements
+
+Talal Rahman and Jan Valdman: Fast MATLAB assembly of FEM matrices in 2D and 3D: nodal
+elements, Applied Mathematics and Computation 219, 7151–7158 (2013).
+"""
 function assemble_flux_matrix(facets, nodes, weights = 1)
-    nfacet = size(facets, 1)
     nnode = size(nodes, 1)
     areas = compute_areas(facets, nodes)
 
@@ -22,13 +33,17 @@ function assemble_flux_matrix(facets, nodes, weights = 1)
         )
     end
 
-    # Assure symmetry
+    # Enforce symmetry
     sym(x) = (x + x') / 2
 
     sym(sparse(x[:], y[:], z[:], nnode, nnode))
 end
 
-""" Compute facet areas. """
+"""
+    compute_areas(facets, nodes)
+
+Compute facet areas.
+"""
 function compute_areas(facets, nodes)
     nfacet = size(facets, 1)
 
@@ -41,5 +56,5 @@ function compute_areas(facets, nodes)
     matrix_3D[2, 1, :] = sum(v1 .* v2, dims = 2)
     matrix_3D[2, 2, :] = sum(v2 .* v2, dims = 2)
 
-    areas = ([√abs(det(matrix_3D[:, :, i])) / 2 for i = 1:nfacet])
+    [√abs(det(matrix_3D[:, :, i])) / 2 for i = 1:nfacet]
 end

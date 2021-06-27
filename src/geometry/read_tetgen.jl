@@ -23,9 +23,9 @@ function read_tetgen(filename)
         facets = zeros(Int, 3, nfacet)
         facetmarkers = zeros(Int, nfacet)
         for ifacet = 1:nfacet
-            vec = parse.(Int, split(readline(io)))
-            facets[:, ifacet] = vec[2:4]
-            facetmarkers[ifacet] = vec[5]
+            tmp = parse.(Int, split(readline(io)))
+            facets[:, ifacet] = tmp[2:4]
+            facetmarkers[ifacet] = tmp[5]
         end
         facets, facetmarkers
     end
@@ -36,9 +36,9 @@ function read_tetgen(filename)
         elements = zeros(Int, 4, nelement)
         elementmarkers = zeros(Int, nelement)
         for ielement = 1:nelement
-            vec = parse.(Int, split(readline(io)))
-            elements[:, ielement] = vec[2:5]
-            elementmarkers[ielement] = vec[6]
+            tmp = parse.(Int, split(readline(io)))
+            elements[:, ielement] = tmp[2:5]
+            elementmarkers[ielement] = tmp[6]
         end
         elements, elementmarkers
     end

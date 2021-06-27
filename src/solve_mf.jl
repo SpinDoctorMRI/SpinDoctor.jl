@@ -9,7 +9,7 @@ function solve_mf(model, lap_eig, experiment)
     starttime = Base.time()
 
     # Extract parameters
-    @unpack mesh, ρ, κ = model
+    @unpack mesh, ρ = model
     @unpack directions, sequences, values, values_type = experiment.gradient
     @unpack ninterval = experiment.mf
 
@@ -47,7 +47,7 @@ function solve_mf(model, lap_eig, experiment)
     M = blockdiag(M_cmpts...)
 
     # Create initial conditions (enforce complex values)
-    ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
+    ρ = vcat(fill.(complex.(ρ), npoint_cmpts)...)
 
     # Project initial spin density onto Laplace eigenfunction basis
     ν₀ = ϕ' * (M * ρ)
@@ -64,7 +64,8 @@ function solve_mf(model, lap_eig, experiment)
     # Allocate arrays
     signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndirection)
     signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndirection)
-    magnetization = fill(ComplexF64[], ncompartment, namplitude, nsequence, ndirection)
+    magnetization =
+        Array{Matrix{ComplexF64},4}(undef, ncompartment, namplitude, nsequence, ndirection)
     itertimes = zeros(namplitude, nsequence, ndirection)
 
     # Laplace operator in Laplace eigenfunction basis
@@ -98,12 +99,12 @@ function solve_mf(model, lap_eig, experiment)
         # Create array for magnetization coefficients
         ν = copy(ν₀)
 
-        if typeof(f) == PGSE
+        if isa(f, PGSE)
             # Constant Bloch-Torrey operator in Laplace eigenfunction basis
             K = L + T + im * q * A
-            ν = expmv!(-f.δ, K, ν)
-            ν = expmv!(-(f.Δ - f.δ), L + T, ν)
-            ν = expmv!(-f.δ, K', ν)
+            expmv!(-f.δ, K, ν)
+            expmv!(-(f.Δ - f.δ), L + T, ν)
+            expmv!(-f.δ, K', ν)
             # edK = exp(-f.δ * K)
             # edL = exp(-(f.Δ - f.δ) * (L + T))
             # ν = edK' * (edL * (edK * ν))

@@ -6,9 +6,6 @@ A neuron surface mesh is loaded or create and loaded. An ECS can be added.
 """
 function create_surfaces_neuron(filename, setup::Setup)
 
-    # Number of points to discretize space for creating tight wrap ECS
-    ndiscretize = 100
-
     ecs_shape = setup.ecs_shape
     ecs_ratio = setup.ecs_ratio
 

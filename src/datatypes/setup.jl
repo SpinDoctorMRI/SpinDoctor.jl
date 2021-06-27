@@ -12,9 +12,9 @@ abstract type Setup end
     ecs_shape::String
     ecs_ratio::Float64
     refinement::Union{Float64,Nothing} = nothing
-    D_in::Matrix{Float64}
-    D_out::Matrix{Float64}
-    D_ecs::Matrix{Float64}
+    D_in::SMatrix{3, 3, Float64}
+    D_out::SMatrix{3, 3, Float64}
+    D_ecs::SMatrix{3, 3, Float64}
     T₂_in::Float64
     T₂_out::Float64
     T₂_ecs::Float64
@@ -43,9 +43,9 @@ end
     ecs_shape::String
     ecs_ratio::Float64
     refinement::Union{Float64,Nothing} = nothing
-    D_in::Matrix{Float64}
-    D_out::Matrix{Float64}
-    D_ecs::Matrix{Float64}
+    D_in::SMatrix{3, 3, Float64}
+    D_out::SMatrix{3, 3, Float64}
+    D_ecs::SMatrix{3, 3, Float64}
     T₂_in::Float64
     T₂_out::Float64
     T₂_ecs::Float64
@@ -67,9 +67,9 @@ end
     ecs_shape::String
     ecs_ratio::Float64
     refinement::Union{Float64,Nothing} = nothing
-    D_in::Matrix{Float64}
-    D_out::Matrix{Float64}
-    D_ecs::Matrix{Float64}
+    D_in::SMatrix{3, 3, Float64}
+    D_out::SMatrix{3, 3, Float64}
+    D_ecs::SMatrix{3, 3, Float64}
     T₂_in::Float64
     T₂_out::Float64
     T₂_ecs::Float64

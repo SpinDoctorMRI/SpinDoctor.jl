@@ -1,8 +1,8 @@
-@with_kw struct Model
+@with_kw struct Model{T}
     name::String
     mesh::FEMesh
-    ρ::Vector{Float64}
-    D::Vector{Matrix{Float64}}
-    T₂::Vector{Float64}
-    κ::Vector{Float64}
+    ρ::Vector{T}
+    D::Vector{SMatrix{3,3,T,9}}
+    T₂::Vector{T}
+    κ::Vector{T}
 end

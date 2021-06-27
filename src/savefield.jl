@@ -24,10 +24,9 @@ function savefield(mesh, field, filename::String, fieldname = "Magnetization")
                 vtkfile[fieldfieldname*" (imaginary part)"] = imag(f[:, ifield])
             end
         end
-
     end
 
-    outfiles = vtk_save(vtmfile)
+    vtk_save(vtmfile)
 end
 
 
@@ -42,7 +41,6 @@ function savefield_time(mesh, time, field, filename::String, fieldname = "Magnet
 
     for (it, t) ∈ enumerate(time)
         vtmfile = vtk_multiblock(filename * "_$it")
-
 
         for icmpt = 1:ncompartment
             points = mesh.points[icmpt]
@@ -60,11 +58,9 @@ function savefield_time(mesh, time, field, filename::String, fieldname = "Magnet
         end
 
         pvd[t] = vtmfile
-
     end
 
-    outfiles = vtk_save(pvd)
-
+    vtk_save(pvd)
 end
 
 
@@ -76,7 +72,6 @@ function save_btpde_results(mesh, experiment, btpde, filename)
 
     time = btpde.time[1, 1, 1]
     magnetization = btpde.magnetization[:, 1, 1, 1]
-    signal_allcmpts = btpde.signal_allcmpts[1, 1, 1]
 
     pvd = paraview_collection(filename)
 
@@ -100,13 +95,10 @@ function save_btpde_results(mesh, experiment, btpde, filename)
                 imag(magnetization[icmpt][:, it])
             vtkfile["Gradient", VTKFieldData()] = f(t) * g
             vtkfile["Sequence", VTKFieldData()] = f(t)
-            # vtkfile["Signal", VTKFieldData()] = real(signal_allcmpts[it])
         end
 
         pvd[t] = vtmfile
-
     end
 
-    outfiles = vtk_save(pvd)
-
+    vtk_save(pvd)
 end

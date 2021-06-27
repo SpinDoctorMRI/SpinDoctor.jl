@@ -203,8 +203,6 @@ function create_surfaces_cylinder(cells, setup::Setup)
         region_ecs = zeros(3, 0)
     end
     regions = [regions_in regions_out region_ecs]
-    @show size(facets)
-    @show size(facetmarkers)
 
     (; points, facets, facetmarkers, regions)
 end

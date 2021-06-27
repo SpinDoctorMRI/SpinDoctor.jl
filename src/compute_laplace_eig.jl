@@ -9,17 +9,16 @@ function compute_laplace_eig(model, eiglim = Inf, neig_max = Inf)
     starttime = Base.time()
 
     # Extract parameters
-    @unpack mesh, D, κ, T₂ = model
+    @unpack mesh, D, T₂ = model
     ncompartment = length(mesh.points)
 
     # Assemble finite element matrices compartment-wise
     M_cmpts = []
     S_cmpts = []
-    Mx_cmpts = [[] for dim = 1:3]
+    Mx_cmpts = [[] for _ = 1:3]
     for icmpt = 1:ncompartment
         # Finite elements
         points = mesh.points[icmpt]
-        facets = mesh.facets[icmpt, :]
         elements = mesh.elements[icmpt]
         volumes, _ = get_mesh_volumes(points, elements)
 

@@ -7,10 +7,10 @@ function couple_flux_matrix(model, Q_blocks, symmetrical = false)
 
     # Extract mesh fields
     @unpack mesh, ρ, κ = model
-    @unpack point_map, points, facets, elements = mesh
+    @unpack point_map, points, facets = mesh
 
     # Sizes
-    ncompartment, nboundary = size(facets)
+    nboundary = size(facets, 2)
     inds_cmpts = cumsum([0; size.(points, 2)])
     npoint = inds_cmpts[end]
     get_inds(icmpt) = inds_cmpts[icmpt]+1:inds_cmpts[icmpt+1]
@@ -52,9 +52,9 @@ function couple_flux_matrix(model, Q_blocks, symmetrical = false)
                 indinds₁ = 1:length(inds₁)
                 indinds₂ = 1:length(inds₂)
             else
-                pairs = point_map[cmpt₁][inds₁] .== point_map[cmpt₂][inds₂]'
+                pairmap = point_map[cmpt₁][inds₁] .== point_map[cmpt₂][inds₂]'
                 indinds₁ = 1:length(inds₁)
-                indinds₂ = [findfirst(pairs[i, :]) for i ∈ indinds₁]
+                indinds₂ = [findfirst(pairmap[i, :]) for i ∈ indinds₁]
             end
 
             # Create coupling blocks

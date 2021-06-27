@@ -92,7 +92,7 @@ function get_coefficients(setup)
     end
 
     # Initialize output arrays
-    D = fill(zeros(3, 3), ncompartment)
+    D = [zeros(SMatrix{3,3}) for _ = 1:ncompartment]
     T₂ = zeros(ncompartment)
     κ = zeros(nboundary)
     ρ = zeros(ncompartment)

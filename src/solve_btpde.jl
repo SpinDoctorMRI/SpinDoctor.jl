@@ -1,5 +1,5 @@
 """
-    results = solve_btpde(mesh, setup)
+    solve_btpde(model, experiment)
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 """
@@ -9,13 +9,12 @@ function solve_btpde(model::Model, experiment::Experiment)
     starttime = Base.time()
 
     # Extract input parameters
-    @unpack mesh, D, T₂, κ, ρ = model
+    @unpack mesh, D, T₂, ρ = model
     @unpack directions, sequences, values, values_type = experiment.gradient
     @unpack odesolver, reltol, abstol, nsave = experiment.btpde
 
     # Deduce sizes
     ncompartment = length(ρ)
-    nboundary = length(κ)
     npoint_cmpts = size.(mesh.points, 2)
     inds_cmpts = cumsum([0; npoint_cmpts])
     ndirection = size(directions, 2)
@@ -25,11 +24,10 @@ function solve_btpde(model::Model, experiment::Experiment)
     # Assemble finite element matrices compartment-wise
     M_cmpts = []
     S_cmpts = []
-    Mx_cmpts = [[] for dim = 1:3]
+    Mx_cmpts = [[] for _ = 1:3]
     for icmpt = 1:ncompartment
         # Finite elements
         points = mesh.points[icmpt]
-        facets = mesh.facets[icmpt, :]
         elements = mesh.elements[icmpt]
         volumes, _ = get_mesh_volumes(points, elements)
 
@@ -52,19 +50,14 @@ function solve_btpde(model::Model, experiment::Experiment)
     Q = couple_flux_matrix(model, Q_blocks, false)
 
     # Create initial conditions (enforce complex values)
-    ρ = vcat(fill.(complex(ρ), npoint_cmpts)...)
+    ρ = vcat(fill.(complex.(ρ), npoint_cmpts)...)
 
     # Allocate output arrays
     signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndirection)
     signal_allcmpts = zeros(ComplexF64, namplitude, nsequence, ndirection)
-    magnetization = fill(
-        Array{ComplexF64,2}(undef, 0, 0),
-        ncompartment,
-        namplitude,
-        nsequence,
-        ndirection,
-    )
-    time = fill(Float64[], namplitude, nsequence, ndirection)
+    magnetization =
+        Array{Matrix{ComplexF64},4}(undef, ncompartment, namplitude, nsequence, ndirection)
+    time = Array{Vector{Float64},3}(undef, namplitude, nsequence, ndirection)
     itertimes = zeros(namplitude, nsequence, ndirection)
 
     # Q-values and b-values
@@ -77,23 +70,27 @@ function solve_btpde(model::Model, experiment::Experiment)
     end
 
     # Time dependent ODE function
-    function M∂u∂t!(du, u, p, t)
-        J, S, Q, A, R, q, f = p
-        @. J = -(S + Q + R + im * f(t) * q * A)
-        mul!(du, J, u)
-    end
-
-    # Time independent ODE function, given jacobian `J` 
-    function M∂u∂t_constant!(du, u, p, t)
+    function Mdξ!(dξ, ξ, p, t)
         # @show t
-        J, = p
-        mul!(du, J, u)
+        @unpack J, S, Q, A, R, q, f = p
+        @. J = -(S + Q + R + im * f(t) * q * A)
+        mul!(dξ, J, ξ)
+        nothing
     end
 
-    # Time dependent Jacobian of ODE function with respect to the state `u`
-    function Jac!(J, u, p, t)
-        _, S, Q, A, R, q, f = p
+    # Time independent ODE function, given Jacobian
+    function Mdξ_constant!(dξ, ξ, p, t)
+        # @show t
+        J = p.J
+        mul!(dξ, J, ξ)
+        nothing
+    end
+
+    # Time dependent Jacobian of ODE function with respect to the state `ξ`
+    function Jac!(J, ξ, p, t)
+        @unpack S, Q, A, R, q, f = p
         @. J = -(S + Q + R + im * f(t) * q * A)
+        nothing
     end
 
     # Jacobian sparsity pattern
@@ -126,35 +123,33 @@ function solve_btpde(model::Model, experiment::Experiment)
         @printf "  Amplitude %d of %d: q = %g, b = %g\n" iamp namplitude q b
 
         # Gradient direction dependent finite element matrix
-        A = sum(dir[dim] * Mx[dim] for dim = 1:3)
+        A = dir' * Mx
 
         # ODE problem
         J = -(S + Q + im * q * A)
         p = (; J, S, Q, A, R, q, f)
 
         # Gather ODE function
-        function get_odefunction(u, t, p)
-            print("    t = $t: ")
-            if all(constant_intervals(p.f)) # is_constant(p.f, t)
-                println("constant time profile, f = $(p.f(t))")
-                func = M∂u∂t_constant!
-                Jac!(p.J, u, p, t)
-                jac = (J, u, p, t) -> (J .= p.J)
-            else
-                println("time dependent time profile")
-                func = M∂u∂t!
-                jac = Jac!
-            end
-            odefunction =
-                ODEFunction(func, jac = jac, jac_prototype = jac_prototype, mass_matrix = M)
+        if all(constant_intervals(p.f)) # is_constant(p.f, t)
+            func = Mdξ_constant!
+            Jac!(p.J, ρ, p, 0)
+            # jac = (J, _, p, t) -> (@show t; J .= p.J; nothing)
+            jac = (J, _, p, t) -> (J .= p.J; nothing)
+        else
+            func = Mdξ!
+            jac = Jac!
         end
-        odeproblem = ODEProblem(get_odefunction(ρ, 0, p), ρ, interval, p, progress = false)
+        odefunction =
+            ODEFunction(func, jac = jac, jac_prototype = jac_prototype, mass_matrix = M)
+        odeproblem = ODEProblem(odefunction, ρ, interval, p, progress = false)#, dtmax = 50)
 
         tstops = intervals(f)[2:end-1]
 
         # Callback for updating problem
         function affect!(integrator)
-            integrator.f = get_odefunction(integrator.u, integrator.t, integrator.p)
+            @unpack u, p, t = integrator
+            # print("    t = $t: constant time profile, f = $(p.f(t))")
+            Jac!(p.J, u, p, t)
         end
         callback = PresetTimeCallback(tstops, affect!)
 
@@ -175,10 +170,11 @@ function solve_btpde(model::Model, experiment::Experiment)
 
         # Extract solution
         time[iamp, iseq, idir] = sol.t
-        mag = hcat(sol.u...)
+        ξ = hcat(sol.u...)
 
         if nsave == 1
-            mag = mag[:, [end]]
+            time[iamp, iseq, idir] =  time[iamp, iseq, idir][[end]]
+            ξ = ξ[:, [end]]
         end
 
         # Split solution into compartments
@@ -186,11 +182,11 @@ function solve_btpde(model::Model, experiment::Experiment)
             inds = inds_cmpts[icmpt]+1:inds_cmpts[icmpt+1]
 
             # Store magnetization in compartment
-            magnetization[icmpt, iamp, iseq, idir] = mag[inds, :]
+            magnetization[icmpt, iamp, iseq, idir] = ξ[inds, :]
 
             # Integrate final magnetization over compartment
             signal[icmpt, iamp, iseq, idir] =
-                sum(M_cmpts[icmpt] * mag[inds, end], dims = 1)[1]
+                sum(M_cmpts[icmpt] * ξ[inds, end], dims = 1)[1]
 
         end
     end

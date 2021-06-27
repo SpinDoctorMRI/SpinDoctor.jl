@@ -1,7 +1,19 @@
-""" Assemble 3D stiffness matrix using P1 finite elements. """
+"""
+    assemble_stiffness_matrix(elements, nodes[, D])
+
+Assemble 3D stiffness matrix using P1 finite elements.
+A diffusion tensor `D` may be provided.
+
+This function is based on the Matlab function `stiffness_matrixP1_3D.m` from the Matlab
+nodal matrix assembly toolbox by Jan Valdman and Talal Rahman.
+
+https://uk.mathworks.com/matlabcentral/fileexchange/27826-fast-fem-assembly-nodal-elements
+
+Talal Rahman and Jan Valdman: Fast MATLAB assembly of FEM matrices in 2D and 3D: nodal
+elements, Applied Mathematics and Computation 219, 7151–7158 (2013).
+"""
 function assemble_stiffness_matrix(elements, nodes, D = I(3))
     nelement = size(elements, 1)
-    nnode = size(nodes, 1)
     nodes = permutedims(nodes[elements, :], [3, 2, 1])
 
     integration_point = [1 // 4; 1 // 4; 1 // 4]
@@ -17,13 +29,17 @@ function assemble_stiffness_matrix(elements, nodes, D = I(3))
     y = reshape(repeat(elements, 1, 4)', 4, 4, nelement)
     x = permutedims(y, [2, 1, 3])
 
-    # Assure symmetry
+    # Enforce symmetry
     sym(x) = (x + x') / 2
 
     sym(sparse(x[:], y[:], z[:]))
 end
 
-""" Gradients of the finite element basis functions φ. """
+"""
+    compute_∇φ(nodes, points)
+
+Compute the gradients of the finite element basis functions φ.
+"""
 function compute_∇φ(nodes, points)
     nelement = size(nodes, 3)
     npoint = size(points, 2)
@@ -43,7 +59,11 @@ function compute_∇φ(nodes, points)
     ∇φ, detjac, jac
 end
 
-""" Derivative of shape functions with respect to reference coordinates (ξ1, ξ2, ξ3). """
+"""
+    shapeder(points)
+
+Derivative of shape functions with respect to reference coordinates (ξ1, ξ2, ξ3).
+"""
 function shapeder(points)
     npoint = size(points, 2)
     dshape = [
