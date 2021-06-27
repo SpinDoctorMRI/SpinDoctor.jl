@@ -40,6 +40,7 @@ QuadGK = "2"
 Roots = "1"
 StaticArrays = "1"
 TetGen = "1"
+Triangle = "0.3"
 UnicodePlots = "1"
 
 [extras]
