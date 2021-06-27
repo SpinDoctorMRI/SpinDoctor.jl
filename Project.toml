@@ -28,6 +28,9 @@ Triangle = "56f361f5-126b-55db-87fb-1c71988fcde4"
 UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
+[compat]
+Arpack = "0.5"
+
 [extras]
 JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
