@@ -19,7 +19,6 @@ using StaticArrays
 using Statistics: mean
 using TetGen
 using Triangle: constrained_triangulation
-using UnicodePlots
 using WriteVTK
 
 export TimeProfile,
