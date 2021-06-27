@@ -30,6 +30,7 @@ WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
 Arpack = "0.5"
+GLPK = "0.14"
 Parameters = "0.12"
 Plots = "1"
 Polyhedra = "0.6"
