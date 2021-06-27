@@ -36,6 +36,10 @@ end
 ##
 btpde = @time solve_btpde(model, experiment)
 
+## Use manual time stepping scheme (theta rule)
+if !isnothing(experiment.btpde_midpoint)
+    btpde = @time solve_btpde_midpoint(model, experiment)
+end
 
 ## Solve BTPDE
 if !isnothing(experiment.btpde)

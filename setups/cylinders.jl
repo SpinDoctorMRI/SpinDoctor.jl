@@ -36,12 +36,8 @@ experiment = Experiment(
         values = [2000.0],
         values_type = "b",
     ),
-    btpde = (
-        odesolver = Rodas5(autodiff = :false),
-        reltol = 1e-4,
-        abstol = 1e-6,
-        nsave = 1,
-    ),
+    btpde = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6, nsave = 1),
+    btpde_midpoint = (θ = 0.5, timestep = 5),
     mf = (length_scale = 3, neig_max = 400, ninterval = 500),
 )
 

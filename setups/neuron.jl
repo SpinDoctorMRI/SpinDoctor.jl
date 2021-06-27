@@ -62,12 +62,8 @@ experiment = Experiment(
         values = [1000.0],
         values_type = "b",
     ),
-    btpde = (
-        odesolver = Rodas5(autodiff = :false),
-        reltol = 1e-4,
-        abstol = 1e-6,
-        nsave = 200,
-    ),
+    btpde = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6, nsave = 1),
+    btpde_midpoint = (θ = 0.5, timestep = 5),
     mf = (length_scale = 3, neig_max = 400, ninterval = 500),
 )
 
@@ -80,19 +76,14 @@ experiment = Experiment(
 # QBDF()
 # QBDF1()
 # QBDF2()
-# ROS3P()
-# Rosenbrock23(autodiff = :false)
-# ROS34PW1a()
-# ROS34PW3()
-# Rodas4(autodiff = :false)
-# Rodas4P(autodiff = :false)
-# Rodas5(autodiff = :false)
-# Kvaerno3()
-# KenCarp4()
+# ROS3P(autodiff = false)
+# Rosenbrock23(autodiff = false)
+# ROS34PW1a(autodiff = false)
+# ROS34PW3(autodiff = false)
+# Rodas4(autodiff = false)
+# Rodas4P(autodiff = false)
+# Rodas5(autodiff = false)
 # Cash4()
-# Tsit5()
-# Vern7()
-# VCABM()
-# BS3()
-# DP5()
-# DP8()
+
+# Fixed time step
+# MEBDF2()

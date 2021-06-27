@@ -50,6 +50,7 @@ export savefield_time
 export save_btpde_results
 export solve_analytical
 export solve_btpde
+export solve_btpde_midpoint
 export solve_mf
 export fit_adc
 export Trapezoid
@@ -111,6 +112,7 @@ include("analytical/find_alpha.jl")
 
 # Solvers
 include("solve_btpde.jl")
+include("solve_btpde_midpoint.jl")
 include("solve_mf.jl")
 include("solve_analytical.jl")
 
