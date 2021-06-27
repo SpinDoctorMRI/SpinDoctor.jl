@@ -1,5 +1,10 @@
 # SpinDoctor
 
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://agdestein.github.io/SpinDoctor.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://agdestein.github.io/SpinDoctor.jl/dev)
+[![Build Status](https://github.com/agdestein/SpinDoctor.jl/workflows/CI/badge.svg)](https://github.com/agdestein/SpinDoctor.jl/actions)
+[![Coverage](https://codecov.io/gh/agdestein/SpinDoctor.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/agdestein/SpinDoctor.jl)
+
 This is a Julia implementation of the SpinDoctor toolbox. The original MATLAB toolbox can be found at https://github.com/jingrebeccali/SpinDoctor.
 
 SpinDoctor is a software package that performs numerical simulations of diffusion magnetic resonance imaging (dMRI) for prototyping purposes.
@@ -42,14 +47,14 @@ In addition, a variety of neuron meshes is available, whose surface geometries w
 
 ![Spindle](misc/spindle.gif)
 
-The above graphic visualizes the magnetization as a z-displacement for the spindle neuron geometry `03b_spindle4aACC` (extracted from NeuroMorpho). The gradient is a PGSE sequence in the x-direction. The magnetization was computed for 200 time steps, and the exported vtk sequence was visualized using ![Paraview](https://www.paraview.org).
+The above graphic visualizes the magnetization as a z-displacement for the spindle neuron geometry `03b_spindle4aACC` (extracted from NeuroMorpho). The gradient is a PGSE sequence in the x-direction. The magnetization was computed for 200 time steps, and the exported vtk sequence was visualized using [Paraview](https://www.paraview.org).
 
  
 ## Getting started
 
 1) The base folder contains a commented general purpose driver `driver.jl`.
 2) The input files for the drivers are found in the folder `setups`, and define the structures needed for the simulations.
-3) Multiple neuron meshes are found in the folder `mesh_files`. These can be loaded in the file `setups/neuron.m`.
+3) Multiple neuron meshes are found in the folder `mesh_files`. These can be loaded in the file `setups/neuron.jl`.
 4) The user guide is found [here](https://github.com/jingrebeccali/SpinDoctor/blob/master/user_guide.pdf).
 
 
