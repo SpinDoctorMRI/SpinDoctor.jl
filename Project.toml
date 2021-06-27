@@ -30,6 +30,10 @@ WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
 UnicodePlots = "1"
+Arpack = "0.5"
+Polyhedra = "0.6"
+QuadGK = "2"
+TetGen = "1"
 
 [extras]
 JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
