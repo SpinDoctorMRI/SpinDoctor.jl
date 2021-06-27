@@ -42,6 +42,7 @@ StaticArrays = "1"
 TetGen = "1"
 Triangle = "0.3"
 UnicodePlots = "1"
+WriteVTK = "1"
 
 [extras]
 JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
