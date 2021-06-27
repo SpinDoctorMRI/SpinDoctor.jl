@@ -33,6 +33,7 @@ UnicodePlots = "1"
 Arpack = "0.5"
 Polyhedra = "0.6"
 QuadGK = "2"
+Roots = "1"
 TetGen = "1"
 
 [extras]
