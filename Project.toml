@@ -35,6 +35,7 @@ Polyhedra = "0.6"
 QHull = "0.2"
 QuadGK = "2"
 Roots = "1"
+StaticArrays = "1"
 TetGen = "1"
 
 [extras]
