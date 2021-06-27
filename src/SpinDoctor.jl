@@ -36,6 +36,10 @@ export TimeProfile,
     echotime
 export Setup, CylinderSetup, SphereSetup, NeuronSetup, Experiment
 export get_coefficients
+export create_cells
+export create_surfaces_cylinder
+export create_surfaces_sphere
+export create_surfaces_neuron
 export create_geometry
 export create_model
 export split_mesh
