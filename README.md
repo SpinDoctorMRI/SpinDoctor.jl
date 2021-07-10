@@ -3,7 +3,7 @@
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://agdestein.github.io/SpinDoctor.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://agdestein.github.io/SpinDoctor.jl/dev)
 [![Build Status](https://github.com/agdestein/SpinDoctor.jl/workflows/CI/badge.svg)](https://github.com/agdestein/SpinDoctor.jl/actions)
-[![Coverage](https://codecov.io/gh/agdestein/SpinDoctor.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/agdestein/SpinDoctor.jl)
+[![Coverage](https://codecov.io/gh/agdestein/SpinDoctor.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/agdestein/SpinDoctor.jl)
 
 This is a Julia implementation of the SpinDoctor toolbox. The original MATLAB toolbox can be found at https://github.com/jingrebeccali/SpinDoctor.
 
