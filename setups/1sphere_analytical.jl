@@ -42,4 +42,5 @@ experiment = Experiment(
     mf = (length_scale = 3, neig_max = 400, ninterval = 500),
     analytical = (length_scale = 1, eigstep = 1e-8),
     hadc = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6),
+    karger = (odesolver = MagnusGL6(), timestep = 5),
 )

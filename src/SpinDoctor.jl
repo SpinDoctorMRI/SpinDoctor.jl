@@ -55,11 +55,12 @@ export solve_btpde
 export solve_btpde_midpoint
 export solve_hadc
 export solve_mf
+export solve_karger
 export fit_adc
 export fit_tensors
 
 # Rexport default ODE solver
-export QNDF
+export QNDF, MagnusGL6
 
 # Setups
 include("datatypes/sequences.jl")
@@ -123,6 +124,7 @@ include("solve_btpde_midpoint.jl")
 include("solve_hadc.jl")
 include("solve_mf.jl")
 include("solve_analytical.jl")
+include("solve_karger.jl")
 
 # Postprocessing
 include("fit_adc.jl")
