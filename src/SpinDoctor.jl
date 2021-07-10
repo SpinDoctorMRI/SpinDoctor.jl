@@ -62,7 +62,7 @@ export fit_tensors
 # Rexport default ODE solver
 export QNDF, MagnusGL6
 
-# Setups
+# Datatypes
 include("datatypes/sequences.jl")
 include("datatypes/experiment.jl")
 include("datatypes/femesh.jl")
@@ -70,7 +70,7 @@ include("datatypes/gradient.jl")
 include("datatypes/model.jl")
 include("datatypes/create_model.jl")
 include("datatypes/setup.jl")
-include("get_coefficients.jl")
+include("datatypes/get_coefficients.jl")
 
 # Geometry
 include("geometry/call_tetgen.jl")

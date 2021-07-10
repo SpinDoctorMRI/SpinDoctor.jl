@@ -3,7 +3,7 @@ using LinearAlgebra
 using Test
 
 
-# Setups
+# Datatypes
 @time @testset "Setups" begin
     include("datatypes/sequences.jl")
     include("datatypes/experiment.jl")
@@ -12,7 +12,7 @@ using Test
     include("datatypes/model.jl")
     include("datatypes/create_model.jl")
     include("datatypes/setup.jl")
-    include("get_coefficients.jl")
+    include("datatypes/get_coefficients.jl")
 end
 
 # Geometry
