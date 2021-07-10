@@ -1,5 +1,5 @@
 """
-    M, S_cmpts, S_total = solve_mf(mesh, setup, lap_eig)
+    solve_mf(model, lap_eig, experiment)
 
 Solve for magnetization using Matrix Formalism.
 """

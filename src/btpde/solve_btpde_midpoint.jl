@@ -100,7 +100,7 @@ function solve_btpde_midpoint(model::Model, experiment::Experiment)
         @printf "  Amplitude %d of %d: q = %g, b = %g\n" iamp namplitude q b
 
         # Crank-Nicolson time stepping
-        t = 0
+        t = 0.0
         y = copy(ρ)
         Ey = copy(y)
         for i = 1:length(ivals)-1

@@ -14,12 +14,11 @@ function solve_hadc(model, experiment)
     @unpack odesolver, reltol, abstol = experiment.hadc
 
     # Deduce sizes
-    ncompartment = length(ρ)
+    ncompartment, nboundary = size(mesh.facets)
     npoint_cmpts = size.(mesh.points, 2)
     inds_cmpts = cumsum([0; npoint_cmpts])
     ndirection = size(directions, 2)
     nsequence = length(sequences)
-    nboundary = size(mesh.facets, 2)
 
     # Number of points in each compartment
     npoint_cmpts = size.(mesh.points, 2)

@@ -29,7 +29,7 @@ function solve_btpde(model::Model, experiment::Experiment)
         # Finite elements
         points = mesh.points[icmpt]
         elements = mesh.elements[icmpt]
-        volumes, _ = get_mesh_volumes(points, elements)
+        volumes, = get_mesh_volumes(points, elements)
 
         # Assemble mass, stiffness and flux matrices
         push!(M_cmpts, assemble_mass_matrix(elements', volumes))
@@ -173,7 +173,7 @@ function solve_btpde(model::Model, experiment::Experiment)
         ξ = hcat(sol.u...)
 
         if nsave == 1
-            time[iamp, iseq, idir] =  time[iamp, iseq, idir][[end]]
+            time[iamp, iseq, idir] = time[iamp, iseq, idir][[end]]
             ξ = ξ[:, [end]]
         end
 
