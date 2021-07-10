@@ -1,4 +1,4 @@
-@time @testset "Create surface triangulation" begin
+@testset "create_surfaces_cylinder.jl" begin
     # Test create cylinders
     setup = CylinderSetup(
         name = "test",

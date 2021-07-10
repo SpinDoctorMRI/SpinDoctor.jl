@@ -1,4 +1,4 @@
-@testset "Create cells" begin
+@testset "create_cells.jl" begin
     # Test create cylinders
     cylsetup = CylinderSetup(
         name = "test",
