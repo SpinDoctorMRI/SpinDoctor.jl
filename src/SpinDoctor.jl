@@ -5,12 +5,11 @@ using Arpack: eigs
 using Expokit: expmv!
 using GLPK: Optimizer
 using LinearAlgebra
+using MiniQhull
 using OrdinaryDiffEq
 using Parameters
-using Polyhedra: DefaultLibrary, polyhedron, removevredundancy!, vrep # GenericLinearAlgebra problem
 using Polynomials: fit
 using Printf
-using QHull: chull # GenericLinearAlgebra problem
 using QuadGK
 using Roots: find_zeros
 using SparseArrays
@@ -72,6 +71,7 @@ include("get_coefficients.jl")
 
 # Geometry
 include("geometry/call_tetgen.jl")
+include("geometry/convexhull.jl")
 include("geometry/create_cells.jl")
 include("geometry/create_directions.jl")
 include("geometry/create_fibonacci_sphere.jl")

@@ -1,5 +1,5 @@
 setup = CylinderSetup(
-    name = "cylinders/3axons_flat",
+    name = "cylinders/somecylinders",
     ncell = 3,
     rmin = 2.0,
     rmax = 6.0,

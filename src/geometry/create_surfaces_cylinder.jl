@@ -86,12 +86,8 @@ function create_surfaces_cylinder(cells, setup::Setup)
             ]
         elseif ecs_shape == "convex_hull"
             # Extract points defining convex hull of ECS
-            lib = DefaultLibrary{Float64}(Optimizer)
-            polyhed = polyhedron(vrep(points_ecs'), lib)
-            removevredundancy!(polyhed)
-            points_ecs = polyhed.vrep.V'
+            edges_ecs, points_ecs = convexhull(points_ecs)
             npoint_ecs = size(points_ecs, 2)
-            edges_ecs = [(1:npoint_ecs)'; (2:npoint_ecs)' 1]
         elseif ecs_shape == "tight_wrap"
             error("unimplemented")
             # ashape = alphashape(points_ecs)

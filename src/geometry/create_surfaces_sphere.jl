@@ -19,7 +19,7 @@ function create_surfaces_sphere(cells, setup::Setup)
         points_in = [
             centers[:, i] .+ in_ratio * radii[i] * create_fibonacci_sphere(npoint_in[i]) for i = 1:ncell
         ]
-        facets_in = [hcat(chull(collect(points_in[i]')).simplices...) for i = 1:ncell]
+        facets_in = [convexhull(points_in[i])[1] for i = 1:ncell]
         regions_in = centers
         nfacet_in = size.(facets_in, 2)
     else
@@ -33,7 +33,7 @@ function create_surfaces_sphere(cells, setup::Setup)
     npoint_out = create_npoint.(radii)
     points_out =
         [centers[:, i] .+ radii[i] * create_fibonacci_sphere(npoint_out[i]) for i = 1:ncell]
-    facets_out = [hcat(chull(collect(points_out[i]')).simplices...) for i = 1:ncell]
+    facets_out = [convexhull(points_out[i])[1] for i = 1:ncell]
     regions_out = @. centers + (1 + in_ratio) / 2 * radii * [1; 0; 0]
     nfacet_out = size.(facets_out, 2)
 
@@ -70,14 +70,8 @@ function create_surfaces_sphere(cells, setup::Setup)
             ]
             points_ecs = hcat(points_ecs...)
 
-            ecs_hull = chull(collect(points_ecs'))
-            points_ecs = points_ecs[:, ecs_hull.vertices]
+            facets_ecs, points_ecs = convexhull(points_ecs)
             npoint_ecs = size(points_ecs, 2)
-            facets_ecs = hcat(ecs_hull.simplices...)
-            [
-                facets_ecs[i, j] = findfirst(facets_ecs[i, j] .== ecs_hull.vertices) for
-                j = 1:length(ecs_hull.simplices), i = 1:3
-            ]
             nfacet_ecs = size(facets_ecs, 2)
             regions_ecs = centers[:, 1] + (1 + ecs_ratio / 2) * radii[1] * [1; 0; 0]
         end

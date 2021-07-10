@@ -7,7 +7,7 @@ setup = SphereSetup(
     dmax = 0.3,
     include_in = true,
     in_ratio = 0.7,
-    ecs_shape = "box",
+    ecs_shape = "convex_hull",
     ecs_ratio = 0.3,
     # refinement = 0.5,
     D_in = 0.002 * I(3),
@@ -34,5 +34,6 @@ experiment = Experiment(
         values_type = "b",
     ),
     btpde = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6, nsave = 1),
+    btpde_midpoint = (θ = 0.5, timestep = 5.0),
     mf = (length_scale = 3, neig_max = 400, ninterval = 500),
 )
