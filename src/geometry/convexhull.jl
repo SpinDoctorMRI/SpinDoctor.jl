@@ -10,7 +10,7 @@ function convexhull(points)
     dim, npoint = size(points)
 
     # Compute Delaunay triangulation
-    D = delaunay(points)
+    D = Int.(delaunay(points))
 
     # Sort each column of d
     for i = 1:size(D, 2)
