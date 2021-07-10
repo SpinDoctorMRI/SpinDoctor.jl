@@ -67,23 +67,3 @@ experiment = Experiment(
     mf = (length_scale = 3, neig_max = 400, ninterval = 500),
 )
 
-# ImplicitEuler()
-# Trapezoid()
-# ABDF2()
-# QNDF()
-# QNDF1()
-# QNDF2()
-# QBDF()
-# QBDF1()
-# QBDF2()
-# ROS3P(autodiff = false)
-# Rosenbrock23(autodiff = false)
-# ROS34PW1a(autodiff = false)
-# ROS34PW3(autodiff = false)
-# Rodas4(autodiff = false)
-# Rodas4P(autodiff = false)
-# Rodas5(autodiff = false)
-# Cash4()
-
-# Fixed time step
-# MEBDF2()

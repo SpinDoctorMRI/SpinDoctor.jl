@@ -5,10 +5,10 @@ version = "0.1.0"
 
 [deps]
 Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
-DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Expokit = "a1e7a1ef-7a5d-5822-a38c-be74e1bb89f4"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 Polyhedra = "67491407-f73d-577b-9b50-8179a7c68029"
 Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
@@ -26,9 +26,9 @@ WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
 Arpack = "0.5"
-DifferentialEquations = "6"
 Expokit = "0.2"
 GLPK = "0.14"
+OrdinaryDiffEq = "5"
 Parameters = "0.12"
 Polyhedra = "0.6"
 Polynomials = "2"

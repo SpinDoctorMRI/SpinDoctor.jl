@@ -2,10 +2,10 @@
 module SpinDoctor
 
 using Arpack: eigs
-using DifferentialEquations
 using Expokit: expmv!
 using GLPK: Optimizer
 using LinearAlgebra
+using OrdinaryDiffEq
 using Parameters
 using Polyhedra: DefaultLibrary, polyhedron, removevredundancy!, vrep # GenericLinearAlgebra problem
 using Polynomials: fit
@@ -56,8 +56,8 @@ export solve_btpde
 export solve_btpde_midpoint
 export solve_mf
 export fit_adc
-export Trapezoid
-export ImplicitEuler
+
+# Rexport default ODE solver
 export QNDF
 
 # Setups

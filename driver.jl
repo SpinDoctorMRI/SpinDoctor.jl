@@ -1,5 +1,4 @@
 using SpinDoctor
-using DifferentialEquations
 using LinearAlgebra
 
 

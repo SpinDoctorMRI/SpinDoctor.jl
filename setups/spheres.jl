@@ -33,37 +33,6 @@ experiment = Experiment(
         values = [2000.0],
         values_type = "b",
     ),
-    btpde = (
-        odesolver = Rodas5(autodiff = :false),
-        reltol = 1e-4,
-        abstol = 1e-6,
-        nsave = 1,
-    ),
+    btpde = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6, nsave = 1),
     mf = (length_scale = 3, neig_max = 400, ninterval = 500),
 )
-
-# ImplicitEuler()
-# Trapezoid()
-# ABDF2()
-# QNDF()
-# QNDF1()
-# QNDF2()
-# QBDF()
-# QBDF1()
-# QBDF2()
-# ROS3P()
-# Rosenbrock23(autodiff = :false)
-# ROS34PW1a()
-# ROS34PW3()
-# Rodas4(autodiff = :false)
-# Rodas4P(autodiff = :false)
-# Rodas5(autodiff = :false)
-# Kvaerno3()
-# KenCarp4()
-# Cash4()
-# Tsit5()
-# Vern7()
-# VCABM()
-# BS3()
-# DP5()
-# DP8()
