@@ -102,9 +102,10 @@ include("matrix_assembly/assemble_flux_matrices.jl")
 include("matrix_assembly/assemble_flux_matrix.jl")
 include("matrix_assembly/couple_flux_matrix.jl")
 
-# Eigendecomposition
-include("eig2length.jl")
-include("compute_laplace_eig.jl")
+# Matrix formalism
+include("matrix_formalism/eig2length.jl")
+include("matrix_formalism/compute_laplace_eig.jl")
+include("matrix_formalism/solve_mf.jl")
 
 # Analytical
 include("analytical/alpha_func.jl")
@@ -117,18 +118,19 @@ include("analytical/compute_JY.jl")
 include("analytical/compute_nu.jl")
 include("analytical/compute_v.jl")
 include("analytical/find_alpha.jl")
+include("analytical/solve_analytical.jl")
 
-# Solvers
-include("solve_btpde.jl")
-include("solve_btpde_midpoint.jl")
-include("solve_hadc.jl")
-include("solve_mf.jl")
-include("solve_analytical.jl")
-include("solve_karger.jl")
+# BTPDE
+include("btpde/solve_btpde.jl")
+include("btpde/solve_btpde_midpoint.jl")
+include("btpde/solve_karger.jl")
+
+# ADC
+include("adc/solve_hadc.jl")
 
 # Postprocessing
-include("fit_adc.jl")
-include("fit_tensors.jl")
-include("savefield.jl")
+include("postprocess/fit_adc.jl")
+include("postprocess/fit_tensors.jl")
+include("postprocess/savefield.jl")
 
 end
