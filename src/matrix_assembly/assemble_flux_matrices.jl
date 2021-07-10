@@ -1,7 +1,7 @@
 """
     assemble_flux_matrices(points, facets)
 
-Assemble flux matrix (Q) for each compartment and boundary.
+Assemble flux matrix (`Q`) for each compartment and boundary.
 """
 function assemble_flux_matrices(points, facets)
 

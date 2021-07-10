@@ -62,7 +62,7 @@ end
 """
     shapeder(points)
 
-Derivative of shape functions with respect to reference coordinates (ξ1, ξ2, ξ3).
+Derivative of shape functions with respect to reference coordinates (`ξ₁`, `ξ₂`, `ξ₃`).
 """
 function shapeder(points)
     npoint = size(points, 2)

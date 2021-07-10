@@ -14,7 +14,7 @@ abstract type TimeProfile end
     f = PGSE(δ, Δ)
 
 Pulsed Gradient Spin Echo sequence with pulse duration `δ` and time between
-pulses `Δ - δ`.
+pulses `Δ-δ`.
 """
 struct PGSE <: TimeProfile
     δ::Float64
@@ -25,7 +25,7 @@ end
     f = CosOGSE(δ, Δ, nperiod)
 
 Oscillating Gradient Spin Echo sequence with two cos-pulses of duration `δ`
-separated by a pause of duration `Δ - δ` for `nperiod` periods per pulse.
+separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
 """
 struct CosOGSE <: TimeProfile
     δ::Float64
@@ -37,7 +37,7 @@ end
     f = SinOGSE(δ, Δ, nperiod)
 
 Oscillating Gradient Spin Echo sequence with two sin-pulses of duration `δ`
-separated by a pause of duration `Δ - δ` for `nperiod` periods per pulse.
+separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
 """
 struct SinOGSE <: TimeProfile
     δ::Float64
@@ -49,7 +49,7 @@ end
     f = DoublePGSE(δ, Δ)
 
 Double Pulsed Gradient Spin Echo sequence with four pulses of duration `δ`,
-separated by pauses of duration `Δ - δ`, `0`, and `Δ - δ` repsectively.
+separated by pauses of duration `Δ-δ`, `0`, and `Δ-δ` repsectively.
 """
 struct DoublePGSE <: TimeProfile
     δ::Float64
@@ -91,8 +91,7 @@ end
 
 
 """
-    integral(f, t)
-    integral(f) -> integral(f, echotime(f))
+    integral(f, t = echotime(f))
 
 Integral of time profile `f` between `0` and `t`. Unless specified, the echotime
 is used as the upper integral limit.
@@ -134,8 +133,8 @@ end
     b = bvalue_no_q(f)
 
 Compute the time profile contribution to the b-value. To obtain the b-value,
-multiply the result by q^2 = (γg)^2, where γ is the gyromagnetic ratio of the
-water proton, g is the gradient amplitude, and b(q, f) = q^2 * bvalue_no_q(f).
+multiply the result by `q^2 = (γg)^2`, where `γ` is the gyromagnetic ratio of the
+water proton, `g` is the gradient amplitude, and `b = q^2 * bvalue_no_q(f)`.
 """
 function bvalue_no_q(f::TimeProfile)
     quadgk(s -> integral(f, s)^2, 0, echotime(f))

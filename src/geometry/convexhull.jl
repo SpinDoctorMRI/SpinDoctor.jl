@@ -1,7 +1,8 @@
 """
-    convexhull(points)
+    elements, points = convexhull(points)
 
 Compute the convex hull of a set of points `points` (of size `dim * npoint`).
+Return a matrix of boundary elements `elements` (of size`dim * nelement`) and a restriction of the original points to the boundary (size `dim * npoint_keep`).
 """
 function convexhull(points)
 
@@ -95,7 +96,7 @@ end
 
 # a = rand(2, 100)
 # e, p = convexhull(a)
-# ##
+
 # pl = scatter(a[1, :], a[2, :])
 
 # scatter!(pl, p[1, :], p[2, :], color = :red)
