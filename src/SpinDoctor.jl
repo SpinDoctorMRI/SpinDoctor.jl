@@ -56,6 +56,7 @@ export solve_btpde_midpoint
 export solve_hadc
 export solve_mf
 export fit_adc
+export fit_tensors
 
 # Rexport default ODE solver
 export QNDF
@@ -125,6 +126,7 @@ include("solve_analytical.jl")
 
 # Postprocessing
 include("fit_adc.jl")
+include("fit_tensors.jl")
 include("savefield.jl")
 
 end
