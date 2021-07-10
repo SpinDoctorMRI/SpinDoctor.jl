@@ -84,12 +84,12 @@ function couple_flux_matrix(model, Q_blocks, symmetrical = false)
             inds₂ = get_inds(cmpt₂)
 
             # Add interface contribution to global flux matrix for compartment 1
-            Q[inds₁, inds₁] += +κ₁ * Q₁₁
-            Q[inds₁, inds₂] += -κ₂ * Q₁₂
+            Q[inds₁, inds₁] += κ₁ * Q₁₁
+            Q[inds₁, inds₂] -= κ₂ * Q₁₂
 
             # Add interface contribution to global flux matrix for compartment 2
-            Q[inds₂, inds₁] += -κ₁ * Q₂₁
-            Q[inds₂, inds₂] += +κ₂ * Q₂₂
+            Q[inds₂, inds₁] -= κ₁ * Q₂₁
+            Q[inds₂, inds₂] += κ₂ * Q₂₂
         else
             error("Each interface only touches 1 or 2 compartments")
         end
