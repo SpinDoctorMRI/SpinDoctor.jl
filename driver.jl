@@ -92,6 +92,15 @@ if !isnothing(experiment.hadc)
     hadc = solve_hadc(model, experiment)
 end
 
+## Solve Karger model
+if !isnothing(experiment.karger)
+    # Fit difftensors (assuming HADC has been solved)
+    difftensors = fit_tensors(experiment.gradient.directions, hadc.adc)
+
+    # Solv Karger
+    karger = solve_karger(model, experiment, difftensors)
+end
+
 ## Solve analytical model
 if !isnothing(experiment.analytical)
     analytical_signal = solve_analytical(setup, experiment, volumes)
