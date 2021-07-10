@@ -53,6 +53,7 @@ export save_btpde_results
 export solve_analytical
 export solve_btpde
 export solve_btpde_midpoint
+export solve_hadc
 export solve_mf
 export fit_adc
 
@@ -81,6 +82,8 @@ include("geometry/create_surfaces_neuron.jl")
 include("geometry/create_surfaces_sphere.jl")
 include("geometry/deform_domain.jl")
 include("geometry/get_volumes.jl")
+include("geometry/get_mesh_surface.jl")
+include("geometry/get_mesh_surfacenormals.jl")
 include("geometry/gmesh2fem.jl")
 include("geometry/read_cells.jl")
 include("geometry/read_surfaces.jl")
@@ -116,6 +119,7 @@ include("analytical/find_alpha.jl")
 # Solvers
 include("solve_btpde.jl")
 include("solve_btpde_midpoint.jl")
+include("solve_hadc.jl")
 include("solve_mf.jl")
 include("solve_analytical.jl")
 

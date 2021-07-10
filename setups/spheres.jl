@@ -36,4 +36,5 @@ experiment = Experiment(
     btpde = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6, nsave = 1),
     btpde_midpoint = (θ = 0.5, timestep = 5.0),
     mf = (length_scale = 3, neig_max = 400, ninterval = 500),
+    hadc = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6),
 )

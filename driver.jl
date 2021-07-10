@@ -87,6 +87,10 @@ if !isnothing(experiment.mf)
     savefield(model.mesh, ϕ_cmpts, "$output_dir/laplace_eig", "Laplace eigenfunction")
 end
 
+## Solve HADC
+if !isnothing(experiment.hadc)
+    hadc = solve_hadc(model, experiment)
+end
 
 ## Solve analytical model
 if !isnothing(experiment.analytical)
