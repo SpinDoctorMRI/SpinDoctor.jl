@@ -1,4 +1,5 @@
 using SpinDoctor
+using LinearAlgebra
 using Test
 
 
