@@ -8,7 +8,7 @@ and `bvalue_no_q` methods, the first providing a default value and the latter
 two computing numerical approximation to the integral quantities if not
 overwritten.
 """
-abstract type TimeProfile <: Function end
+abstract type TimeProfile{T<:Real} <: Function end
 
 """
     f = PGSE(δ, Δ)
@@ -16,10 +16,18 @@ abstract type TimeProfile <: Function end
 Pulsed Gradient Spin Echo sequence with pulse duration `δ` and time between
 pulses `Δ-δ`.
 """
-struct PGSE <: TimeProfile
-    δ::Float64
-    Δ::Float64
+struct PGSE{T} <: TimeProfile{T}
+    δ::T
+    Δ::T
+    function PGSE(δ::T, Δ::T) where {T}
+        @assert δ ≤ Δ
+        new{T}(δ, Δ)
+    end
 end
+PGSE(δ::Int, Δ::Int) = PGSE(float(δ), float(Δ))
+PGSE(δ::Int, Δ) = PGSE(promote(δ, Δ)...)
+PGSE(δ, Δ::Int) = PGSE(promote(δ, Δ)...)
+
 
 """
     f = CosOGSE(δ, Δ, nperiod)
@@ -27,10 +35,15 @@ end
 Oscillating Gradient Spin Echo sequence with two cos-pulses of duration `δ`
 separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
 """
-struct CosOGSE <: TimeProfile
-    δ::Float64
-    Δ::Float64
+struct CosOGSE{T} <: TimeProfile{T}
+    δ::T
+    Δ::T
     nperiod::Int
+    function CosOGSE(δ::T, Δ::T, n) where {T}
+        @assert δ ≤ Δ
+        @assert n > zero(n)
+        new{T}(δ, Δ, n)
+    end
 end
 
 """
@@ -39,10 +52,15 @@ end
 Oscillating Gradient Spin Echo sequence with two sin-pulses of duration `δ`
 separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
 """
-struct SinOGSE <: TimeProfile
-    δ::Float64
-    Δ::Float64
+struct SinOGSE{T} <: TimeProfile{T}
+    δ::T
+    Δ::T
     nperiod::Int
+    function SinOGSE(δ::T, Δ::T, n) where {T}
+        @assert δ ≤ Δ
+        @assert n > zero(n)
+        new{T}(δ, Δ, n)
+    end
 end
 
 """
@@ -51,9 +69,13 @@ end
 Double Pulsed Gradient Spin Echo sequence with four pulses of duration `δ`,
 separated by pauses of duration `Δ-δ`, `0`, and `Δ-δ` repsectively.
 """
-struct DoublePGSE <: TimeProfile
-    δ::Float64
-    Δ::Float64
+struct DoublePGSE{T} <: TimeProfile{T}
+    δ::T
+    Δ::T
+    function DoublePGSE(δ::T, Δ::T) where {T}
+        @assert δ ≤ Δ
+        new{T}(δ, Δ)
+    end
 end
 
 
@@ -100,7 +122,7 @@ For the `PGSE`, `SinOGSE`, `CosOGSE` and `DoublePGSE` sequences, analytical
 expressions are available. Otherwise a numerical integral is computed.
 """
 function integral(f::TimeProfile, t = echotime(f))
-    quadgk(f, 0, t)
+    quadgk(f, zero(t), t)
 end
 
 function integral(f::PGSE, t = echotime(f))
@@ -136,8 +158,8 @@ Compute the time profile contribution to the b-value. To obtain the b-value,
 multiply the result by `q^2 = (γg)^2`, where `γ` is the gyromagnetic ratio of the
 water proton, `g` is the gradient amplitude, and `b = q^2 * bvalue_no_q(f)`.
 """
-function bvalue_no_q(f::TimeProfile)
-    quadgk(s -> integral(f, s)^2, 0, echotime(f))
+function bvalue_no_q(f::TimeProfile{T}) where {T}
+    quadgk(s -> integral(f, s)^2, zero(T), echotime(f))
 end
 
 function bvalue_no_q(f::PGSE)
@@ -168,20 +190,20 @@ end
 
 function intervals(f::Union{PGSE,CosOGSE,SinOGSE})
     if f.δ < f.Δ
-        i = [0, f.δ, f.Δ, f.Δ + f.δ]
+        i = [zero(f.δ), f.δ, f.Δ, f.Δ + f.δ]
     else
         # No pause between pulses
-        i = [0, f.δ, 2f.δ]
+        i = [zero(f.δ), f.δ, 2f.δ]
     end
     i
 end
 
 function intervals(f::DoublePGSE)
     if f.δ < f.Δ
-        i = [0, f.δ, f.Δ, f.Δ + f.δ, f.Δ + 2f.δ, 2f.Δ + f.δ, 2f.Δ + 2f.δ]
+        i = [zero(f.δ), f.δ, f.Δ, f.Δ + f.δ, f.Δ + 2f.δ, 2f.Δ + f.δ, 2f.Δ + 2f.δ]
     else
         # No pause between pulses
-        i = [0, f.δ, 2f.δ, 3f.δ, 4f.δ]
+        i = [zero(f.δ), f.δ, 2f.δ, 3f.δ, 4f.δ]
     end
     i
 end
