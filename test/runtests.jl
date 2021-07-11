@@ -1,5 +1,6 @@
 using SpinDoctor
 using LinearAlgebra
+using QuadGK
 using Test
 
 
