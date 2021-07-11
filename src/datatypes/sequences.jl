@@ -8,7 +8,7 @@ and `bvalue_no_q` methods, the first providing a default value and the latter
 two computing numerical approximation to the integral quantities if not
 overwritten.
 """
-abstract type TimeProfile end
+abstract type TimeProfile <: Function end
 
 """
     f = PGSE(δ, Δ)
