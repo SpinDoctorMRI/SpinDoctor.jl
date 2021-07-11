@@ -5,7 +5,7 @@ using Test
 
 
 # Datatypes
-@time @testset "Setups" begin
+@testset "Setups" begin
     include("datatypes/sequences.jl")
     include("datatypes/experiment.jl")
     include("datatypes/femesh.jl")
@@ -17,7 +17,7 @@ using Test
 end
 
 # Geometry
-@time @testset "Geometry" begin
+@testset "Geometry" begin
     include("geometry/call_tetgen.jl")
     include("geometry/convexhull.jl")
     include("geometry/create_cells.jl")
@@ -42,7 +42,7 @@ end
 end
 
 # Matrix assembly
-@time @testset "Matrix assembly" begin
+@testset "Matrix assembly" begin
     include("matrix_assembly/assemble_mass_matrix.jl")
     include("matrix_assembly/assemble_stiffness_matrix.jl")
     include("matrix_assembly/assemble_flux_matrices.jl")
@@ -51,14 +51,14 @@ end
 end
 
 # Matrix formalism
-@time @testset "Matrix formalism" begin
+@testset "Matrix formalism" begin
     include("matrix_formalism/eig2length.jl")
     include("matrix_formalism/compute_laplace_eig.jl")
     include("matrix_formalism/solve_mf.jl")
 end
 
 # Analytical
-@time @testset "Analytical" begin
+@testset "Analytical" begin
     include("analytical/alpha_func.jl")
     include("analytical/compute_bc.jl")
     include("analytical/compute_beta.jl")
@@ -73,19 +73,19 @@ end
 end
 
 # BTPDE
-@time @testset "BTPDE" begin
+@testset "BTPDE" begin
     include("btpde/solve_btpde.jl")
     include("btpde/solve_btpde_midpoint.jl")
     include("btpde/solve_karger.jl")
 end
 
 # ADC
-@time @testset "ADC" begin
+@testset "ADC" begin
     include("adc/solve_hadc.jl")
 end
 
 # Postprocessing
-@time @testset "Postprocess" begin
+@testset "Postprocess" begin
     include("postprocess/fit_adc.jl")
     include("postprocess/fit_tensors.jl")
     include("postprocess/savefield.jl")
