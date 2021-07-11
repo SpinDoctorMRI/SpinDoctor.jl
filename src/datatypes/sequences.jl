@@ -72,9 +72,11 @@ separated by pauses of duration `Δ-δ`, `0`, and `Δ-δ` repsectively.
 struct DoublePGSE{T} <: TimeProfile{T}
     δ::T
     Δ::T
-    function DoublePGSE(δ::T, Δ::T) where {T}
+    tpause::T
+    function DoublePGSE(δ::T, Δ::T, tpause::T) where {T}
         @assert δ ≤ Δ
-        new{T}(δ, Δ)
+        @assert tpause ≥ zero(tpause)
+        new{T}(δ, Δ, tpause)
     end
 end
 
@@ -94,21 +96,21 @@ function (f::PGSE)(t)
 end
 
 function (f::DoublePGSE)(t)
-    ((t < f.δ) - (f.Δ ≤ t < f.Δ + f.δ) + (f.Δ + f.δ ≤ t < 2f.Δ + f.δ) - (2f.Δ + f.δ ≤ t))
+    δ, Δ, p = f.δ, f.Δ, f.tpause
+    (
+        (zero(t) ≤ t < δ) - (Δ ≤ t < Δ + δ) + (p + Δ + δ ≤ t < p + Δ + 2δ) -
+        (p + 2Δ + δ ≤ t < p + 2Δ + 2δ)
+    )
 end
 
 function (f::CosOGSE)(t)
-    (
-        (t < f.δ) * cos(2π * f.nperiod * t / f.δ) -
-        (f.Δ ≤ t) * cos(2π * f.nperiod * (t - f.Δ) / f.δ)
-    )
+    δ, Δ, n = f.δ, f.Δ, f.nperiod
+    (t < δ) * cos(2π * nperiod * t / δ) - (Δ ≤ t) * cos(2π * nperiod * (t - Δ) / δ)
 end
 
 function (f::SinOGSE)(t)
-    (
-        (t < f.δ) * sin(2π * f.nperiod * t / f.δ) -
-        (f.Δ ≤ t) * sin(2π * f.nperiod * (t - f.Δ) / f.δ)
-    )
+    δ, Δ, n = f.δ, f.Δ, f.nperiod
+    (t < δ) * sin(2π * nperiod * t / δ) - (Δ ≤ t) * sin(2π * nperiod * (t - Δ) / δ)
 end
 
 
@@ -131,13 +133,23 @@ function integral(f::PGSE, t = echotime(f))
 end
 
 function integral(f::DoublePGSE, t = echotime(f))
-    δ, Δ = f.δ, f.Δ
-    tmid = Δ + δ
-    (
-        (t < δ) * t + (δ ≤ t < tmid) * δ - (Δ ≤ t < tmid) * (t - Δ) +
-        (tmid ≤ t < tmid + δ) * (t - tmid) +
-        (tmid + δ ≤ t) * δ - (tmid + Δ ≤ t) * (t - (tmid + Δ))
-    )
+    δ, Δ, p = f.δ, f.Δ, f.tpause
+    tmid = p + Δ + δ
+    if zero(t) ≤ t < δ
+        t
+    elseif δ ≤ t < Δ
+        δ
+    elseif Δ ≤ t < Δ + δ
+        δ - (t - Δ)
+    elseif tmid ≤ t < tmid + δ
+        t - tmid
+    elseif tmid + δ ≤ t < tmid + Δ
+        δ
+    elseif tmid + Δ ≤ t < tmid + Δ + δ
+        δ - (t - Δ - tmid)
+    else
+        zero(t)
+    end
 end
 
 function integral(f::CosOGSE, t = echotime(f))
@@ -168,7 +180,7 @@ function bvalue_no_q(f::PGSE)
 end
 
 function bvalue_no_q(f::DoublePGSE)
-    2 * f.δ^2 * (f.Δ - f.δ / 3)
+    2f.δ^2 * (f.Δ - f.δ / 3)
 end
 
 function bvalue_no_q(f::CosOGSE)
@@ -190,23 +202,28 @@ function intervals(f::TimeProfile)
 end
 
 function intervals(f::Union{PGSE,CosOGSE,SinOGSE})
-    if f.δ < f.Δ
-        i = [zero(f.δ), f.δ, f.Δ, f.Δ + f.δ]
+    δ, Δ = f.δ, f.Δ
+    if δ < Δ
+        [zero(δ), δ, Δ, Δ + δ]
     else
         # No pause between pulses
-        i = [zero(f.δ), f.δ, 2f.δ]
+        [zero(δ), δ, 2f.δ]
     end
-    i
 end
 
 function intervals(f::DoublePGSE)
-    if f.δ < f.Δ
-        i = [zero(f.δ), f.δ, f.Δ, f.Δ + f.δ, f.Δ + 2f.δ, 2f.Δ + f.δ, 2f.Δ + 2f.δ]
+    δ, Δ, p = f.δ, f.Δ, f.tpause
+    if δ < Δ
+        i = [zero(δ), δ, Δ, Δ + δ]
     else
         # No pause between pulses
-        i = [zero(f.δ), f.δ, 2f.δ, 3f.δ, 4f.δ]
+        i = [zero(δ), δ, 2f.δ, 3f.δ, 4f.δ]
     end
-    i
+    if p > zero(p)
+        [i; i .+ p .+ Δ .+ δ]
+    else
+        [i; i[2:end] .+ p .+ Δ .+ δ]
+    end
 end
 
 
