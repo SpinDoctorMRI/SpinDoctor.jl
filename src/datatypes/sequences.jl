@@ -90,7 +90,7 @@ function (f::TimeProfile)(t)
 end
 
 function (f::PGSE)(t)
-    (t < f.δ) - (f.Δ ≤ t)
+    (zero(t) ≤ t < f.δ) - (f.Δ ≤ t < f.Δ + f.δ)
 end
 
 function (f::DoublePGSE)(t)
@@ -126,7 +126,8 @@ function integral(f::TimeProfile, t = echotime(f))
 end
 
 function integral(f::PGSE, t = echotime(f))
-    ((t < f.δ) * t + (f.δ ≤ t) * f.δ - (f.Δ ≤ t) * (t - f.Δ))
+    δ, Δ = f.δ, f.Δ
+    (zero(t) ≤ t < δ) * t + (δ ≤ t < Δ + δ) * δ - (Δ ≤ t < Δ + δ) * (t - Δ)
 end
 
 function integral(f::DoublePGSE, t = echotime(f))
