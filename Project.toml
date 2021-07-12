@@ -36,7 +36,7 @@ Roots = "1"
 SpecialFunctions = "1"
 StaticArrays = "0.12, 1"
 TetGen = "1"
-# Triangle = "0.3"
+Triangle = "0.3"
 WriteVTK = "1"
 
 [extras]
