@@ -20,7 +20,7 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 TetGen = "c5d3f3f7-f850-59f6-8a2e-ffc6dc1317ea"
-Triangle = "56f361f5-126b-55db-87fb-1c71988fcde4"
+Triangulate = "f7e6ffb2-c36d-4f8f-a77e-16e897189344"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
@@ -36,7 +36,7 @@ Roots = "1"
 SpecialFunctions = "1"
 StaticArrays = "0.12, 1"
 TetGen = "1"
-Triangle = "0.3"
+Triangulate = "2"
 WriteVTK = "1"
 
 [extras]

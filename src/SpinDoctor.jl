@@ -17,7 +17,7 @@ using SpecialFunctions
 using StaticArrays
 using Statistics: mean
 using TetGen
-using Triangle: constrained_triangulation
+using Triangulate: TriangulateIO, triangulate
 using WriteVTK
 
 export TimeProfile,

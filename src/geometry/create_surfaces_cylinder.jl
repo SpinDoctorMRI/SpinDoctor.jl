@@ -113,12 +113,12 @@ function create_surfaces_cylinder(cells, setup::Setup)
     nedge = size(edges, 2)
 
     # Perform Delaynay triangulation of entire domain
-    triangles = constrained_triangulation(
-        collect(points'),
-        collect(1:npoint),
-        collect(edges'),
-        fill(true, nedge),
-    )
+    triin = TriangulateIO()
+    triin.pointlist = points
+    triin.segmentlist = edges
+    triin.segmentmarkerlist = 1:nedge
+    triout, = triangulate("pQ", triin)
+    triangles = eachcol(triout.trianglelist)
     ntriangle = length(triangles)
 
     boundary_bounds = cumsum([0 nside_in nside_out nedge_ecs], dims = 2)
