@@ -5,7 +5,7 @@ using Arpack: eigs
 using Expokit: expmv!
 using GLPK: Optimizer
 using LinearAlgebra
-using MiniQhull
+using MiniQhull: delaunay
 using OrdinaryDiffEq
 using Parameters
 using Polynomials: fit
