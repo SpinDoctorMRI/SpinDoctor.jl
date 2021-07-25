@@ -16,7 +16,7 @@ using SparseArrays
 using SpecialFunctions
 using StaticArrays
 using Statistics: mean
-using TetGen
+using TetGen: RawTetGenIO, facetlist!, tetrahedralize
 using Triangulate: TriangulateIO, triangulate
 using WriteVTK
 

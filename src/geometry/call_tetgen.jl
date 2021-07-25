@@ -8,17 +8,17 @@ function call_tetgen(surfaces, refinement = nothing)
 
     nregion = size(regions, 2)
 
-    input = TetGen.RawTetGenIO{Cdouble}()
+    input = RawTetGenIO{Cdouble}()
     input.pointlist = points
 
-    TetGen.facetlist!(input, facets)
+    facetlist!(input, facets)
 
     input.facetmarkerlist = facetmarkers
 
     input.regionlist = [
         regions
         collect(1:nregion)'
-        repeat([0.1], 1, nregion)
+        fill(0.1, 1, nregion)
     ]
 
     if isnothing(refinement)
