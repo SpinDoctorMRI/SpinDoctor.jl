@@ -3,6 +3,7 @@ module SpinDoctor
 
 using Arpack: eigs
 using Expokit: expmv!
+using GLMakie
 using GLPK: Optimizer
 using LinearAlgebra
 using MiniQhull: delaunay
@@ -58,6 +59,7 @@ export solve_mf
 export solve_karger
 export fit_adc
 export fit_tensors
+export plot_mesh
 
 # Rexport default ODE solver
 export QNDF, MagnusGL6
@@ -132,5 +134,8 @@ include("adc/solve_hadc.jl")
 include("postprocess/fit_adc.jl")
 include("postprocess/fit_tensors.jl")
 include("postprocess/savefield.jl")
+
+# Plot
+include("plot/plot_mesh.jl")
 
 end
