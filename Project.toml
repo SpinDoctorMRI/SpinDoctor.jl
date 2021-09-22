@@ -26,7 +26,7 @@ WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 [compat]
 Arpack = "0.5"
 Expokit = "0.2"
-GLPK = "0.14"
+GLPK = "0.14, 0.15"
 MiniQhull = "0.3"
 OrdinaryDiffEq = "5"
 Parameters = "0.12"
