@@ -16,8 +16,6 @@ function solve_karger(model, experiment, difftensors)
 
     # Deduce sizes
     ncompartment, nboundary = size(mesh.facets)
-    npoint_cmpts = size.(mesh.points, 2)
-    inds_cmpts = cumsum([0; npoint_cmpts])
     ndirection = size(directions, 2)
     nsequence = length(sequences)
     namplitude = length(values)
@@ -32,7 +30,6 @@ function solve_karger(model, experiment, difftensors)
     for icmpt = 1:ncompartment
         # Finite elements
         points = mesh.points[icmpt]
-        elements = mesh.elements[icmpt]
         facets = mesh.facets[icmpt, :]
 
         # Surface area

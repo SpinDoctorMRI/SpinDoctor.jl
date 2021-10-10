@@ -23,13 +23,15 @@ ndirection = size(experiment.gradient.directions, 2)
 
 qvalues, bvalues = get_values(experiment.gradient)
 
+## Assemble finite element matrices
+matrices = assemble_matrices(model)
 
 ##
-btpde = @time solve_btpde(model, experiment)
+btpde = @time solve_btpde(model, matrices, experiment)
 
 ## Use manual time stepping scheme (theta rule)
 if !isnothing(experiment.btpde_midpoint)
-    btpde = @time solve_btpde_midpoint(model, experiment)
+    btpde = @time solve_btpde_midpoint(model, matrices, experiment)
 end
 
 ## Solve BTPDE
@@ -65,9 +67,9 @@ end
 ## Solve MF
 if !isnothing(experiment.mf)
     λ_max = length2eig(experiment.mf.length_scale, D_avg)
-    lap_eig = compute_laplace_eig(model, λ_max, experiment.mf.neig_max)
+    lap_eig = compute_laplace_eig(model, matrices, λ_max, experiment.mf.neig_max)
     length_scales = eig2length.(lap_eig.values, D_avg)
-    mf = solve_mf(model, lap_eig, experiment)
+    mf = solve_mf(model, matrices, lap_eig, experiment)
 
     output_dir = "output/$(setup.name)"
     isdir(output_dir) || mkpath(output_dir)

@@ -1,5 +1,5 @@
 """
-    solve_btpde_midpoint(model, setup)
+    solve_btpde_midpoint(model, matrices, experiment)
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 This function uses a manual time stepping scheme (theta-rule), that requires a degree of
@@ -7,13 +7,14 @@ implicitness `θ` and a time step `dt`.
     `θ = 0.5`: Crank-Nicolson (second order)
     `θ = 1.0`: Implicit Euler (first order)
 """
-function solve_btpde_midpoint(model::Model, experiment::Experiment)
+function solve_btpde_midpoint(model::Model, matrices, experiment::Experiment)
 
     # Measure function evalutation time
     starttime = Base.time()
 
     # Extract input parameters
     @unpack mesh, D, T₂, ρ = model
+    @unpack M, S, R, Mx, Q, M_cmpts = matrices
     @unpack directions, sequences, values, values_type = experiment.gradient
     θ = experiment.btpde_midpoint.θ
     dt = experiment.btpde_midpoint.timestep
@@ -28,34 +29,6 @@ function solve_btpde_midpoint(model::Model, experiment::Experiment)
 
     qvalues, bvalues = get_values(experiment.gradient)
 
-    # Assemble finite element matrices compartment-wise
-    M_cmpts = []
-    S_cmpts = []
-    Ax_cmpts = [[] for _ = 1:3]
-    for icmpt = 1:ncompartment
-        # Finite elements
-        points = mesh.points[icmpt]
-        elements = mesh.elements[icmpt]
-        volumes, _ = get_mesh_volumes(points, elements)
-
-        # Assemble mass, stiffness and flux matrices
-        push!(M_cmpts, assemble_mass_matrix(elements', volumes))
-        push!(S_cmpts, assemble_stiffness_matrix(elements', points', D[icmpt]))
-
-        # Assemble first order product moment matrices
-        for dim = 1:3
-            push!(Ax_cmpts[dim], assemble_mass_matrix(elements', volumes, points[dim, :]))
-        end
-    end
-
-    # Assemble global finite element matrices
-    M = blockdiag(M_cmpts...)
-    S = blockdiag(S_cmpts...)
-    R = blockdiag((M_cmpts ./ T₂)...)
-    Ax = [blockdiag(Ax_cmpts[dim]...) for dim = 1:3]
-    Q_blocks = assemble_flux_matrices(mesh.points, mesh.facets)
-    Q = couple_flux_matrix(model, Q_blocks, false)
-
     # Create initial conditions (enforce complex values)
     ρ = vcat(fill.(complex.(ρ), npoint_cmpts)...)
 
@@ -67,7 +40,7 @@ function solve_btpde_midpoint(model::Model, experiment::Experiment)
     time = Array{Vector{Float64},3}(undef, namplitude, nsequence, ndirection)
     itertimes = zeros(namplitude, nsequence, ndirection)
 
-    Jac(q, fₜ, g) = -(S + Q + R + im * fₜ * q * (g' * Ax))
+    Jac(q, fₜ, g) = -(S + Q + R + im * fₜ * q * (g' * Mx))
 
     # Iterate over gradient amplitudes, time profiles and directions
     for idir = 1:ndirection, iseq = 1:nsequence, iamp = 1:namplitude

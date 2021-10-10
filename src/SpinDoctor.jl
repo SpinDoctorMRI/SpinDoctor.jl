@@ -35,6 +35,7 @@ export TimeProfile,
     echotime
 export Setup, CylinderSetup, SphereSetup, NeuronSetup, Experiment
 export get_coefficients
+export assemble_matrices
 export create_cells
 export create_surfaces_cylinder
 export create_surfaces_sphere
@@ -104,6 +105,7 @@ include("matrix_assembly/assemble_stiffness_matrix.jl")
 include("matrix_assembly/assemble_flux_matrices.jl")
 include("matrix_assembly/assemble_flux_matrix.jl")
 include("matrix_assembly/couple_flux_matrix.jl")
+include("matrix_assembly/assemble_matrices.jl")
 
 # Matrix formalism
 include("matrix_formalism/eig2length.jl")
