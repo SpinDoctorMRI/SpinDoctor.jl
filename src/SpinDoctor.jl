@@ -8,7 +8,6 @@ using GLPK: Optimizer
 using LinearAlgebra
 using MiniQhull: delaunay
 using OrdinaryDiffEq
-using Parameters
 using Polynomials: fit
 using Printf
 using QuadGK
@@ -19,6 +18,7 @@ using StaticArrays
 using Statistics: mean
 using TetGen: RawTetGenIO, facetlist!, tetrahedralize
 using Triangulate: TriangulateIO, triangulate
+using UnPack
 using WriteVTK
 
 export TimeProfile,
