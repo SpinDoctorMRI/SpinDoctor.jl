@@ -26,6 +26,8 @@ function solve_mf(model, lap_eig, experiment)
     npoint_cmpts = size.(mesh.points, 2)
     ncompartment = length(mesh.points)
 
+    qvalues, bvalues = get_values(experiment.gradient)
+
     # Compartment index ranges
     inds_start = cumsum([1; npoint_cmpts[1:end-1]])
     inds_stop = cumsum(npoint_cmpts[1:end])
@@ -51,15 +53,6 @@ function solve_mf(model, lap_eig, experiment)
 
     # Project initial spin density onto Laplace eigenfunction basis
     ν₀ = ϕ' * (M * ρ)
-
-    # Q-values and b-values
-    if values_type == "q"
-        qvalues = repeat(values, 1, nsequence)
-        bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
-    else
-        bvalues = repeat(values, 1, nsequence)
-        qvalues = .√(values ./ bvalue_no_q.(sequences)')
-    end
 
     # Allocate arrays
     signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndirection)

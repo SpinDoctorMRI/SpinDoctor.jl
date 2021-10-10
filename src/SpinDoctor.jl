@@ -60,6 +60,7 @@ export solve_karger
 export fit_adc
 export fit_tensors
 export plot_mesh
+export get_values
 
 # Rexport default ODE solver
 export QNDF, MagnusGL6
@@ -137,5 +138,8 @@ include("postprocess/savefield.jl")
 
 # Plot
 include("plot/plot_mesh.jl")
+
+# Utils
+include("utils/get_values.jl")
 
 end

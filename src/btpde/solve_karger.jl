@@ -22,6 +22,8 @@ function solve_karger(model, experiment, difftensors)
     nsequence = length(sequences)
     namplitude = length(values)
 
+    qvalues, bvalues = get_values(experiment.gradient)
+
     # Volumes
     volumes = get_cmpt_volumes(mesh)
 
@@ -62,15 +64,6 @@ function solve_karger(model, experiment, difftensors)
 
     # Initial signal
     S₀ = volumes .* ρ
-
-    # Q-values and b-values
-    if values_type == "q"
-        qvalues = repeat(values, 1, nsequence)
-        bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
-    else
-        bvalues = repeat(values, 1, nsequence)
-        qvalues = .√(values ./ bvalue_no_q.(sequences)')
-    end
 
     # Update function for linear ODE operator
     function update_func(J, u, p, t)

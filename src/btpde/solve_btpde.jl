@@ -21,6 +21,8 @@ function solve_btpde(model::Model, experiment::Experiment)
     nsequence = length(sequences)
     namplitude = length(values)
 
+    qvalues, bvalues = get_values(experiment.gradient)
+
     # Assemble finite element matrices compartment-wise
     M_cmpts = []
     S_cmpts = []
@@ -59,15 +61,6 @@ function solve_btpde(model::Model, experiment::Experiment)
         Array{Matrix{ComplexF64},4}(undef, ncompartment, namplitude, nsequence, ndirection)
     time = Array{Vector{Float64},3}(undef, namplitude, nsequence, ndirection)
     itertimes = zeros(namplitude, nsequence, ndirection)
-
-    # Q-values and b-values
-    if values_type == "q"
-        qvalues = repeat(values, 1, nsequence)
-        bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
-    else
-        bvalues = repeat(values, 1, nsequence)
-        qvalues = .√(values ./ bvalue_no_q.(sequences)')
-    end
 
     # Time dependent ODE function
     function Mdξ!(dξ, ξ, p, t)

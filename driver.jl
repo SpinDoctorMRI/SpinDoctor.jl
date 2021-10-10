@@ -21,15 +21,7 @@ namplitude = length(experiment.gradient.values)
 nsequence = length(experiment.gradient.sequences)
 ndirection = size(experiment.gradient.directions, 2)
 
-# Q-values and b-values
-if experiment.gradient.values_type == "q"
-    qvalues = repeat(experiment.gradient.values, 1, nsequence)
-    bvalues =
-        experiment.gradient.values .^ 2 .* bvalue_no_q.(experiment.gradient.sequences)'
-else
-    bvalues = repeat(experiment.gradient.values, 1, nsequence)
-    qvalues = .√(experiment.gradient.values ./ bvalue_no_q.(experiment.gradient.sequences)')
-end
+qvalues, bvalues = get_values(experiment.gradient)
 
 
 ##
