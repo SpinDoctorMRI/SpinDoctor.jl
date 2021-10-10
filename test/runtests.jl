@@ -90,3 +90,8 @@ end
     include("postprocess/fit_tensors.jl")
     include("postprocess/savefield.jl")
 end
+
+# Plot
+@testset "Plot" begin
+    include("plot/plot_mesh.jl")
+end

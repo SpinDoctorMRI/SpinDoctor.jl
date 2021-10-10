@@ -1,4 +1,4 @@
-@with_kw struct Experiment
+Base.@kwdef struct Experiment
     gradient::NamedTuple
     btpde::Union{NamedTuple,Nothing} = nothing
     btpde_midpoint::Union{NamedTuple,Nothing} = nothing

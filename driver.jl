@@ -21,28 +21,22 @@ namplitude = length(experiment.gradient.values)
 nsequence = length(experiment.gradient.sequences)
 ndirection = size(experiment.gradient.directions, 2)
 
-# Q-values and b-values
-if experiment.gradient.values_type == "q"
-    qvalues = repeat(experiment.gradient.values, 1, nsequence)
-    bvalues =
-        experiment.gradient.values .^ 2 .* bvalue_no_q.(experiment.gradient.sequences)'
-else
-    bvalues = repeat(experiment.gradient.values, 1, nsequence)
-    qvalues = .√(experiment.gradient.values ./ bvalue_no_q.(experiment.gradient.sequences)')
-end
+qvalues, bvalues = get_values(experiment.gradient)
 
+## Assemble finite element matrices
+@time matrices = assemble_matrices(model);
 
 ##
-btpde = @time solve_btpde(model, experiment)
+@time btpde = solve_btpde(model, matrices, experiment)
 
 ## Use manual time stepping scheme (theta rule)
 if !isnothing(experiment.btpde_midpoint)
-    btpde = @time solve_btpde_midpoint(model, experiment)
+    @time btpde = solve_btpde_midpoint(model, matrices, experiment)
 end
 
 ## Solve BTPDE
 if !isnothing(experiment.btpde)
-    # btpde = @time solve_btpde(model, experiment)
+    # @time btpde = solve_btpde(model, experiment)
 
     refinement_str = ""
     if !isnothing(setup.refinement)
@@ -73,9 +67,9 @@ end
 ## Solve MF
 if !isnothing(experiment.mf)
     λ_max = length2eig(experiment.mf.length_scale, D_avg)
-    lap_eig = compute_laplace_eig(model, λ_max, experiment.mf.neig_max)
+    lap_eig = compute_laplace_eig(model, matrices, λ_max, experiment.mf.neig_max)
     length_scales = eig2length.(lap_eig.values, D_avg)
-    mf = solve_mf(model, lap_eig, experiment)
+    mf = solve_mf(model, matrices, lap_eig, experiment)
 
     output_dir = "output/$(setup.name)"
     isdir(output_dir) || mkpath(output_dir)

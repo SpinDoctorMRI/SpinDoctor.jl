@@ -1,6 +1,6 @@
 abstract type Setup end
 
-@with_kw struct SphereSetup <: Setup
+Base.@kwdef struct SphereSetup <: Setup
     name::String
     ncell::Int
     rmin::Float64
@@ -28,7 +28,7 @@ abstract type Setup end
     κ_ecs::Float64
 end
 
-@with_kw struct CylinderSetup <: Setup
+Base.@kwdef struct CylinderSetup <: Setup
     name::String
     ncell::Int
     rmin::Float64
@@ -59,7 +59,7 @@ end
     κ_ecs::Float64
 end
 
-@with_kw struct NeuronSetup <: Setup
+Base.@kwdef struct NeuronSetup <: Setup
     name::String
     ncell::Int = 1
     include_in::Bool = false

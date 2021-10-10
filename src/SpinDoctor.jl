@@ -2,12 +2,13 @@
 module SpinDoctor
 
 using Arpack: eigs
+using DiffEqCallbacks: PresetTimeCallback
 using Expokit: expmv!
+using GLMakie
 using GLPK: Optimizer
 using LinearAlgebra
 using MiniQhull: delaunay
 using OrdinaryDiffEq
-using Parameters
 using Polynomials: fit
 using Printf
 using QuadGK
@@ -16,8 +17,9 @@ using SparseArrays
 using SpecialFunctions
 using StaticArrays
 using Statistics: mean
-using TetGen
+using TetGen: RawTetGenIO, facetlist!, tetrahedralize
 using Triangulate: TriangulateIO, triangulate
+using UnPack
 using WriteVTK
 
 export TimeProfile,
@@ -34,6 +36,7 @@ export TimeProfile,
     echotime
 export Setup, CylinderSetup, SphereSetup, NeuronSetup, Experiment
 export get_coefficients
+export assemble_matrices
 export create_cells
 export create_surfaces_cylinder
 export create_surfaces_sphere
@@ -58,6 +61,8 @@ export solve_mf
 export solve_karger
 export fit_adc
 export fit_tensors
+export plot_mesh
+export get_values
 
 # Rexport default ODE solver
 export QNDF, MagnusGL6
@@ -101,6 +106,7 @@ include("matrix_assembly/assemble_stiffness_matrix.jl")
 include("matrix_assembly/assemble_flux_matrices.jl")
 include("matrix_assembly/assemble_flux_matrix.jl")
 include("matrix_assembly/couple_flux_matrix.jl")
+include("matrix_assembly/assemble_matrices.jl")
 
 # Matrix formalism
 include("matrix_formalism/eig2length.jl")
@@ -132,5 +138,11 @@ include("adc/solve_hadc.jl")
 include("postprocess/fit_adc.jl")
 include("postprocess/fit_tensors.jl")
 include("postprocess/savefield.jl")
+
+# Plot
+include("plot/plot_mesh.jl")
+
+# Utils
+include("utils/get_values.jl")
 
 end

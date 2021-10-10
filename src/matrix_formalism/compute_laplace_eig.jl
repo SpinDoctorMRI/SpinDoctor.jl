@@ -1,44 +1,17 @@
 """
-    compute_laplace_eig(mesh, pde, eiglim, neig_max)
+    compute_laplace_eig(mesh, matrices, pde, eiglim, neig_max)
 
 Compute the Laplace eigenvalues, eigenfunctions and first order moments of products of pairs of eigenfunctions.
 """
-function compute_laplace_eig(model, eiglim = Inf, neig_max = Inf)
+function compute_laplace_eig(model, matrices, eiglim = Inf, neig_max = Inf)
 
     # Measure function evaluation time
     starttime = Base.time()
 
     # Extract parameters
     @unpack mesh, D, T₂ = model
+    @unpack M, S, R, Mx, Q = matrices
     ncompartment = length(mesh.points)
-
-    # Assemble finite element matrices compartment-wise
-    M_cmpts = []
-    S_cmpts = []
-    Mx_cmpts = [[] for _ = 1:3]
-    for icmpt = 1:ncompartment
-        # Finite elements
-        points = mesh.points[icmpt]
-        elements = mesh.elements[icmpt]
-        volumes, _ = get_mesh_volumes(points, elements)
-
-        # Assemble mass, stiffness and flux matrices
-        push!(M_cmpts, assemble_mass_matrix(elements', volumes))
-        push!(S_cmpts, assemble_stiffness_matrix(elements', points', D[icmpt]))
-
-        # Assemble first order product moment matrices
-        for dim = 1:3
-            push!(Mx_cmpts[dim], assemble_mass_matrix(elements', volumes, points[dim, :]))
-        end
-    end
-
-    # Assemble global finite element matrices
-    M = blockdiag(M_cmpts...)
-    S = blockdiag(S_cmpts...)
-    R = blockdiag((M_cmpts ./ T₂)...)
-    Mx = [blockdiag(Mx_cmpts[dim]...) for dim = 1:3]
-    Q_blocks = assemble_flux_matrices(mesh.points, mesh.facets)
-    Q = couple_flux_matrix(model, Q_blocks, false)
 
     # Compute at most all eigenvalues in the given domain
     neig = Int(min(neig_max, size(M, 1)))

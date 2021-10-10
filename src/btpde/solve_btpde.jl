@@ -1,17 +1,32 @@
+# # Custom workaround OrdinaryDiffEq: https://github.com/SciML/OrdinaryDiffEq.jl/blob/54fb35870fa402fc95d665cd5f9502e2759ea436/src/derivative_utils.jl#L606-L608
+# # as proposed in: https://github.com/CliMA/ClimaCore.jl/blob/af6b01bc8f945ada0794147d8f2c7ca5303adf62/examples/hybrid/inertial_gravity_wave_implicit.jl#L411-L414
+# struct CustomWFact
+#     W
+#     γref
+# end
+# Base.similar(W::CustomWFact) = deepcopy(W)
+# function linsolve!(::Type{Val{:init}}, f, u0; kwargs...)
+#     function _linsolve!(x, W, b, update_matrix = false; kwargs...)
+#         W isa CustomWFact || error("Linsolve specialized for CustomWFact")
+#         ldiv!(x, W.W, b)
+#     end
+# end
+
 """
-    solve_btpde(model, experiment)
+    solve_btpde(model, matrices, experiment)
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 """
-function solve_btpde(model::Model, experiment::Experiment)
+function solve_btpde(model::Model, matrices, experiment::Experiment)
 
     # Measure function evalutation time
     starttime = Base.time()
 
     # Extract input parameters
     @unpack mesh, D, T₂, ρ = model
+    @unpack M, S, R, Mx, Q, M_cmpts = matrices
     @unpack directions, sequences, values, values_type = experiment.gradient
-    @unpack odesolver, reltol, abstol, nsave = experiment.btpde
+    @unpack reltol, abstol, nsave = experiment.btpde
 
     # Deduce sizes
     ncompartment = length(ρ)
@@ -21,33 +36,7 @@ function solve_btpde(model::Model, experiment::Experiment)
     nsequence = length(sequences)
     namplitude = length(values)
 
-    # Assemble finite element matrices compartment-wise
-    M_cmpts = []
-    S_cmpts = []
-    Mx_cmpts = [[] for _ = 1:3]
-    for icmpt = 1:ncompartment
-        # Finite elements
-        points = mesh.points[icmpt]
-        elements = mesh.elements[icmpt]
-        volumes, = get_mesh_volumes(points, elements)
-
-        # Assemble mass, stiffness and flux matrices
-        push!(M_cmpts, assemble_mass_matrix(elements', volumes))
-        push!(S_cmpts, assemble_stiffness_matrix(elements', points', D[icmpt]))
-
-        # Assemble first order product moment matrices
-        for dim = 1:3
-            push!(Mx_cmpts[dim], assemble_mass_matrix(elements', volumes, points[dim, :]))
-        end
-    end
-
-    # Assemble global finite element matrices
-    M = blockdiag(M_cmpts...)
-    S = blockdiag(S_cmpts...)
-    R = blockdiag((M_cmpts ./ T₂)...)
-    Mx = [blockdiag(Mx_cmpts[dim]...) for dim = 1:3]
-    Q_blocks = assemble_flux_matrices(mesh.points, mesh.facets)
-    Q = couple_flux_matrix(model, Q_blocks, false)
+    qvalues, bvalues = get_values(experiment.gradient)
 
     # Create initial conditions (enforce complex values)
     ρ = vcat(fill.(complex.(ρ), npoint_cmpts)...)
@@ -59,15 +48,6 @@ function solve_btpde(model::Model, experiment::Experiment)
         Array{Matrix{ComplexF64},4}(undef, ncompartment, namplitude, nsequence, ndirection)
     time = Array{Vector{Float64},3}(undef, namplitude, nsequence, ndirection)
     itertimes = zeros(namplitude, nsequence, ndirection)
-
-    # Q-values and b-values
-    if values_type == "q"
-        qvalues = repeat(values, 1, nsequence)
-        bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
-    else
-        bvalues = repeat(values, 1, nsequence)
-        qvalues = .√(values ./ bvalue_no_q.(sequences)')
-    end
 
     # Time dependent ODE function
     function Mdξ!(dξ, ξ, p, t)
@@ -88,10 +68,40 @@ function solve_btpde(model::Model, experiment::Experiment)
 
     # Time dependent Jacobian of ODE function with respect to the state `ξ`
     function Jac!(J, ξ, p, t)
+        # println("Jac at $t")
         @unpack S, Q, A, R, q, f = p
         @. J = -(S + Q + R + im * f(t) * q * A)
         nothing
     end
+
+    # # TODO: propagate types
+    # # TODO: look for caching packages
+    # # TODO: detect change in f and recompute J and W
+    # function Wfact(u, p, γ, t)
+    #     println("Wfact at $t")
+    #     @unpack J = p
+    #     CustomWFact(lu(M .- γ .* J), Ref(0.0))
+    # end
+    # function Wfact!(W, u, p, γ, t)
+    #     # println("Wfact! at $t")
+    #     @unpack J, γ_cache, factorization_cache = p
+    #     ind = findfirst(isapprox(γ), γ_cache)
+    #     # if isnothing(ind)
+    #     if !(γ ≈ W.γref[])
+    #         println("Refact at γ = $γ, t = $t")
+    #         # W = factorize(M .- γ .* J)
+    #         lu!(W.W, M .- γ .* J)
+    #         W.γref[] = γ
+    #     else
+    #         println("No fact at γ = $γ, t = $t")
+    #     end
+    #     #     push!(γ_cache, γ)
+    #     #     push!(factorization_cache, W)
+    #     # else
+    #     #     W = factorization_cache[ind]
+    #     # end
+    #     W
+    # end
 
     # Jacobian sparsity pattern
     jac_prototype = -(S + Q + im * sum(Mx))
@@ -127,20 +137,28 @@ function solve_btpde(model::Model, experiment::Experiment)
 
         # ODE problem
         J = -(S + Q + im * q * A)
+        # γ_cache = Float64[]
+        # factorization_cache = LinearAlgebra.Factorization[]
+        # p = (; J, S, Q, A, R, q, f, γ_cache, factorization_cache)
         p = (; J, S, Q, A, R, q, f)
 
         # Gather ODE function
         if all(constant_intervals(p.f)) # is_constant(p.f, t)
             func = Mdξ_constant!
             Jac!(p.J, ρ, p, 0)
-            # jac = (J, _, p, t) -> (@show t; J .= p.J; nothing)
             jac = (J, _, p, t) -> (J .= p.J; nothing)
+            # jac = (J, _, p, t) -> (println("Jac called at $t"); J .= p.J; nothing)
         else
             func = Mdξ!
             jac = Jac!
         end
-        odefunction =
-            ODEFunction(func, jac = jac, jac_prototype = jac_prototype, mass_matrix = M)
+        odefunction = ODEFunction(
+            func;
+            mass_matrix = M,
+            jac,
+            jac_prototype, # = Wfact(ρ, p, 0.1, 0.0),
+            # Wfact = Wfact!,
+        )
         odeproblem = ODEProblem(odefunction, ρ, interval, p, progress = false)#, dtmax = 50)
 
         tstops = intervals(f)[2:end-1]
@@ -159,11 +177,11 @@ function solve_btpde(model::Model, experiment::Experiment)
         # Solve ODE problem
         sol = solve(
             odeproblem,
-            odesolver,
-            saveat = saveat,
-            reltol = reltol,
-            abstol = abstol,
-            callback = callback,
+            QNDF(); # , linsolve = linsolve!);
+            saveat,
+            reltol,
+            abstol,
+            callback,
         )
 
         itertimes[iamp, iseq, idir] = Base.time() - itertime

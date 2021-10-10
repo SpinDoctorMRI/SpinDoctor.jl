@@ -1,15 +1,16 @@
 """
-    solve_mf(model, lap_eig, experiment)
+    solve_mf(model, matrices, lap_eig, experiment)
 
 Solve for magnetization using Matrix Formalism.
 """
-function solve_mf(model, lap_eig, experiment)
+function solve_mf(model, matrices, lap_eig, experiment)
 
     # Measure time of function evaluation
     starttime = Base.time()
 
     # Extract parameters
     @unpack mesh, ρ = model
+    @unpack M, M_cmpts = matrices
     @unpack directions, sequences, values, values_type = experiment.gradient
     @unpack ninterval = experiment.mf
 
@@ -26,22 +27,12 @@ function solve_mf(model, lap_eig, experiment)
     npoint_cmpts = size.(mesh.points, 2)
     ncompartment = length(mesh.points)
 
+    qvalues, bvalues = get_values(experiment.gradient)
+
     # Compartment index ranges
     inds_start = cumsum([1; npoint_cmpts[1:end-1]])
     inds_stop = cumsum(npoint_cmpts[1:end])
     get_inds(icmpt) = inds_start[icmpt]:inds_stop[icmpt]
-
-    # Assemble mass matrices compartment-wise (for spatial integration)
-    M_cmpts = []
-    for icmpt = 1:ncompartment
-        # Finite elements
-        points = mesh.points[icmpt]
-        elements = mesh.elements[icmpt]
-        volumes, _ = get_mesh_volumes(points, elements)
-
-        # Assemble mass matrix
-        push!(M_cmpts, assemble_mass_matrix(elements', volumes))
-    end
 
     # Global mass matrix
     M = blockdiag(M_cmpts...)
@@ -51,15 +42,6 @@ function solve_mf(model, lap_eig, experiment)
 
     # Project initial spin density onto Laplace eigenfunction basis
     ν₀ = ϕ' * (M * ρ)
-
-    # Q-values and b-values
-    if values_type == "q"
-        qvalues = repeat(values, 1, nsequence)
-        bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
-    else
-        bvalues = repeat(values, 1, nsequence)
-        qvalues = .√(values ./ bvalue_no_q.(sequences)')
-    end
 
     # Allocate arrays
     signal = zeros(ComplexF64, ncompartment, namplitude, nsequence, ndirection)

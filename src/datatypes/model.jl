@@ -1,4 +1,4 @@
-@with_kw struct Model{T}
+Base.@kwdef struct Model{T}
     name::String
     mesh::FEMesh
     ρ::Vector{T}

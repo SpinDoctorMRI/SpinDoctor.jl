@@ -16,11 +16,11 @@ function solve_karger(model, experiment, difftensors)
 
     # Deduce sizes
     ncompartment, nboundary = size(mesh.facets)
-    npoint_cmpts = size.(mesh.points, 2)
-    inds_cmpts = cumsum([0; npoint_cmpts])
     ndirection = size(directions, 2)
     nsequence = length(sequences)
     namplitude = length(values)
+
+    qvalues, bvalues = get_values(experiment.gradient)
 
     # Volumes
     volumes = get_cmpt_volumes(mesh)
@@ -30,7 +30,6 @@ function solve_karger(model, experiment, difftensors)
     for icmpt = 1:ncompartment
         # Finite elements
         points = mesh.points[icmpt]
-        elements = mesh.elements[icmpt]
         facets = mesh.facets[icmpt, :]
 
         # Surface area
@@ -62,15 +61,6 @@ function solve_karger(model, experiment, difftensors)
 
     # Initial signal
     S₀ = volumes .* ρ
-
-    # Q-values and b-values
-    if values_type == "q"
-        qvalues = repeat(values, 1, nsequence)
-        bvalues = values .^ 2 .* bvalue_no_q.(sequences)'
-    else
-        bvalues = repeat(values, 1, nsequence)
-        qvalues = .√(values ./ bvalue_no_q.(sequences)')
-    end
 
     # Update function for linear ODE operator
     function update_func(J, u, p, t)
