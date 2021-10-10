@@ -1,5 +1,19 @@
+# # Custom workaround OrdinaryDiffEq: https://github.com/SciML/OrdinaryDiffEq.jl/blob/54fb35870fa402fc95d665cd5f9502e2759ea436/src/derivative_utils.jl#L606-L608
+# # as proposed in: https://github.com/CliMA/ClimaCore.jl/blob/af6b01bc8f945ada0794147d8f2c7ca5303adf62/examples/hybrid/inertial_gravity_wave_implicit.jl#L411-L414
+# struct CustomWFact
+#     W
+#     γref
+# end
+# Base.similar(W::CustomWFact) = deepcopy(W)
+# function linsolve!(::Type{Val{:init}}, f, u0; kwargs...)
+#     function _linsolve!(x, W, b, update_matrix = false; kwargs...)
+#         W isa CustomWFact || error("Linsolve specialized for CustomWFact")
+#         ldiv!(x, W.W, b)
+#     end
+# end
+
 """
-    solve_btpde(model, experiment)
+    solve_btpde(model, matrices, experiment)
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 """
@@ -12,7 +26,7 @@ function solve_btpde(model::Model, matrices, experiment::Experiment)
     @unpack mesh, D, T₂, ρ = model
     @unpack M, S, R, Mx, Q, M_cmpts = matrices
     @unpack directions, sequences, values, values_type = experiment.gradient
-    @unpack odesolver, reltol, abstol, nsave = experiment.btpde
+    @unpack reltol, abstol, nsave = experiment.btpde
 
     # Deduce sizes
     ncompartment = length(ρ)
@@ -54,26 +68,40 @@ function solve_btpde(model::Model, matrices, experiment::Experiment)
 
     # Time dependent Jacobian of ODE function with respect to the state `ξ`
     function Jac!(J, ξ, p, t)
+        # println("Jac at $t")
         @unpack S, Q, A, R, q, f = p
         @. J = -(S + Q + R + im * f(t) * q * A)
         nothing
     end
 
-    # TODO: propagate types
-    # TODO: look for caching packages
-    # TODO: detect change in f and recompute J and W
-    function Wfact(u, p, γ, t)
-        @unpack J, γ_cache, factorization_cache = p
-        ind = findfirst(isapprox(γ), γ_cache)
-        if isnothing(ind)
-            W = factorize(M .- γ .* J)
-            push!(γ_cache, γ)
-            push!(factorization_cache, W)
-        else
-            W = factorization_cache[ind]
-        end
-        W
-    end
+    # # TODO: propagate types
+    # # TODO: look for caching packages
+    # # TODO: detect change in f and recompute J and W
+    # function Wfact(u, p, γ, t)
+    #     println("Wfact at $t")
+    #     @unpack J = p
+    #     CustomWFact(lu(M .- γ .* J), Ref(0.0))
+    # end
+    # function Wfact!(W, u, p, γ, t)
+    #     # println("Wfact! at $t")
+    #     @unpack J, γ_cache, factorization_cache = p
+    #     ind = findfirst(isapprox(γ), γ_cache)
+    #     # if isnothing(ind)
+    #     if !(γ ≈ W.γref[])
+    #         println("Refact at γ = $γ, t = $t")
+    #         # W = factorize(M .- γ .* J)
+    #         lu!(W.W, M .- γ .* J)
+    #         W.γref[] = γ
+    #     else
+    #         println("No fact at γ = $γ, t = $t")
+    #     end
+    #     #     push!(γ_cache, γ)
+    #     #     push!(factorization_cache, W)
+    #     # else
+    #     #     W = factorization_cache[ind]
+    #     # end
+    #     W
+    # end
 
     # Jacobian sparsity pattern
     jac_prototype = -(S + Q + im * sum(Mx))
@@ -109,16 +137,17 @@ function solve_btpde(model::Model, matrices, experiment::Experiment)
 
         # ODE problem
         J = -(S + Q + im * q * A)
-        γ_cache = Float64[]
-        factorization_cache = LinearAlgebra.Factorization[]
-        p = (; J, S, Q, A, R, q, f, γ_cache, factorization_cache)
+        # γ_cache = Float64[]
+        # factorization_cache = LinearAlgebra.Factorization[]
+        # p = (; J, S, Q, A, R, q, f, γ_cache, factorization_cache)
+        p = (; J, S, Q, A, R, q, f)
 
         # Gather ODE function
         if all(constant_intervals(p.f)) # is_constant(p.f, t)
             func = Mdξ_constant!
             Jac!(p.J, ρ, p, 0)
-            # jac = (J, _, p, t) -> (@show t; J .= p.J; nothing)
             jac = (J, _, p, t) -> (J .= p.J; nothing)
+            # jac = (J, _, p, t) -> (println("Jac called at $t"); J .= p.J; nothing)
         else
             func = Mdξ!
             jac = Jac!
@@ -127,8 +156,8 @@ function solve_btpde(model::Model, matrices, experiment::Experiment)
             func;
             mass_matrix = M,
             jac,
-            jac_prototype,
-            Wfact,
+            jac_prototype, # = Wfact(ρ, p, 0.1, 0.0),
+            # Wfact = Wfact!,
         )
         odeproblem = ODEProblem(odefunction, ρ, interval, p, progress = false)#, dtmax = 50)
 
@@ -148,11 +177,11 @@ function solve_btpde(model::Model, matrices, experiment::Experiment)
         # Solve ODE problem
         sol = solve(
             odeproblem,
-            odesolver,
-            saveat = saveat,
-            reltol = reltol,
-            abstol = abstol,
-            callback = callback,
+            QNDF(); # , linsolve = linsolve!);
+            saveat,
+            reltol,
+            abstol,
+            callback,
         )
 
         itertimes[iamp, iseq, idir] = Base.time() - itertime

@@ -24,19 +24,19 @@ ndirection = size(experiment.gradient.directions, 2)
 qvalues, bvalues = get_values(experiment.gradient)
 
 ## Assemble finite element matrices
-matrices = assemble_matrices(model)
+@time matrices = assemble_matrices(model);
 
 ##
-btpde = @time solve_btpde(model, matrices, experiment)
+@time btpde = solve_btpde(model, matrices, experiment)
 
 ## Use manual time stepping scheme (theta rule)
 if !isnothing(experiment.btpde_midpoint)
-    btpde = @time solve_btpde_midpoint(model, matrices, experiment)
+    @time btpde = solve_btpde_midpoint(model, matrices, experiment)
 end
 
 ## Solve BTPDE
 if !isnothing(experiment.btpde)
-    # btpde = @time solve_btpde(model, experiment)
+    # @time btpde = solve_btpde(model, experiment)
 
     refinement_str = ""
     if !isnothing(setup.refinement)

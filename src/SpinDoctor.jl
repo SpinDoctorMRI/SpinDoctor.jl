@@ -2,6 +2,7 @@
 module SpinDoctor
 
 using Arpack: eigs
+using DiffEqCallbacks: PresetTimeCallback
 using Expokit: expmv!
 using GLMakie
 using GLPK: Optimizer
