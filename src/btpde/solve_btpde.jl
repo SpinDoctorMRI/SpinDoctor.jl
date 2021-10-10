@@ -86,6 +86,22 @@ function solve_btpde(model::Model, experiment::Experiment)
         nothing
     end
 
+    # TODO: propagate types
+    # TODO: look for caching packages
+    # TODO: detect change in f and recompute J and W
+    function Wfact(u, p, γ, t)
+        @unpack J, γ_cache, factorization_cache = p
+        ind = findfirst(isapprox(γ), γ_cache)
+        if isnothing(ind)
+            W = factorize(M .- γ .* J)
+            push!(γ_cache, γ)
+            push!(factorization_cache, W)
+        else
+            W = factorization_cache[ind]
+        end
+        W
+    end
+
     # Jacobian sparsity pattern
     jac_prototype = -(S + Q + im * sum(Mx))
 
@@ -120,7 +136,9 @@ function solve_btpde(model::Model, experiment::Experiment)
 
         # ODE problem
         J = -(S + Q + im * q * A)
-        p = (; J, S, Q, A, R, q, f)
+        γ_cache = Float64[]
+        factorization_cache = LinearAlgebra.Factorization[]
+        p = (; J, S, Q, A, R, q, f, γ_cache, factorization_cache)
 
         # Gather ODE function
         if all(constant_intervals(p.f)) # is_constant(p.f, t)
@@ -132,8 +150,13 @@ function solve_btpde(model::Model, experiment::Experiment)
             func = Mdξ!
             jac = Jac!
         end
-        odefunction =
-            ODEFunction(func, jac = jac, jac_prototype = jac_prototype, mass_matrix = M)
+        odefunction = ODEFunction(
+            func;
+            mass_matrix = M,
+            jac,
+            jac_prototype,
+            Wfact,
+        )
         odeproblem = ODEProblem(odefunction, ρ, interval, p, progress = false)#, dtmax = 50)
 
         tstops = intervals(f)[2:end-1]
