@@ -3,7 +3,7 @@
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 This function uses a manual time stepping scheme (theta-rule), that requires a degree of
-implicitness `θ` and a time step `dt`.
+implicitness `θ` and a time step `Δt`.
     `θ = 0.5`: Crank-Nicolson (second order)
     `θ = 1.0`: Implicit Euler (first order)
 """
@@ -16,8 +16,7 @@ function solve_btpde_midpoint(model::Model, matrices, experiment::Experiment)
     @unpack mesh, D, T₂, ρ = model
     @unpack M, S, R, Mx, Q, M_cmpts = matrices
     @unpack directions, sequences, values, values_type = experiment.gradient
-    θ = experiment.btpde_midpoint.θ
-    dt = experiment.btpde_midpoint.timestep
+    @unpack θ, timestep = experiment.btpde_midpoint
 
     # Deduce sizes
     ncompartment = length(ρ)
@@ -71,20 +70,26 @@ function solve_btpde_midpoint(model::Model, matrices, experiment::Experiment)
         Ey = copy(y)
         for i = 1:length(ivals)-1
             @printf "    Solving for interval [%g, %g]\n" ivals[i] ivals[i+1]
+
+            # Adjust time step to obtain divide interval uniformly
+            ival_length = ivals[i+1] - ivals[i]
+            nt = round(Int, ival_length / timestep)
+            Δt = ival_length / nt
+
+            # Build matrices for interval
             J = Jac(q, f(ivals[i]), dir)
-            F = lu(M - dt * θ * J)
-            # F = factorize(M - dt * θ * J)
-            E = M + dt * (1 - θ) * J
-            while t + dt < ivals[i+1]
+            F = lu(M .- Δt .* θ .* J)
+            # F = factorize(M .- Δt .* θ .* J)
+            E = @. complex(M) + Δt * (1 - θ) * J
+
+            # Advance one interval
+            # for it = 1:nt
+            while t + Δt ≤ ivals[i+1]
                 # @show t
                 mul!(Ey, E, y)
                 ldiv!(y, F, Ey)
-                t += dt
+                t += Δt
             end
-            dt_last = ivals[i+1] - t
-            mul!(Ey, M + dt_last * (1 - θ) * J, y)
-            ldiv!(y, lu(M - dt_last * θ * J), Ey)
-            t += dt_last
         end
 
         # Extract solution
