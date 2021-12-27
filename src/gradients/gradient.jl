@@ -1,7 +1,7 @@
 """
     AbstractGradient{T}
 
-Magnetic field gradient ``\vec{g}(t)``.
+Magnetic field gradient ``\\vec{g}(t)``.
 """
 abstract type AbstractGradient{T} end
 

@@ -1,12 +1,12 @@
 """
-    fit_adc(b, S)
+    fit_adc(bvalues, signals)
 
-Fit Apparent Diffusion Coefficient (ADC) using a polynomial logfit of the normalized signal `S` against the b-values `b`.
+Fit the apparent diffusion coefficient (ADC) using a polynomial logfit of the normalized signals
+`signals` against the b-values `bvalues`.
 """
-function fit_adc(b::Array{T,1}, S::Array{T,1}) where {T<:Real}
-
+function fit_adc(bvalues, signals)
     # Fit log of signal
-    p = fit(b, log.(S))
+    p = fit(bvalues, log.(abs.(signals)))
 
     # ADC is the negative linear term
     -p[1]

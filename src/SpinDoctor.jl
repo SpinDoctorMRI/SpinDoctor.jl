@@ -33,19 +33,23 @@ export create_model
 export split_mesh
 export split_field
 export get_cmpt_volumes, get_mesh_volumes
-export length2eig, eig2length
+
 export Model
+
 export savefield
+
 export solve, solve_multigrad
 export fit_adc
 export fit_tensors
 export plot_mesh, plot_field
 export compute_lap_eig_analytical
-export limit_lengthscale
 
 export IntervalConstanBTPDE, GeneralBTPDE, HADC, Karger
 export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
 export solve
+
+# Matrix formalism
+export length2eig, eig2length, limit_lengthscale, compute_mf_diffusion_tensor
 
 # Utils
 export unitcircle, unitsphere
@@ -114,6 +118,7 @@ include("matrix_formalism/eig2length.jl")
 include("matrix_formalism/limit_lengthscale.jl")
 include("matrix_formalism/solve_laplace.jl")
 include("matrix_formalism/solve_mf.jl")
+include("matrix_formalism/compute_mf_diffusion_tensor.jl")
 
 # Analytical
 include("analytical/alpha_func.jl")
