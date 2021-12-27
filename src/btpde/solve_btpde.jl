@@ -8,7 +8,7 @@ function solve(
     gradient;
     callbacks = AbstractCallback[],
 ) where {T}
-    @unpack reltol, abstol, model, matrices = simulation
+    @unpack model, matrices, reltol, abstol, odesolver = simulation
     @unpack mesh, D, T₂, ρ, γ = model
     @unpack M, S, R, Mx, Q, M_cmpts = matrices
 
@@ -63,7 +63,7 @@ function solve(
     # Solve ODE problem
     sol = OrdinaryDiffEq.solve(
         odeproblem,
-        QNDF();
+        odesolver;
         reltol,
         abstol,
         callback,
