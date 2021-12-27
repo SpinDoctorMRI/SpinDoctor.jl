@@ -1,101 +1,118 @@
-using SpinDoctor
 using LinearAlgebra
+using GLMakie
+using OrdinaryDiffEq: OrdinaryDiffEq
 
+# LSP indexing solution
+# https://github.com/julia-vscode/julia-vscode/issues/800#issuecomment-650085983
+if isdefined(@__MODULE__, :LanguageServer)
+    include("src/SpinDoctor.jl")
+    using .SpinDoctor
+else
+    using SpinDoctor
+end
 
-## Choose setup script
-# include("setups/1axon_analytical.jl")
-# include("setups/1sphere_analytical.jl")
-include("setups/cylinders.jl")
+set_theme!(theme_dark())
+
+## Choose setup recipe
+# include("setups/axon.jl")
+# include("setups/sphere.jl")
+# include("setups/cylinders.jl")
 # include("setups/spheres.jl")
-# include("setups/neuron.jl")
+include("setups/neuron.jl")
 
 
-## Prepare experiments
-model = create_model(setup)
+## Create geometry from setup recipe
+femesh, = @time create_geometry(setup)
+model = Model(; mesh = femesh, coeffs...)
 volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
-
-# Sizes
 ncompartment = length(model.mesh.points)
-namplitude = length(experiment.gradient.values)
-nsequence = length(experiment.gradient.sequences)
-ndirection = size(experiment.gradient.directions, 2)
+@info "Number of nodes per compartment:" length.(model.mesh.points)
 
-qvalues, bvalues = get_values(experiment.gradient)
+
+## Plot mesh
+plot_mesh(model.mesh)
+
 
 ## Assemble finite element matrices
-@time matrices = assemble_matrices(model);
+matrices = @time assemble_matrices(model);
 
-##
-@time btpde = solve_btpde(model, matrices, experiment)
 
-## Use manual time stepping scheme (theta rule)
-if !isnothing(experiment.btpde_midpoint)
-    @time btpde = solve_btpde_midpoint(model, matrices, experiment)
-end
+## Callbacks for time stepping (plot solution, save time series)
+plotter = Plotter{T}(; nupdate = 5)
+writer = VTKWriter(; nupdate = 5)
+# callbacks = [plotter]
+callbacks = [plotter, writer]
 
 ## Solve BTPDE
-if !isnothing(experiment.btpde)
-    # @time btpde = solve_btpde(model, experiment)
+btpde = GeneralBTPDE(;
+    model,
+    matrices,
+    reltol = 1e-4,
+    abstol = 1e-6,
+    odesolver = OrdinaryDiffEq.Rodas4(autodiff = false),
+)
+ξ = @time solve(btpde, gradient; callbacks)
 
-    refinement_str = ""
-    if !isnothing(setup.refinement)
-        refinement_str = "_refinement$(setup.refinement)"
-    end
-    output_dir = "output/" * setup.name * refinement_str
-    isdir(output_dir) || mkpath(output_dir)
+## Solve BTPDE with constant interval profile (PGSE, DoublePGSE)
+constant_btpde = IntervalConstanBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
+ξ = @time solve(constant_btpde, gradient; callbacks)
 
-    if experiment.btpde.nsave == 1
-        savefield(
-            model.mesh,
-            btpde.magnetization[:, end, 1, 1],
-            "$output_dir/magnetization_btpde",
-        )
-    else
-        save_btpde_results(model.mesh, experiment, btpde, "$output_dir/magnetization_btpde")
-    end
+## Plot magnetization
+plot_field(model.mesh, ξ)
 
-    adc = [
-        fit_adc(
-            bvalues[:, iseq],
-            real(btpde.signal[icmpt, :, iseq, idir]) / (model.ρ' * volumes),
-        ) for idir = 1:ndirection, iseq = 1:nsequence, icmpt = 1:ncompartment
-    ]
-end
+## Compute signal
+compute_signal(matrices.M, ξ)
+compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
 
 
-## Solve MF
-if !isnothing(experiment.mf)
-    λ_max = length2eig(experiment.mf.length_scale, D_avg)
-    lap_eig = compute_laplace_eig(model, matrices, λ_max, experiment.mf.neig_max)
-    length_scales = eig2length.(lap_eig.values, D_avg)
-    mf = solve_mf(model, matrices, lap_eig, experiment)
+## Matrix Formalism
+# Perform Laplace eigendecomposition
+laplace = Laplace{T}(; model, matrices, neig_max = 400)
+lap_eig = @time solve(laplace)
+length_scales = eig2length.(lap_eig.values, D_avg)
 
-    output_dir = "output/$(setup.name)"
-    isdir(output_dir) || mkpath(output_dir)
-    savefield(model.mesh, mf.magnetization[:, 1, 1, 1], "$output_dir/magnetization_mf")
+# Truncate basis at minimum length scale
+length_scale = 3
+λ_max = length2eig(length_scale, D_avg)
+lap_eig = limit_lengthscale(lap_eig, λ_max)
 
-    npoint_cmpts = size.(model.mesh.points, 2)
-    bounds = cumsum([0; npoint_cmpts])
-    ϕ_cmpts = [lap_eig.funcs[bounds[i]+1:bounds[i+1], :] for i = 1:ncompartment]
-    savefield(model.mesh, ϕ_cmpts, "$output_dir/laplace_eig", "Laplace eigenfunction")
-end
+# Compute magnetization using the matrix formalism reduced order model
+mf = MatrixFormalism(; model, matrices, lap_eig, ninterval = 500)
+ξ = @time solve(mf, gradient)
+
 
 ## Solve HADC
-if !isnothing(experiment.hadc)
-    hadc = solve_hadc(model, experiment)
-end
+hadc = HADC(; model, matrices, odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6)
+adc_cmpts = @time solve(hadc, gradient)
+
 
 ## Solve Karger model
-if !isnothing(experiment.karger)
-    # Fit difftensors (assuming HADC has been solved)
-    difftensors = fit_tensors(experiment.gradient.directions, hadc.adc)
 
-    # Solv Karger
-    karger = solve_karger(model, experiment, difftensors)
-end
+# Compute HADC and fit difftensors
+directions = unitsphere(50)
+gradients = [
+    ScalarGradient(collect(d), gradient.profile, gradient.amplitude) for
+    d ∈ eachcol(directions)
+]
+hadc = HADC(; model, matrices, odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6)
+adcs, = @time solve_multigrad(hadc, gradients)
+difftensors = fit_tensors(directions, adcs)
+
+# Solve Karger
+karger = Karger(; model, difftensors, odesolver = MagnusGL6(), timestep = 5.0)
+signal = @time solve(karger, gradient)
+
 
 ## Solve analytical model
-if !isnothing(experiment.analytical)
-    analytical_signal = solve_analytical(setup, experiment, volumes)
-end
+# Compute analytical Laplace eigenfunctions
+length_scale = 0.3
+eigstep = 1e-8
+eiglim = length2eig(length_scale, D_avg)
+analytical_coeffs = analytical_coefficients(setup, coeffs)
+analytical_laplace = AnalyticalLaplace(; analytical_coeffs..., eiglim, eigstep)
+lap_mat = @time solve(analytical_laplace) 
+
+# Compute analytical matrix formalism signal truncation
+analytical_mf = AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
+signal = solve(analytical_mf, gradient)

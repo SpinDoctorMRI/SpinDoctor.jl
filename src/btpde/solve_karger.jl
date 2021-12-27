@@ -1,26 +1,21 @@
 """
-    solve_karger(model, experiment, difftensors)
+    solve(simulation::Karger, gradient)
+
 Solve the finite pulse Karger model (FPK) using precomputed effective diffusion tensors
 `difftensors`.
 """
-function solve_karger(model, experiment, difftensors)
+function solve(simulation::Karger, gradient::ScalarGradient)
+    @unpack model, difftensors, odesolver, timestep = simulation
+    @unpack mesh, T₂, ρ, κ, γ = model
 
-    # Measure function evalutation time
-    starttime = Base.time()
-
-    # Extract input parameters
-    @unpack mesh, T₂, ρ, κ = model
-    @unpack directions, sequences, values, values_type = experiment.gradient
-    @unpack odesolver, timestep = experiment.karger
     dt = timestep
+    f = gradient.profile
+    d = gradient.dir
+    g = gradient.amplitude
+    TE = echotime(f)
 
     # Deduce sizes
     ncompartment, nboundary = size(mesh.facets)
-    ndirection = size(directions, 2)
-    nsequence = length(sequences)
-    namplitude = length(values)
-
-    qvalues, bvalues = get_values(experiment.gradient)
 
     # Volumes
     volumes = get_cmpt_volumes(mesh)
@@ -64,57 +59,18 @@ function solve_karger(model, experiment, difftensors)
 
     # Update function for linear ODE operator
     function update_func(J, u, p, t)
-        @unpack A, ADC_diag, R, f, q = p
-        J .= A .- (integral(f, t)^2 * q^2) .* ADC_diag .- R
+        @unpack A, ADC_diag, R, f, γ, g = p
+        J .= A .- (integral(f, t)^2 * (γ * g)^2) .* ADC_diag .- R
     end
 
-    # Allocate output arrays
-    signal = zeros(ncompartment, namplitude, nsequence, ndirection)
-    signal_allcmpts = zeros(namplitude, nsequence, ndirection)
-    itertimes = zeros(namplitude, nsequence, ndirection)
+    ADC_diag = spdiagm([d' * D * d for D ∈ difftensors])
 
-    # Iterate over gradient amplitudes, sequences and directions
-    for idir = 1:ndirection, iseq = 1:nsequence, iamp = 1:namplitude
+    p = (; A, ADC_diag, R, f, γ, g)
+    J_prototype = A - ADC_diag - R
+    J = DiffEqArrayOperator(J_prototype; update_func)
 
-        # Measure iteration time
-        itertime = Base.time()
+    prob = ODEProblem(J, S₀, (0.0, TE), p)
+    sol = OrdinaryDiffEq.solve(prob, odesolver, dt = dt)
 
-        # Gradient amplitude
-        q = qvalues[iamp, iseq]
-        b = bvalues[iamp, iseq]
-
-        # Time profile
-        f = sequences[iseq]
-        TE = echotime(f)
-
-        # Gradient direction
-        g = directions[:, idir]
-
-        # Display state of iterations
-        println("Computing Karger signal:")
-        println("  Direction $idir of $ndirection: g = $g")
-        println("  Sequence  $iseq of $nsequence: f = $f")
-        println("  Amplitude $iamp of $namplitude: q = $q, b = $b")
-
-        ADC_diag = spdiagm([g' * D * g for D ∈ difftensors[:, iseq]])
-
-        p = (; A, ADC_diag, R, f, q)
-        J_prototype = A - ADC_diag - R
-        J = DiffEqArrayOperator(J_prototype, update_func = update_func)
-
-        prob = ODEProblem(J, S₀, (0.0, TE), p)
-        sol = solve(prob, odesolver, dt = dt)
-
-        # Save final signal
-        signal[:, iamp, iseq, idir] = sol.u[end]
-
-        # Store timing
-        itertimes[iamp, iseq, idir] = Base.time() - itertime
-    end
-
-    signal_allcmpts = sum(signal, dims = 1)[1, :, :, :]
-
-    totaltime = Base.time() - starttime
-
-    (; signal, signal_allcmpts, itertimes, totaltime)
+    sol.u[end]
 end

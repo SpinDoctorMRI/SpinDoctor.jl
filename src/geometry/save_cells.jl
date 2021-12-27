@@ -13,7 +13,7 @@ function save_cells(cells, cellfilename)
     d, ncell = size(centers)
 
     # Save cell geometry to file
-    println("Writing cell geometry to " * cellfilename)
+    @info "Writing cell geometry to " * cellfilename
 
     open(cellfilename, "w") do io
         write(io, "Number of cells:\n")

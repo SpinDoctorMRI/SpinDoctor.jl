@@ -1,9 +1,9 @@
 """
-    create_surfaces_sphere(cells, setup)
+    create_surfaces(setup::SphereSetup, cells)
 
 Create surface triangulation of [inner and] outer spheres [and ECS].
 """
-function create_surfaces_sphere(cells, setup::Setup)
+function create_surfaces(setup::SphereSetup, cells)
 
     # Extract parameters
     @unpack radii, centers = cells

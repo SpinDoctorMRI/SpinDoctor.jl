@@ -5,7 +5,7 @@ Read mesh from Tetgen.
 """
 function read_tetgen(filename)
 
-    println("Reading from Tetgen FE mesh from " * filename)
+    @info "Reading Tetgen FE mesh from " * filename
 
     # Read points
     points = open(filename * ".node", "r") do io

@@ -1,12 +1,12 @@
 """
-    create_surfaces_cylinder(cells, setup)
+    create_surfaces(setup::CylinderSetup, cells)
 
 Create surface triangulation of [inner and] outer cylinders [and ECS].
 
 The ground surface is triangulated first, before the walls are "extruded" and
 the top surface is copied from the ground surface.
 """
-function create_surfaces_cylinder(cells, setup::Setup)
+function create_surfaces(setup::CylinderSetup, cells)
     @unpack radii, centers = cells
     @unpack ncell, rmin, rmax, height, include_in, in_ratio, ecs_shape, ecs_ratio = setup
 

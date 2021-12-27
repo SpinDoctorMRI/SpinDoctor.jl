@@ -47,7 +47,11 @@ In addition, a variety of neuron meshes is available, whose surface geometries w
 
 ![Spindle](misc/spindle.gif)
 
-The above graphic visualizes the magnetization as a z-displacement for the spindle neuron geometry `03b_spindle4aACC` (extracted from NeuroMorpho). The gradient is a PGSE sequence in the x-direction. The magnetization was computed for 200 time steps, and the exported vtk sequence was visualized using [Paraview](https://www.paraview.org).
+The above graphic visualizes the magnetization as a z-displacement for the spindle neuron
+geometry `03b_spindle4aACC` (extracted from [NeuroMorpho](http://neuromorpho.org/)). The
+gradient is a PGSE sequence in the x-direction. The magnetization was saved for 200 time
+steps, and the exported VTK sequence was visualized using
+[ParaView](https://www.paraview.org).
 
  
 ## Getting started
@@ -60,20 +64,4 @@ The above graphic visualizes the magnetization as a z-displacement for the spind
 
 ## How to cite us
 
-The paper about SpinDoctor can be found at https://arxiv.org/abs/1902.01025.
-
-If you use our software for research, please consider citing us:
-
-```bibtex
-@article{Li2019,
-  author  = {Jing-Rebecca Li and Van-Dang Nguyen and Try Nguyen Tran and Jan Valdman and Cong-Bang Trang and Khieu Van Nguyen and Duc Thach Son Vu and Hoang An Tran and Hoang Trong An Tran and Thi Minh Phuong Nguyen},
-  doi     = {https://doi.org/10.1016/j.neuroimage.2019.116120},
-  issn    = {1053-8119},
-  journal = {NeuroImage},
-  pages   = {116120},
-  title   = {{SpinDoctor: A MATLAB toolbox for diffusion MRI simulation}},
-  url     = {http://www.sciencedirect.com/science/article/pii/S1053811919307116},
-  volume  = {202},
-  year    = {2019}
-}
-```
+If you use our software for research, please consider citing us. See [CITATION.md](CITATION.md) for further details.

@@ -26,7 +26,7 @@
 
         # B-value
         b = quadgk(t -> integral(f, t)^2, 0.0, Δ + δ)[1]
-        @test bvalue_no_q(f) ≈ b rtol = 1e-8
+        @test int_F²(f) ≈ b rtol = 1e-8
     end
 
     @testset "DoublePGSE" begin
@@ -76,7 +76,7 @@
 
         # B-value
         b = quadgk(t -> integral(f, t)^2, 0.0, tmid + Δ + δ)[1]
-        @test bvalue_no_q(f) ≈ b rtol = 1e-8
+        @test int_F²(f) ≈ b rtol = 1e-8
     end
 
     @testset "CosOGSE" begin
@@ -94,7 +94,7 @@
 
         @test_throws Exception f(0.0)
         @test_throws Exception integral(f, 0.0)
-        @test_throws Exception bvalue_no_q(f)
+        @test_throws Exception int_F²(f)
         @test_throws Exception intervals(f)
         @test_throws Exception echotime(f)
         @test_throws Exception get_interval(f, 0.0)

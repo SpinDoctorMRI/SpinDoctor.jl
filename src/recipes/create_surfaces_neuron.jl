@@ -1,18 +1,17 @@
 """
-    create_surfaces_neuron(filename, setup)
+    create_surfaces(setup::NeuronSetup, filename)
 
 Create neuron surface mesh.
 A neuron surface mesh is loaded or create and loaded. An ECS can be added.
 """
-function create_surfaces_neuron(filename, setup::Setup)
-
+function create_surfaces(setup::NeuronSetup, filename)
     ecs_shape = setup.ecs_shape
     ecs_ratio = setup.ecs_ratio
 
     if !isfile(filename * "_elements.txt") || !isfile(filename * "_nodes.txt")
         gmesh2fem(filename)
     end
-    println("Reading from neuron FE mesh from " * filename)
+    @info "Reading neuron FE mesh from " * filename
 
     # Read points
     nline = open(filename * "_nodes.txt", "r") do io

@@ -2,18 +2,18 @@
 T = Float64
 
 # Geometrical setup
-setup = SphereSetup{T}(
-    name = "spheres/somespheres",
-    ncell = 4,
-    rmin = 3.0,
+setup = SphereSetup{T}(;
+    name = "spheres/sphere",
+    ncell = 1,
+    rmin = 5.0,
     rmax = 5.0,
     dmin = 0.2,
     dmax = 0.3,
     include_in = false,
-    in_ratio = 0.7,
-    ecs_shape = "convex_hull",
-    ecs_ratio = 0.3,
-    # refinement = 0.5,
+    in_ratio = 0.6,
+    ecs_shape = "no_ecs",
+    ecs_ratio = 0.5,
+    refinement = 0.5,
 )
 
 # Get compartimentalized coefficient vectors
@@ -27,8 +27,8 @@ coeffs = coefficients(
 )
 
 # Magnetic field gradient
-dir = [1.0, 1.0, 1.0]
-profile = PGSE(2000.0, 6000.0)
+dir = [1.0, 0.0, 0.0]
+profile = PGSE(5000.0, 10000.0)
 b = 1000
 g = √(b / int_F²(profile)) / coeffs.γ
 gradient = ScalarGradient(dir, profile, g)

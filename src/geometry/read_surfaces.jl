@@ -5,7 +5,7 @@ Read surface triangulation from file.
 """
 function read_surfaces(filename)
 
-    println("Loading surface triangulation from " * filename)
+    @info "Loading surface triangulation from " * filename
 
     # Get list of nodes from .node file
     points = open(filename * ".node", "r") do io

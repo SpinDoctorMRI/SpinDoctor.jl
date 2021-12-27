@@ -8,7 +8,7 @@ function save_tetgen(mesh_all, filename)
     # Extract mesh
     @unpack points, facets, elements, facetmarkers, elementmarkers = mesh_all
 
-    println("Saving mesh in Tetgen output format at " * filename)
+    @info "Saving mesh in Tetgen output format at " * filename
 
     # Save points
     npoint = size(points, 2)

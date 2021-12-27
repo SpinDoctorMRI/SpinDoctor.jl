@@ -1,8 +1,9 @@
 """
     elements, points = convexhull(points)
 
-Compute the convex hull of a set of points `points` (of size `dim * npoint`).
-Return a matrix of boundary elements `elements` (of size`dim * nelement`) and a restriction of the original points to the boundary (size `dim * npoint_keep`).
+Compute the convex hull of a set of points `points` (of size `dim * npoint`). Return a
+matrix of boundary elements `elements` (of size`dim * nelement`) and a restriction of the
+original points to the boundary (size `dim * npoint_keep`).
 """
 function convexhull(points)
 

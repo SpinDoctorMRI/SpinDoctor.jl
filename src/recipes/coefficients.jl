@@ -1,9 +1,9 @@
 """
-    get_coefficients(setup)
+    coefficients(setup; D, T₂, ρ, κ, γ)
 
 Prepare PDE compartments.
 """
-function get_coefficients(setup)
+function coefficients(setup::AbstractSetup{T}; D, T₂, ρ, κ, γ) where T
     @unpack ncell, include_in, in_ratio, ecs_shape, ecs_ratio = setup
 
     include_ecs = ecs_shape != "no_ecs"
@@ -92,26 +92,29 @@ function get_coefficients(setup)
     end
 
     # Initialize output arrays
-    D = [zeros(SMatrix{3,3}) for _ = 1:ncompartment]
-    T₂ = zeros(ncompartment)
-    κ = zeros(nboundary)
-    ρ = zeros(ncompartment)
+    coeffs = (;
+        D = [zeros(SMatrix{3,3,T}) for _ = 1:ncompartment],
+        T₂ = zeros(T, ncompartment),
+        κ = zeros(T, nboundary),
+        ρ = zeros(Complex{T}, ncompartment),
+        γ,
+    ) 
 
     # Distribute material properties to compartments and boundaries
-    ρ[compartments.=="in"] .= setup.ρ_in
-    ρ[compartments.=="out"] .= setup.ρ_out
-    ρ[compartments.=="ecs"] .= setup.ρ_ecs
-    D[compartments.=="in"] .= [setup.D_in]
-    D[compartments.=="out"] .= [setup.D_out]
-    D[compartments.=="ecs"] .= [setup.D_ecs]
-    T₂[compartments.=="in"] .= setup.T₂_in
-    T₂[compartments.=="out"] .= setup.T₂_out
-    T₂[compartments.=="ecs"] .= setup.T₂_ecs
-    κ[boundaries.=="in,out"] .= setup.κ_in_out
-    κ[boundaries.=="out,ecs"] .= setup.κ_out_ecs
-    κ[boundaries.=="in"] .= setup.κ_in
-    κ[boundaries.=="out"] .= setup.κ_out
-    κ[boundaries.=="ecs"] .= setup.κ_ecs
+    coeffs.ρ[compartments.=="in"] .= ρ.in
+    coeffs.ρ[compartments.=="out"] .= ρ.out
+    coeffs.ρ[compartments.=="ecs"] .= ρ.ecs
+    coeffs.D[compartments.=="in"] .= [D.in]
+    coeffs.D[compartments.=="out"] .= [D.out]
+    coeffs.D[compartments.=="ecs"] .= [D.ecs]
+    coeffs.T₂[compartments.=="in"] .= T₂.in
+    coeffs.T₂[compartments.=="out"] .= T₂.out
+    coeffs.T₂[compartments.=="ecs"] .= T₂.ecs
+    coeffs.κ[boundaries.=="in,out"] .= κ.in_out
+    coeffs.κ[boundaries.=="out,ecs"] .= κ.out_ecs
+    coeffs.κ[boundaries.=="in"] .= κ.in
+    coeffs.κ[boundaries.=="out"] .= κ.out
+    coeffs.κ[boundaries.=="ecs"] .= κ.ecs
 
-    (; ρ, D, T₂, κ)
+    coeffs 
 end

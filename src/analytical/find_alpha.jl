@@ -1,14 +1,22 @@
 function find_α(params, α_min, α_max, dα)
     α = Float64[]
     n = Int[]
-
+    
     α₀ = [0.0]
     j = 0
+    # pl = nothing
+    # αα = LinRange(α_min, α_max, 1000)
     while !isempty(α₀) && α₀[1] < α_max
-        println("Computing zeros of Fₙ(α) for n = $j")
+        @info "Computing zeros of Fₙ(α) for n = $j"
         α₀ = find_zeros(α -> α_func(params, α, j), α_min, α_max)
         append!(α, α₀)
         append!(n, fill(j, size(α₀)))
+        # if j == 0
+        #     pl = lines(αα,  α -> α_func(params, α, j))
+        #     display(pl)
+        # else
+        #     lines!(αα, α -> α_func(params, α, j))
+        # end
         j = j + 1
     end
 

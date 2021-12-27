@@ -19,12 +19,3 @@ function create_directions(ndirection::Int; flat::Bool = false)
     end
     directions
 end
-
-"""
-    create_directions(direction)
-
-Get one normalized direction.
-"""
-function create_directions(direction::Vector)
-    direction / norm(direction)
-end

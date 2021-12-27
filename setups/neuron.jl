@@ -1,6 +1,6 @@
 ## Neuron name
 # name = "spindle/whole_neurons/03a_spindle2aFI"
-name = "spindle/whole_neurons/03b_spindle4aACC"
+# name = "spindle/whole_neurons/03b_spindle4aACC"
 # name = "spindle/whole_neurons/03b_spindle7aACC"
 # name = "spindle/whole_neurons/04b_spindle3aFI"
 # name = "spindle/whole_neurons/06b_spindle8aACC"
@@ -14,7 +14,7 @@ name = "spindle/whole_neurons/03b_spindle4aACC"
 # name = "spindle/separated_neurons/03b_spindle4aACC_soma"
 # name = "spindle/separated_neurons/03b_spindle6aACC_dendrites_1"
 # name = "spindle/separated_neurons/03b_spindle6aACC_dendrites_2"
-# name = "spindle/separated_neurons/03b_spindle6aACC_soma"
+name = "spindle/separated_neurons/03b_spindle6aACC_soma"
 # name = "spindle/separated_neurons/03b_spindle7aACC_dendrites_1"
 # name = "spindle/separated_neurons/03b_spindle7aACC_dendrites_2"
 # name = "spindle/separated_neurons/03b_spindle7aACC_soma"
@@ -32,40 +32,30 @@ name = "spindle/whole_neurons/03b_spindle4aACC"
 # name = "pyramidal/whole_neurons/04b_pyramidal6aFI"
 # name = "pyramidal/whole_neurons/25o_pyramidal18aFI"
 
+# Floating point type for simulations
+T = Float64
 
-## Setup
-setup = NeuronSetup(
-    name = name,
+# Geometrical setup
+setup = NeuronSetup{T}(;
+    name,
     ecs_shape = "no_ecs",
     ecs_ratio = 0.3,
     # refinement = 0.5,
-    D_in = 0.002 * I(3),
-    D_out = 0.002 * I(3),
-    D_ecs = 0.002 * I(3),
-    T₂_in = Inf,
-    T₂_out = Inf,
-    T₂_ecs = Inf,
-    ρ_in = 1.0,
-    ρ_out = 1.0,
-    ρ_ecs = 1.0,
-    κ_in_out = 1e-3,
-    κ_out_ecs = 1e-3,
-    κ_in = 0.0,
-    κ_out = 0.0,
-    κ_ecs = 0.0,
 )
 
-experiment = Experiment(
-    gradient = (
-        directions = create_directions([1.0; 0.0; 0.0]),
-        sequences = [PGSE(2500.0, 4000.0)],
-        values = [1000.0],
-        values_type = "b",
-    ),
-    btpde = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6, nsave = 1),
-    btpde_midpoint = (θ = 0.5, timestep = 5),
-    mf = (length_scale = 3, neig_max = 400, ninterval = 500),
-    hadc = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6),
-    karger = (odesolver = MagnusGL6(), timestep = 5),
+# Get compartimentalized coefficient vectors
+coeffs = coefficients(
+    setup;
+    D = (; in = 0.002 * I(3), out = 0.002 * I(3), ecs = 0.002 * I(3)),
+    T₂ = (; in = Inf, out= Inf, ecs = Inf),
+    ρ = (; in = 1.0, out = 1.0, ecs = 1.0),
+    κ = (; in_out = 1e-4, out_ecs = 1e-4, in = 0.0, out = 0.0, ecs = 0.0),
+    γ = 2.67513e-4,
 )
 
+# Magnetic field gradient
+dir = [1.0, 0.0, 0.0]
+profile = PGSE(2500.0, 4000.0)
+b = 1000
+g = √(b / int_F²(profile)) / coeffs.γ
+gradient = ScalarGradient(dir, profile, g)

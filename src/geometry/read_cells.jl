@@ -6,7 +6,7 @@ Read cell configuration (centers and radii).
 function read_cells(cellfilename)
 
     # Read geometry from file
-    println("Loading cell configuration from " * cellfilename)
+    @info "Loading cell configuration from " * cellfilename
 
     open(cellfilename, "r") do io
         readline(io)

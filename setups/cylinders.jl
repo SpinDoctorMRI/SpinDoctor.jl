@@ -1,44 +1,38 @@
-setup = CylinderSetup(
+# Floating point type for simulations
+T = Float64
+
+# Geometrical setup
+setup = CylinderSetup{T}(;
     name = "cylinders/somecylinders",
     ncell = 3,
     rmin = 2.0,
     rmax = 6.0,
     dmin = 0.2,
     dmax = 0.3,
+    height = 1.0,
     bend = 0.0,
     twist = 0.0,
-    height = 20.0,
-    include_in = true,
+    include_in = false,
     in_ratio = 0.6,
     ecs_shape = "convex_hull",
     ecs_ratio = 0.5,
-    refinement = 0.5,
-    D_in = 0.002 * I(3),
-    D_out = 0.002 * I(3),
-    D_ecs = 0.002 * I(3),
-    T₂_in = Inf,
-    T₂_out = Inf,
-    T₂_ecs = Inf,
-    ρ_in = 1.0,
-    ρ_out = 1.0,
-    ρ_ecs = 1.0,
-    κ_in_out = 1e-3,
-    κ_out_ecs = 1e-3,
-    κ_in = 0.0,
-    κ_out = 0.0,
-    κ_ecs = 0.0,
+    # refinement = 0.5,
 )
 
-experiment = Experiment(
-    gradient = (
-        directions = create_directions([0.0; 0.0; 1.0]),
-        sequences = [PGSE(1000.0, 5000.0)],
-        values = [2000.0],
-        values_type = "b",
-    ),
-    btpde = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6, nsave = 1),
-    btpde_midpoint = (θ = 0.5, timestep = 5),
-    mf = (length_scale = 3, neig_max = 400, ninterval = 500),
-    hadc = (odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6),
-    karger = (odesolver = MagnusGL6(), timestep = 5),
+# Get compartimentalized coefficient vectors
+coeffs = coefficients(
+    setup;
+    D = (; in = 0.002 * I(3), out = 0.002 * I(3), ecs = 0.002 * I(3)),
+    T₂ = (; in = Inf, out= Inf, ecs = Inf),
+    ρ = (; in = 1.0, out = 1.0, ecs = 1.0),
+    κ = (; in_out = 1e-4, out_ecs = 1e-4, in = 0.0, out = 0.0, ecs = 0.0),
+    γ = 2.67513e-4,
 )
+
+# Magnetic field gradient
+dir = [1.0, 0.0, 0.0]
+profile = PGSE(2000.0, 6000.0)
+# profile = CosOGSE(5000.0, 5000.0, 2)
+b = 1000
+g = √(b / int_F²(profile)) / coeffs.γ
+gradient = ScalarGradient(dir, profile, g)
