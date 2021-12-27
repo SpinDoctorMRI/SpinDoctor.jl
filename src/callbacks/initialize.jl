@@ -12,21 +12,37 @@ function initialize!(p::Plotter{T}, simulation, gradient, ξ, t) where {T}
     ξ_cmpts = split_field(femesh, ξ)
     ξmax = maximum(abs, ξ)
     p.S₀ = sum(abs, M * ξ)
-    TE = echotime(gradient.profile)
+    TE = echotime(gradient)
 
     p.t[] = [t]
-    p.f[] = [gradient.profile(t)]
     p.ξ[] = copy(ξ)
     p.attenuation = Node(T[1])
     p.magnitude = [Node(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
     p.phase = [Node(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
 
     fig = Figure()
-
-    ax = Axis(fig[1, 1]; xlabel = "t [μs]", title = "Time profile")
-    xlims!(ax, 0, TE)
-    ylims!(ax, -1.1, 1.1)
-    lines!(ax, p.t, p.f)
+    
+    if gradient isa ScalarGradient
+        p.f[] = [gradient.profile(t)]
+        ax = Axis(fig[1, 1]; xlabel = "t [μs]", title = "Time profile")
+        xlims!(ax, 0, TE)
+        ylims!(ax, -1.1, 1.1)
+        lines!(ax, p.t, p.f)
+    else
+        grads = mapreduce(gradient, hcat, LinRange(0, gradient.TE, 200))
+        pmin = minimum(grads; dims = 2)
+        pmax = maximum(grads; dims = 2)
+        grad = Vec3f(gradient(t))
+        p.g⃗ = Node([grad])
+        p.g⃗_hist = Node([grad])
+        ax = Axis3(fig[1, 1]; title = "Gradient [T/m]")
+        ax.aspect = :data
+        xlims!(ax, pmin[1], pmax[1])
+        ylims!(ax, pmin[2], pmax[2])
+        zlims!(ax, pmin[3], pmax[3])
+        lines!(ax, p.g⃗_hist)
+        arrows!(ax, [Point3f(0,0,0)], p.g⃗)
+    end
 
     # ax = Axis(fig[2, 1]; xlabel = "t [μs]", yscale = log10, title = "Signal")
     ax = Axis(fig[2, 1]; xlabel = "t [μs]", title = "Signal attenuation")

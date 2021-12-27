@@ -10,7 +10,7 @@ abstract type AbstractGradient{T} end
 
 General gradient sequence `g⃗(t) ∈ R³`. The direcion and amplitude may vary in time.
 """
-struct GeneralGradient{T,F}
+Base.@kwdef struct GeneralGradient{T,F}
     g⃗::F
     TE::T
 end

@@ -37,9 +37,14 @@ function update!(p::Plotter, simulation, gradient, ξ, t)
         M = simulation.matrices.M
         ncompartment, nboundary = size(femesh.facets)
         ξ_cmpts = split_field(femesh, ξ)
-
         push!(p.t[], t)
-        p.f[] = push!(p.f[], gradient.profile(t))
+        if gradient isa ScalarGradient
+            p.f[] = push!(p.f[], gradient.profile(t))
+        else
+            grad = Vec3f(gradient(t))
+            p.g⃗[] = [grad]
+            p.g⃗_hist[] = push!(p.g⃗_hist[], grad)
+        end
         p.attenuation[] = push!(p.attenuation[], sum(abs, M * ξ) / p.S₀)
         p.ξ[] = ξ
         for icmpt = 1:ncompartment, iboundary = 1:nboundary
@@ -47,7 +52,7 @@ function update!(p::Plotter, simulation, gradient, ξ, t)
             p.phase[icmpt, iboundary][] = angle.(ξ_cmpts[icmpt])
         end
 
-        sleep(0.05)
+        sleep(0.01)
     end
     p.n += 1
 end

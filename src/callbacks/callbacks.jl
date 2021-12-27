@@ -36,9 +36,11 @@ Base.@kwdef mutable struct Plotter{T} <: AbstractCallback
     nupdate::Int = 1
     t::Node{Vector{T}} = Node(T[])
     f::Node{Vector{T}} = Node(T[])
+    g⃗::Node{Vector{Vec3f}} = Node([Vec3f(0, 0, 0)])
+    g⃗_hist::Node{Vector{Vec3f}} = Node([Vec3f(0, 0, 0)])
     ξ::Node{Vector{Complex{T}}} = Node(Complex{T}[])
     magnitude::Matrix{Node{Vector{T}}} = [Node(Vector{T}());;]
     phase::Matrix{Node{Vector{T}}} = [Node(Vector{T}());;]
     attenuation::Node{Vector{T}} = Node(T[])
-    S₀::T = one(T) 
+    S₀::T = one(T)
 end

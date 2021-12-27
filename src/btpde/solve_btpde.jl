@@ -41,7 +41,7 @@ function solve(
     # ODE problem
     J = copy(jac_prototype)
     p = (; J, S, Q, R, gradient)
-    TE = echotime(gradient.profile)
+    TE = echotime(gradient)
 
     for cb ∈ callbacks
         initialize!(cb, simulation, gradient, ρ, 0)

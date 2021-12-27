@@ -36,18 +36,16 @@ matrices = @time assemble_matrices(model);
 
 
 ## Magnetic field gradient
-dir = [1.0, 0.0, 0.0]
-profile = PGSE(2000.0, 6000.0)
-# profile = CosOGSE(5000.0, 5000.0, 2)
-b = 1000
-g = √(b / int_F²(profile)) / coeffs.γ
-gradient = ScalarGradient(dir, profile, g)
+TE = 5000
+g⃗(t) = 1.0 * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
+gradient = GeneralGradient{T,typeof(g⃗)}(; g⃗, TE)
+
 
 
 ## Solve BTPDE
 
 # Callbacks for time stepping (plot solution, save time series)
-plotter = Plotter{T}(; nupdate = 5)
+plotter = Plotter{T}(; nupdate = 1)
 writer = VTKWriter(; nupdate = 5)
 # callbacks = [plotter]
 callbacks = [plotter, writer]
@@ -56,9 +54,6 @@ callbacks = [plotter, writer]
 btpde = GeneralBTPDE(;
     model, matrices, reltol = 1e-4, abstol = 1e-6, odesolver = Rodas4(autodiff = false)
 )
-
-# BTPDE specialized for `ScalarGradient`s with constant interval profiles (PGSE, DoublePGSE)
-btpde = IntervalConstanBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
 
 # Solve BTPDE
 ξ = @time solve(btpde, gradient; callbacks)
@@ -87,39 +82,3 @@ lap_eig = limit_lengthscale(lap_eig, λ_max)
 # Compute magnetization using the matrix formalism reduced order model
 mf = MatrixFormalism(; model, matrices, lap_eig, ninterval = 500)
 ξ = @time solve(mf, gradient)
-
-
-## Solve HADC
-hadc = HADC(; model, matrices, odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6)
-adc_cmpts = @time solve(hadc, gradient)
-
-
-## Solve Karger model
-
-# Compute HADC and fit difftensors
-directions = unitsphere(50)
-gradients = [
-    ScalarGradient(collect(d), gradient.profile, gradient.amplitude) for
-    d ∈ eachcol(directions)
-]
-hadc = HADC(; model, matrices, odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6)
-adcs, = @time solve_multigrad(hadc, gradients)
-difftensors = fit_tensors(directions, adcs)
-
-# Solve Karger
-karger = Karger(; model, difftensors, odesolver = MagnusGL6(), timestep = 5.0)
-signal = @time solve(karger, gradient)
-
-
-## Solve analytical model
-# Compute analytical Laplace eigenfunctions
-length_scale = 0.3
-eigstep = 1e-8
-eiglim = length2eig(length_scale, D_avg)
-analytical_coeffs = analytical_coefficients(setup, coeffs)
-analytical_laplace = AnalyticalLaplace(; analytical_coeffs..., eiglim, eigstep)
-lap_mat = @time solve(analytical_laplace) 
-
-# Compute analytical matrix formalism signal truncation
-analytical_mf = AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
-signal = solve(analytical_mf, gradient)
