@@ -26,8 +26,8 @@ ParaView data collection file (PVD). The magnetization time series may be visual
 ParaView by opening the file `"\$dir/\$filename.pvd"`. The compartments are labeled.
 """
 Base.@kwdef mutable struct VTKWriter <: AbstractCallback
-    n::Int = 1
     nupdate::Int = 1
+    n::Int = 1
     ifile::Int = 1
     dir::String = "output"
     filename::String = "solution"
@@ -43,8 +43,8 @@ step. The resulting figure contains a plot of the time profile, total signal att
 and magnetization field (complex magnitude and phase shift).
 """
 Base.@kwdef mutable struct Plotter{T} <: AbstractCallback
-    n::Int = 1
     nupdate::Int = 1
+    n::Int = 1
     t::Node{Vector{T}} = Node(T[])
     f::Node{Vector{T}} = Node(T[])
     g⃗::Node{Vector{Vec3f}} = Node([Vec3f(0, 0, 0)])
@@ -54,4 +54,5 @@ Base.@kwdef mutable struct Plotter{T} <: AbstractCallback
     phase::Matrix{Node{Vector{T}}} = [Node(Vector{T}());;]
     attenuation::Node{Vector{T}} = Node(T[])
     S₀::T = one(T)
+    fig::Figure = Figure()
 end

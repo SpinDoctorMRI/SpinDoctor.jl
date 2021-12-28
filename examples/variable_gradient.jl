@@ -37,7 +37,9 @@ matrices = @time assemble_matrices(model);
 
 ## Magnetic field gradient
 TE = 5000
-g⃗(t) = 1.0 * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
+φ = -π / 6
+R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
+g⃗(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
 gradient = GeneralGradient{T,typeof(g⃗)}(; g⃗, TE)
 
 

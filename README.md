@@ -28,8 +28,8 @@ SpinDoctor has support for the following features:
 3. built-in diffusion-encoding pulse sequences, including
 	* the Pulsed Gradient Spin Echo (PGSE) and double-PGSE,
 	* the Ocsillating Gradient Spin Echo (OGSE), or
-	* custom pulse sequences;
-4. uniformly distributed gradient directions in 2D and 3D for high angular resolution diffusion imaging (HARDI)
+	* custom three-dimensional pulse sequences `g(t) = (gx(t), gy(t), gz(t))`
+4. uniformly distributed gradient directions in 2D and 3D for high angular resolution diffusion imaging (HARDI);
 
 SpinDoctor also comes with a geometry generation module, allowing for
 1. spherical cells with a nucleus;
@@ -53,7 +53,10 @@ gradient is a PGSE sequence in the x-direction. The magnetization was saved for 
 steps, and the exported VTK sequence was visualized using
 [ParaView](https://www.paraview.org).
 
- 
+![Spindle](misc/gradient.gif)
+
+Here the magnetization is shown in a dendrite branch during a three-dimensional gradient sequence.
+
 ## Getting started
 
 1) The base folder contains a commented general purpose driver `driver.jl`.

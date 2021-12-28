@@ -3,7 +3,7 @@ function initialize!(p::Printer, problem, gradient, ξ, t)
 end
 
 function initialize!(writer::VTKWriter, simulation, gradient, ξ, t)
-    (; dir, filename) = writer 
+    (; dir, filename) = writer
     ispath(dir) || mkdir(dir)
     writer.pvd = paraview_collection(joinpath(dir, filename))
     update!(writer, simulation, gradient, ξ, t)
@@ -18,28 +18,29 @@ function initialize!(p::Plotter{T}, simulation, gradient, ξ, t) where {T}
     p.S₀ = sum(abs, M * ξ)
     TE = echotime(gradient)
 
+    p.n = 1
     p.t[] = [t]
     p.ξ[] = copy(ξ)
     p.attenuation = Node(T[1])
     p.magnitude = [Node(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
     p.phase = [Node(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
 
-    fig = Figure()
-    
+    p.fig = Figure()
+
     if gradient isa ScalarGradient
         p.f[] = [gradient.profile(t)]
-        ax = Axis(fig[1, 1]; xlabel = "t [μs]", title = "Time profile")
+        ax = Axis(p.fig[1, 1]; xlabel = "t [μs]", title = "Time profile")
         xlims!(ax, 0, TE)
         ylims!(ax, -1.1, 1.1)
         lines!(ax, p.t, p.f)
     else
-        grads = mapreduce(gradient, hcat, LinRange(0, gradient.TE, 200))
+        grads = mapreduce(gradient, hcat, LinRange(0, TE, 200))
         pmin = minimum(grads; dims = 2)
         pmax = maximum(grads; dims = 2)
         grad = Vec3f(gradient(t))
         p.g⃗ = Node([grad])
         p.g⃗_hist = Node([grad])
-        ax = Axis3(fig[1, 1]; title = "Gradient [T/m]")
+        ax = Axis3(p.fig[1, 1]; title = "Gradient [T/m]")
         ax.aspect = :data
         xlims!(ax, pmin[1], pmax[1])
         ylims!(ax, pmin[2], pmax[2])
@@ -48,16 +49,15 @@ function initialize!(p::Plotter{T}, simulation, gradient, ξ, t) where {T}
         arrows!(ax, [Point3f(0,0,0)], p.g⃗)
     end
 
-    # ax = Axis(fig[2, 1]; xlabel = "t [μs]", yscale = log10, title = "Signal")
-    ax = Axis(fig[2, 1]; xlabel = "t [μs]", title = "Signal attenuation")
+    ax = Axis(p.fig[2, 1]; xlabel = "t [μs]", title = "Signal attenuation")
     xlims!(ax, 0, TE)
     # ylims!(ax, 1e-8, 1)
     ylims!(ax, 0, 1.1)
     lines!(ax, p.t, p.attenuation)
 
-    gm = fig[1, 2] = GridLayout()
+    gm = p.fig[1, 2] = GridLayout()
     ax = Axis3(gm[1, 1], title = "Magnetization (magnitude)")
-    ax.aspect = :data 
+    ax.aspect = :data
     m = nothing
     first = true
     colorrange = (0, ξmax)
@@ -75,13 +75,13 @@ function initialize!(p::Plotter{T}, simulation, gradient, ξ, t) where {T}
     end
     Colorbar(gm[1, 2]; limits = colorrange)
 
-    gm = fig[2, 2] = GridLayout()
+    gm = p.fig[2, 2] = GridLayout()
     ax = Axis3(gm[1, 1], title = "Magnetization (phase-shift)")
-    ax.aspect = :data 
+    ax.aspect = :data
     m = nothing
     first = true
     # colormap = :cyclic_wrwbw_40_90_c42_n256
-    colormap = :cyclic_mrybm_35_75_c68_n256		
+    colormap = :cyclic_mrybm_35_75_c68_n256
     colorrange = (-π, π)
     for icmpt = 1:ncompartment, iboundary = 1:nboundary
         facets = femesh.facets[icmpt, iboundary]
@@ -97,7 +97,7 @@ function initialize!(p::Plotter{T}, simulation, gradient, ξ, t) where {T}
     end
     Colorbar(gm[1, 2]; limits = colorrange, colormap)
 
-    display(fig)
+    display(p.fig)
 
     p
 end
