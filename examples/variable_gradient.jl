@@ -45,10 +45,11 @@ gradient = GeneralGradient{T,typeof(g⃗)}(; g⃗, TE)
 ## Solve BTPDE
 
 # Callbacks for time stepping (plot solution, save time series)
-plotter = Plotter{T}(; nupdate = 1)
+printer = Printer(; nupdate = 1, verbosity = 2)
 writer = VTKWriter(; nupdate = 5)
-# callbacks = [plotter]
-callbacks = [plotter, writer]
+plotter = Plotter{T}(; nupdate = 5)
+callbacks = [printer, plotter]
+# callbacks = [printer, plotter, writer]
 
 # General BTPDE for all gradients
 btpde = GeneralBTPDE(;

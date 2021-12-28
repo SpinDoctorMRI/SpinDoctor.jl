@@ -56,7 +56,7 @@ export unitcircle, unitsphere
 export compute_signal
 
 # Callbacks
-export VTKWriter, Plotter
+export Printer, VTKWriter, Plotter
 export initialize!, update!, finalize!
 
 # Recipes

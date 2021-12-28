@@ -1,3 +1,5 @@
+update!(p::Printer, problem, gradient, ξ, t)  = p.verbosity ≥ 2 && @info t 
+
 function update!(writer::VTKWriter, simulation, gradient, ξ, t)
     if writer.n % writer.nupdate == 0 
         (; pvd, dir, filename, ifile) = writer

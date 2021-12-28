@@ -1,3 +1,7 @@
+function initialize!(p::Printer, problem, gradient, ξ, t)
+    @info "Solving for" typeof(problem) gradient
+end
+
 function initialize!(writer::VTKWriter, simulation, gradient, ξ, t)
     (; dir, filename) = writer 
     ispath(dir) || mkdir(dir)
