@@ -14,7 +14,7 @@ function create_surfaces(setup::CylinderSetup, cells)
     nside = 30
     nside_min = 12
 
-    include_ecs = ecs_shape != "no_ecs"
+    include_ecs = ecs_shape != :no_ecs
     nboundary = (2 * include_in + 1 + include_ecs) * ncell + include_ecs
     rmean = (rmin + rmax) / 2
 
@@ -70,7 +70,7 @@ function create_surfaces(setup::CylinderSetup, cells)
         circles_ecs = create_circle.(radii_ecs, angles_ecs, centers_columns)
         points_ecs = hcat(circles_ecs...)
 
-        if ecs_shape == "box"
+        if ecs_shape == :box
             # Determine bounds of domain
             pmin = minimum(points_ecs, dims = 2)
             pmax = maximum(points_ecs, dims = 2)
@@ -84,11 +84,11 @@ function create_surfaces(setup::CylinderSetup, cells)
                 1 2 3 4
                 2 3 4 1
             ]
-        elseif ecs_shape == "convex_hull"
+        elseif ecs_shape == :convex_hull
             # Extract points defining convex hull of ECS
             edges_ecs, points_ecs = convexhull(points_ecs)
             npoint_ecs = size(points_ecs, 2)
-        elseif ecs_shape == "tight_wrap"
+        elseif ecs_shape == :tight_wrap
             error("unimplemented")
             # ashape = alphashape(points_ecs)
             # edges_ecs = boundary(hull)

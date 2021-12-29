@@ -37,7 +37,7 @@ T = Float64
 end
 
 # Geometrical setup
-setup = get_setup(CylinderSetup)
+setup = get_setup(CylinderSetup{T})
 coeffs = get_coeffs(setup)
 
 # Get compartimentalized coefficient vectors

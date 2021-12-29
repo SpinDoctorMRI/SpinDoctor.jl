@@ -13,31 +13,28 @@ For custom geometries with more than one compartment, call `split_mesh`
 directly instead. This requires facet and element labels.
 """
 function create_geometry(setup)
-
-    (; ncell, ecs_shape, refinement) = setup
+    (; refinement) = setup
 
     # File name for saving or loading geometry
-    filename = "meshfiles" * "/" * setup.name
+    filename = joinpath("meshfiles", setup.name)
 
     # Make sure that folder exists
     dir = dirname(filename)
     isdir(dir) || mkpath(dir)
 
-    # Check correct input format
-    if isa(setup, NeuronSetup) && ncell != 1
-        error("Neuron cell type is only available for ncell=1.")
+    if hasfield(typeof(setup), :ecs_shape)
+        setup.ecs_shape ∈ [:no_ecs, :box, :convex_hull, :tight_wrap] || error("Invalid ECS shape")
     end
-    !(ecs_shape == "no_ecs" && ncell > 1) ||
-        @error "Geometry must include ECS if more than one cell"
-    ecs_shape ∈ ["no_ecs", "box", "convex_hull", "tight_wrap"] || error("Invalid ECS shape")
 
-    # Check if cell description file is already available
-    cellfilename = filename * "_cells"
-    if isfile(cellfilename)
-        cells = read_cells(cellfilename)
-    elseif isa(setup, SphereSetup) || isa(setup, CylinderSetup)
-        cells = create_cells(setup)
-        save_cells(cells, cellfilename)
+    if setup isa Union{CylinderSetup,SphereSetup}
+        # Check if cell description file is already available
+        cellfilename = filename * "_cells"
+        if isfile(cellfilename)
+            cells = read_cells(cellfilename)
+        else
+            cells = create_cells(setup)
+            save_cells(cells, cellfilename)
+        end
     else
         cells = nothing
     end
@@ -45,7 +42,7 @@ function create_geometry(setup)
     # Make directory for storing finite elements mesh
     is_stl = endswith(filename, ".stl")
     if is_stl
-        ecs_shape == "no_ecs" || error("ECS is only available for surface meshes")
+        setup.ecs_shape == :no_ecs || error("ECS is only available for surface meshes")
         filename = filename[1:end-4]
     end
     save_meshdir_path = filename * "_dir"
@@ -63,10 +60,10 @@ function create_geometry(setup)
     elseif isfile(fname_tetgen * ".node") && isfile(fname_tetgen * ".poly")
         surfaces = read_surfaces(fname_tetgen)
     else
-        if isa(setup, Union{SphereSetup,CylinderSetup})
-            surfaces = create_surfaces(setup, cells)
-        elseif isa(setup, NeuronSetup)
+        if isa(setup, NeuronSetup)
             surfaces = create_surfaces(setup, filename)
+        else
+            surfaces = create_surfaces(setup, cells)
         end
         save_surfaces(fname_tetgen, surfaces)
     end
@@ -84,16 +81,6 @@ function create_geometry(setup)
         save_tetgen(mesh_all, fname_tetgen_femesh)
     end
 
-    # # Check that at correct number of compartments and boundaries has been found
-    # compartments_new = unique(mesh_all.elementmarkers)
-    # boundaries_new = unique(mesh_all.facetmarkers)
-
-    # solution = "use smaller refinement or change surface triangulation."
-    # length(compartments_new) == ncompartment ||
-    #     @error "Incorrect number of compartments, " * solution
-    # length(boundaries_new) == nboundary ||
-    #     @error "Incorrect number of boundaries, " * solution
-
     # Deform domain
     if isa(setup, CylinderSetup) && (setup.bend > 1e-16 || setup.twist > 1e-16)
         @debug "Deforming domain with bend $(setup.bend) and twist $(setup.twist)"
@@ -101,7 +88,7 @@ function create_geometry(setup)
     end
 
     # Split mesh into compartments
-    @time mesh = split_mesh(mesh_all)
+    mesh = split_mesh(mesh_all)
 
     mesh, surfaces, cells
 end

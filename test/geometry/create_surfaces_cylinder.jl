@@ -12,7 +12,7 @@
         height = 3.0,
         include_in = true,
         in_ratio = 0.6,
-        ecs_shape = "convex_hull",
+        ecs_shape = :convex_hull,
         ecs_ratio = 0.5,
         refinement = 0.5,
         D_in = 0.002 * I(3),

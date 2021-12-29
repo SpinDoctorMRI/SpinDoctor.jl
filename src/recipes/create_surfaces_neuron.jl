@@ -4,7 +4,7 @@
 Create neuron surface mesh.
 A neuron surface mesh is loaded or create and loaded. An ECS can be added.
 """
-function create_surfaces(setup::NeuronSetup, filename)
+function create_surfaces(setup::NeuronSetup{T}, filename) where {T}
     ecs_shape = setup.ecs_shape
     ecs_ratio = setup.ecs_ratio
 
@@ -20,7 +20,7 @@ function create_surfaces(setup::NeuronSetup, filename)
     points = open(filename * "_nodes.txt", "r") do io
         points = zeros(3, nline)
         for iline = 1:nline
-            points[:, iline] = parse.(Float64, split(readline(io)))
+            points[:, iline] = parse.(T, split(readline(io)))
         end
         points
     end
@@ -56,12 +56,12 @@ function create_surfaces(setup::NeuronSetup, filename)
     pmin = minimum(points, dims = 2)
     pmax = maximum(points, dims = 2)
 
-    if ecs_shape != "no_ecs"
+    if ecs_shape != :no_ecs
 
         # ecs_gap = ecs_ratio * min(pmax - pmin)
         ecs_gap = ecs_ratio * 10
 
-        if ecs_shape == "box"
+        if ecs_shape == :box
             points_ecs = [
                 pmin(1) pmax(1) pmax(1) pmin(1) pmin(1) pmax(1) pmax(1) pmin(1)
                 pmin(2) pmin(2) pmax(2) pmax(2) pmin(2) pmin(2) pmax(2) pmax(2)
@@ -72,9 +72,9 @@ function create_surfaces(setup::NeuronSetup, filename)
                 2 3 2 6 3 7 4 8 1 5 6 7
                 3 4 6 5 7 6 8 7 5 8 7 8
             ]
-        elseif ecs_shape == "convex_hull"
+        elseif ecs_shape == :convex_hull
             error("Not implemented")
-        elseif ecs_shape == "tight_wrap"
+        elseif ecs_shape == :tight_wrap
             error("Not implemented")
         end
 

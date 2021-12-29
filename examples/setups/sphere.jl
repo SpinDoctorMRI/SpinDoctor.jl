@@ -11,7 +11,7 @@ setup = SphereSetup{T}(;
     dmax = 0.3,
     include_in = false,
     in_ratio = 0.6,
-    ecs_shape = "no_ecs",
+    ecs_shape = :no_ecs,
     ecs_ratio = 0.5,
     refinement = 0.5,
 )

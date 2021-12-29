@@ -1,7 +1,7 @@
 function analytical_coefficients(setup, coeffs)
     rmean = (setup.rmin + setup.rmax) / 2
     include_in = setup.include_in
-    include_ecs = setup.ecs_shape != "no_ecs"
+    include_ecs = setup.ecs_shape != :no_ecs
     dim = radial_dimension(setup)
     n = unique([1:include_in+include_ecs; length(coeffs.κ)])
 

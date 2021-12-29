@@ -11,7 +11,7 @@ setup = SphereSetup{T}(
     dmax = 0.3,
     include_in = false,
     in_ratio = 0.7,
-    ecs_shape = "convex_hull",
+    ecs_shape = :convex_hull,
     ecs_ratio = 0.3,
     # refinement = 0.5,
 )

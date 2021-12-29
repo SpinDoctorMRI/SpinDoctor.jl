@@ -1,6 +1,7 @@
 function solve(laplace::AnalyticalLaplace) 
     (; D, T₂, dim, eiglim, eigstep) = laplace
 
+    # TODO: Add support for dim = 1 (PlateSetup)
     L = length(D)
 
     # Compute radial and angular eigenvalues (λ and ν), with α^2 = λ and n^2 = ν for

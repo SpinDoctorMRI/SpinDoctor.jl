@@ -1,9 +1,9 @@
 """
-    call_tetgen(setup, surfaces)
+    call_tetgen(surfaces, refinement)
 
-Call Tetgen on surface geometry.
+Call Tetgen on surface geometry. A refinement is applied if `refinement < Inf`.
 """
-function call_tetgen(surfaces, refinement = nothing)
+function call_tetgen(surfaces, refinement)
     (; points, facets, facetmarkers, regions) = surfaces
 
     nregion = size(regions, 2)
@@ -21,7 +21,7 @@ function call_tetgen(surfaces, refinement = nothing)
         fill(0.1, 1, nregion)
     ]
 
-    if isnothing(refinement)
+    if isinf(refinement)
         tetgen = tetrahedralize(input, "pqA")
     else
         tetgen = tetrahedralize(input, "pqAa$(refinement)")

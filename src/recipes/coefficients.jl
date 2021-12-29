@@ -3,13 +3,64 @@
 
 Prepare PDE compartments.
 """
-function coefficients(setup::AbstractSetup{T}; D, T₂, ρ, κ, γ) where T
+function coefficients end
+
+coefficients(::PlateSetup{T}; D, T₂, ρ, κ, γ) where T = (;
+    D = SMatrix{3,3,T,9}.(D),
+    T₂ = T.(T₂),
+    κ = [T.(κ.interfaces); T.(κ.boundaries)],
+    ρ = Complex{T}.(ρ),
+    γ = T(γ),
+) 
+
+function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where T
+    (; ecs_shape, ecs_ratio) = setup
+
+    include_ecs = ecs_shape != :no_ecs
+
+    @assert !include_ecs || 0 < ecs_ratio
+
+    # Determine number of compartments and boundaries
+    ncompartment = 1 + include_ecs
+    nboundary = 1 + include_ecs
+    if include_ecs
+        compartments = ["neuron", "ecs"]
+        boundaries = ["neuron,ecs", "ecs"]
+    else
+        compartments = ["neuron"]
+        boundaries = ["neuron"]
+    end
+
+    # Initialize output arrays
+    coeffs = (;
+        D = [zeros(SMatrix{3,3,T}) for _ = 1:ncompartment],
+        T₂ = zeros(T, ncompartment),
+        κ = zeros(T, nboundary),
+        ρ = zeros(Complex{T}, ncompartment),
+        γ = T(γ),
+    ) 
+
+    # Distribute material properties to compartments and boundaries
+    coeffs.ρ[compartments.=="neuron"] .= ρ.neuron
+    coeffs.ρ[compartments.=="ecs"] .= ρ.ecs
+    coeffs.D[compartments.=="neuron"] .= [D.neuron]
+    coeffs.D[compartments.=="ecs"] .= [D.ecs]
+    coeffs.T₂[compartments.=="neuron"] .= T₂.neuron
+    coeffs.T₂[compartments.=="ecs"] .= T₂.ecs
+    coeffs.κ[boundaries.=="neuron,ecs"] .= κ.neuron_ecs
+    coeffs.κ[boundaries.=="neuron"] .= κ.neuron
+    coeffs.κ[boundaries.=="ecs"] .= κ.ecs
+
+    coeffs 
+end
+
+function coefficients(setup::Union{CylinderSetup{T},SphereSetup{T}}; D, T₂, ρ, κ, γ) where T
     (; ncell, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
 
-    include_ecs = ecs_shape != "no_ecs"
+    include_ecs = ecs_shape != :no_ecs
 
     # Check for correct radius ratios and that neurons do not have in-compartments
-    @assert !include_in || 0 < in_ratio && in_ratio < 1 && !isa(setup, NeuronSetup)
+    @assert !include_in || 0 < in_ratio && in_ratio < 1
     @assert !include_ecs || 0 < ecs_ratio
 
     # Determine number of compartments and boundaries
@@ -20,9 +71,6 @@ function coefficients(setup::AbstractSetup{T}; D, T₂, ρ, κ, γ) where T
     elseif isa(setup, CylinderSetup)
         # An axon has a side interface, and a top-bottom boundary
         nboundary = (2 * include_in + 1 + include_ecs) * ncell + include_ecs
-    elseif isa(setup, NeuronSetup)
-        # For a neuron, there is one interface
-        nboundary = 1 + include_ecs
     end
 
     boundaries = String[]
@@ -97,7 +145,7 @@ function coefficients(setup::AbstractSetup{T}; D, T₂, ρ, κ, γ) where T
         T₂ = zeros(T, ncompartment),
         κ = zeros(T, nboundary),
         ρ = zeros(Complex{T}, ncompartment),
-        γ,
+        γ = T(γ),
     ) 
 
     # Distribute material properties to compartments and boundaries

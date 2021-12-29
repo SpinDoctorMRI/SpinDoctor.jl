@@ -14,7 +14,7 @@ setup = CylinderSetup{T}(;
     twist = 0.0,
     include_in = false,
     in_ratio = 0.6,
-    ecs_shape = "convex_hull",
+    ecs_shape = :convex_hull,
     ecs_ratio = 0.5,
     # refinement = 0.5,
 )

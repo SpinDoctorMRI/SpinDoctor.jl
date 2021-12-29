@@ -4,12 +4,10 @@
 Create surface triangulation of [inner and] outer spheres [and ECS].
 """
 function create_surfaces(setup::SphereSetup, cells)
-
-    # Extract parameters
     (; radii, centers) = cells
     (; ncell, rmin, rmax, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
 
-    include_ecs = ecs_shape != "no_ecs"
+    include_ecs = ecs_shape != :no_ecs
 
     rmean = (rmin + rmax) / 2
 
@@ -38,7 +36,7 @@ function create_surfaces(setup::SphereSetup, cells)
     nfacet_out = size.(facets_out, 2)
 
     if include_ecs
-        if ecs_shape == "box"
+        if ecs_shape == :box
             # Determine bounds of domain
             emin = minimum(hcat(points_out...), dims = 2)
             emax = maximum(hcat(points_out...), dims = 2)
@@ -61,7 +59,7 @@ function create_surfaces(setup::SphereSetup, cells)
             regions_ecs = emin .+ ecs_ratio / 2 * rmean
             npoint_ecs = 8
             nfacet_ecs = 12
-        elseif ecs_shape == "convex_hull"
+        elseif ecs_shape == :convex_hull
             npoint_ecs = create_npoint.((1 + ecs_ratio) .* radii)
             points_ecs = [
                 centers[:, i] .+

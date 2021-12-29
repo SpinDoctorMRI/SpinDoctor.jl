@@ -11,7 +11,7 @@ Base.@kwdef struct SphereSetup{T} <: AbstractSetup{T}
     in_ratio::T
     ecs_shape::String
     ecs_ratio::T
-    refinement::Union{T,Nothing} = nothing
+    refinement::T = Inf
 end
 
 Base.@kwdef struct CylinderSetup{T} <: AbstractSetup{T}
@@ -28,7 +28,7 @@ Base.@kwdef struct CylinderSetup{T} <: AbstractSetup{T}
     in_ratio::T
     ecs_shape::String
     ecs_ratio::T
-    refinement::Union{T,Nothing} = nothing
+    refinement::T = Inf
 end
 
 Base.@kwdef struct PlateSetup{T} <: AbstractSetup{T}
@@ -38,15 +38,12 @@ Base.@kwdef struct PlateSetup{T} <: AbstractSetup{T}
     heights::Vector{T}
     bend::T
     twist::T
-    refinement::Union{T,Nothing} = nothing
+    refinement::T = Inf
 end
 
 Base.@kwdef struct NeuronSetup{T} <: AbstractSetup{T}
     name::String
-    ncell::Int = 1
-    include_in::Bool = false
-    in_ratio::T = 0
-    ecs_shape::String
+    ecs_shape::Symbol
     ecs_ratio::T
-    refinement::Union{T,Nothing} = nothing
+    refinement::T = Inf
 end

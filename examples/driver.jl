@@ -22,8 +22,8 @@ set_theme!(theme_dark())
 # include("setups/spheres.jl")
 include("setups/neuron.jl")
 
-femesh, = @time create_geometry(setup)
-model = Model(; mesh = femesh, coeffs...)
+femesh, = @time create_geometry(setup);
+model = Model(; mesh = femesh, coeffs...);
 volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
 ncompartment = length(model.mesh.points)
@@ -37,7 +37,7 @@ matrices = @time assemble_matrices(model);
 
 
 ## Magnetic field gradient
-dir = [1.0, 0.0, 0.0]
+dir = [0.0, 0.0, 1.0]
 profile = PGSE(2000.0, 6000.0)
 # profile = CosOGSE(5000.0, 5000.0, 2)
 b = 1000

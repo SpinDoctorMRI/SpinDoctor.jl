@@ -7,9 +7,9 @@ function get_setup end
 
 get_setup(S::Type{PlateSetup{T}}) where {T} = S(;
     name = "plates/someplates",
-    width = 1.0,
-    depth = 1.0,
-    heights = 0:0.1:1.0,
+    width = 20.0,
+    depth = 20.0,
+    heights = fill(5.0, 4),
     bend = 0.0,
     twist = 0.0,
     # refinement = 0.5,
@@ -27,7 +27,7 @@ get_setup(S::Type{CylinderSetup{T}}) where {T} = S(;
     twist = 0.0,
     include_in = true,
     in_ratio = 0.6,
-    ecs_shape = "convex_hull",
+    ecs_shape = :convex_hull,
     ecs_ratio = 0.5,
     # refinement = 0.5,
 )
@@ -41,14 +41,14 @@ get_setup(S::Type{SphereSetup{T}}) where {T} = S(;
     dmax = 0.3,
     include_in = false,
     in_ratio = 0.7,
-    ecs_shape = "convex_hull",
+    ecs_shape = :convex_hull,
     ecs_ratio = 0.3,
     # refinement = 0.5,
 )
 
 get_setup(S::Type{NeuronSetup{T}}) where {T} = S(;
     name,
-    ecs_shape = "no_ecs",
+    ecs_shape = :no_ecs,
     ecs_ratio = 0.3,
     # refinement = 0.5,
 )
@@ -58,7 +58,19 @@ get_setup(S::Type{NeuronSetup{T}}) where {T} = S(;
 
 Get preconfigured compartment coefficients for `setup`.
 """
-setup_coeffs(setup) = coefficients(
+function setup_coeffs end
+
+setup_coeffs(setup::PlateSetup) = coefficients(
+    setup;
+    D = [0.002 * I(3) for _ = 1:length(setup.heights)],
+    T₂ = [Inf for _ = 1:length(setup.heights)],
+    ρ = [1.0 for _ = 1:length(setup.heights)],
+    κ = (; interfaces = [1e-4 for _ = 1:length(setup.heights)-1],
+         boundaries = [0.0 for _ = 1:length(setup.heights)]),
+    γ = 2.67513e-4,
+)
+
+setup_coeffs(setup::CylinderSetup) = coefficients(
     setup;
     D = (; in = 0.002 * I(3), out = 0.002 * I(3), ecs = 0.002 * I(3)),
     T₂ = (; in = Inf, out = Inf, ecs = Inf),
@@ -67,3 +79,20 @@ setup_coeffs(setup) = coefficients(
     γ = 2.67513e-4,
 )
 
+setup_coeffs(setup::SphereSetup) = coefficients(
+    setup;
+    D = (; in = 0.002 * I(3), out = 0.002 * I(3), ecs = 0.002 * I(3)),
+    T₂ = (; in = Inf, out = Inf, ecs = Inf),
+    ρ = (; in = 1.0, out = 1.0, ecs = 1.0),
+    κ = (; in_out = 1e-4, out_ecs = 1e-4, in = 0.0, out = 0.0, ecs = 0.0),
+    γ = 2.67513e-4,
+)
+
+setup_coeffs(setup::NeuronSetup) = coefficients(
+    setup;
+    D = (; neuron = 0.002 * I(3), ecs = 0.002 * I(3)),
+    T₂ = (; neuron = Inf, ecs = Inf),
+    ρ = (; n = 1.0, neuron = 1.0, ecs = 1.0),
+    κ = (; neuron_ecs = 1e-4, neuron = 0.0, ecs = 0.0),
+    γ = 2.67513e-4,
+)
