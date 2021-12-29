@@ -15,8 +15,7 @@ function solve(problem::MatrixFormalism, gradient)
     T = lap_eig.massrelax
     neig = length(λ)
 
-    # Create initial conditions
-    ρ = mapreduce((ρ, p) -> fill(ρ, size(p, 2)), vcat, ρ, mesh.points)
+    ρ = initial_conditions(model)
 
     # Project initial spin density onto Laplace eigenfunction basis
     ν = ϕ' * (M * ρ)

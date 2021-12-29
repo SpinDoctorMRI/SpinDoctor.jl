@@ -19,8 +19,7 @@ function solve(
     isconstant(gradient.profile) || error("Time profile must be interval-wise constant")
     ivals = intervals(gradient.profile)
 
-    # Create initial conditions (enforce complex values)
-    ρ = mapreduce((ρ, p) -> fill(ρ, size(p, 2)), vcat, ρ, mesh.points)
+    ρ = initial_conditions(model)
 
     Jac!(J, g⃗) =
            @.(J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3])))

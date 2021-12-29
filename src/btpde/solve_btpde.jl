@@ -12,8 +12,7 @@ function solve(
     (; mesh, D, T₂, ρ, γ) = model
     (; M, S, R, Mx, Q, M_cmpts) = matrices
 
-    # Create initial conditions (enforce complex values)
-    ρ = mapreduce((ρ, p) -> fill(ρ, size(p, 2)), vcat, ρ, mesh.points)
+    ρ = initial_conditions(model)
 
     # Time dependent ODE function
     function Mdξ!(dξ, ξ, p, t)

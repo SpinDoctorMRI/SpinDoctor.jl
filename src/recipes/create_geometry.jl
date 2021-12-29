@@ -52,7 +52,7 @@ function create_geometry(setup; recreate = true)
 
     # Use an existing finite elements mesh or create a new finite elements mesh. The name of
     # the finite elements mesh is stored in the string `fname_tetgen_femesh`
-    refinement_str = isnothing(refinement) ? "" : "_refinement$refinement"
+    refinement_str = isinf(refinement) ? "" : "_refinement$refinement"
     fname_tetgen =
         "$save_meshdir_path/$(split(filename, "/")[end])$(refinement_str)_mesh"
 

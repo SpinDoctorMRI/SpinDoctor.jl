@@ -34,6 +34,7 @@ export split_field
 export get_cmpt_volumes, get_mesh_volumes
 
 export Model
+export initial_conditions
 
 export savefield
 
@@ -134,6 +135,7 @@ include("analytical/solve_analytical_laplace.jl")
 include("analytical/solve_analytical_mf.jl")
 
 # BTPDE
+include("btpde/initial_conditions.jl")
 include("btpde/solve_btpde.jl")
 include("btpde/solve_btpde_midpoint.jl")
 include("btpde/solve_karger.jl")
