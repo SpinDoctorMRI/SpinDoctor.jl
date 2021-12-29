@@ -1,9 +1,24 @@
-using SpinDoctor
 using LinearAlgebra
 using QuadGK
 using Test
 
+# LSP indexing solution
+# https://github.com/julia-vscode/julia-vscode/issues/800#issuecomment-650085983
+if isdefined(@__MODULE__, :LanguageServer)
+    include("../src/SpinDoctor.jl")
+    using .SpinDoctor
+else
+    using SpinDoctor
+end
 
+include("testutils.jl")
+
+# Run through typical workflow
+@testset "Workflow" begin
+    include("workflow.jl")
+end
+
+#= TODO: Restructure tests
 # Datatypes
 @testset "Setups" begin
     include("datatypes/sequences.jl")
@@ -95,3 +110,4 @@ end
 @testset "Plot" begin
     include("plot/plot_mesh.jl")
 end
+=#
