@@ -47,20 +47,20 @@ get_setup(S::Type{SphereSetup{T}}) where {T} = S(;
 )
 
 get_setup(S::Type{NeuronSetup{T}}) where {T} = S(;
-    name,
+    name = "neuron",
     ecs_shape = :no_ecs,
     ecs_ratio = 0.3,
     # refinement = 0.5,
 )
 
 """
-    setup_coeffs(setup)
+    get_coeffs(setup)
 
 Get preconfigured compartment coefficients for `setup`.
 """
-function setup_coeffs end
+function get_coeffs end
 
-setup_coeffs(setup::PlateSetup) = coefficients(
+get_coeffs(setup::PlateSetup) = coefficients(
     setup;
     D = [0.002 * I(3) for _ = 1:length(setup.heights)],
     T₂ = [Inf for _ = 1:length(setup.heights)],
@@ -70,7 +70,7 @@ setup_coeffs(setup::PlateSetup) = coefficients(
     γ = 2.67513e-4,
 )
 
-setup_coeffs(setup::CylinderSetup) = coefficients(
+get_coeffs(setup::CylinderSetup) = coefficients(
     setup;
     D = (; in = 0.002 * I(3), out = 0.002 * I(3), ecs = 0.002 * I(3)),
     T₂ = (; in = Inf, out = Inf, ecs = Inf),
@@ -79,7 +79,7 @@ setup_coeffs(setup::CylinderSetup) = coefficients(
     γ = 2.67513e-4,
 )
 
-setup_coeffs(setup::SphereSetup) = coefficients(
+get_coeffs(setup::SphereSetup) = coefficients(
     setup;
     D = (; in = 0.002 * I(3), out = 0.002 * I(3), ecs = 0.002 * I(3)),
     T₂ = (; in = Inf, out = Inf, ecs = Inf),
@@ -88,7 +88,7 @@ setup_coeffs(setup::SphereSetup) = coefficients(
     γ = 2.67513e-4,
 )
 
-setup_coeffs(setup::NeuronSetup) = coefficients(
+get_coeffs(setup::NeuronSetup) = coefficients(
     setup;
     D = (; neuron = 0.002 * I(3), ecs = 0.002 * I(3)),
     T₂ = (; neuron = Inf, ecs = Inf),

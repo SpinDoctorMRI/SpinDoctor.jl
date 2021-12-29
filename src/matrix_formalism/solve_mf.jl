@@ -23,10 +23,6 @@ function solve(problem::MatrixFormalism, gradient)
     # Laplace operator in Laplace eigenfunction basis
     L = diagm(λ)
 
-    dir = gradient.dir
-    f = gradient.profile
-    g = gradient.amplitude
-
     # Bloch-Torrey operator in Laplace eigenfunction basis for given gradient 
     function K!(K, g⃗)
         @. K = L + T + im * γ * (g⃗[1] * Ax[1] + g⃗[2] * Ax[2] + g⃗[3] * Ax[3])
