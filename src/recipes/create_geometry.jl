@@ -1,7 +1,9 @@
 """
-    create_geometry(setup)
+    create_geometry(setup; recreate = true)
 
-Create cells, surfaces and finite element mesh.
+Create cells, surfaces and finite element mesh. If `recreate = false`, previous geometry
+will be reused.
+
 This function does the following:
 - Check geometry setup consistency
 - Create or load cell configuration
@@ -12,7 +14,7 @@ This function does the following:
 For custom geometries with more than one compartment, call `split_mesh`
 directly instead. This requires facet and element labels.
 """
-function create_geometry(setup)
+function create_geometry(setup; recreate = true)
     (; refinement) = setup
 
     # File name for saving or loading geometry
@@ -29,7 +31,7 @@ function create_geometry(setup)
     if setup isa Union{CylinderSetup,SphereSetup}
         # Check if cell description file is already available
         cellfilename = filename * "_cells"
-        if isfile(cellfilename)
+        if isfile(cellfilename) && !recreate
             cells = read_cells(cellfilename)
         else
             cells = create_cells(setup)
@@ -57,7 +59,7 @@ function create_geometry(setup)
     # Read or create surface triangulation
     if is_stl
         surfaces = nothing
-    elseif isfile(fname_tetgen * ".node") && isfile(fname_tetgen * ".poly")
+    elseif isfile(fname_tetgen * ".node") && isfile(fname_tetgen * ".poly") && !recreate
         surfaces = read_surfaces(fname_tetgen)
     else
         if isa(setup, NeuronSetup)
@@ -71,7 +73,7 @@ function create_geometry(setup)
     # Add ".1" suffix to output file name, since this is what Tetgen does
     fname_tetgen_femesh = fname_tetgen * ".1"
 
-    if isfile(fname_tetgen_femesh * ".node")
+    if isfile(fname_tetgen_femesh * ".node") && !recreate
         # Read global mesh from Tetgen output
         mesh_all = read_tetgen(fname_tetgen_femesh)
     elseif is_stl
