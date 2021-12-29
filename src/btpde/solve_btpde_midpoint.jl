@@ -1,5 +1,5 @@
 """
-    run(simulation::IntervalConstanBTPDE, gradient)
+    run(problem::IntervalConstanBTPDE, gradient)
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 This function uses a manual time stepping scheme (theta-rule), that requires a degree of
@@ -8,11 +8,11 @@ implicitness `θ` and a time step `Δt`.
     `θ = 1.0`: Implicit Euler (first order)
 """
 function solve(
-    simulation::IntervalConstanBTPDE{T},
+    problem::IntervalConstanBTPDE{T},
     gradient::ScalarGradient;
     callbacks = AbstractCallback[],
 ) where {T}
-    @unpack θ, timestep, model, matrices = simulation
+    @unpack θ, timestep, model, matrices = problem
     @unpack mesh, D, T₂, ρ, γ = model
     @unpack M, S, R, Mx, Q, M_cmpts = matrices
 
@@ -31,7 +31,7 @@ function solve(
     J = -(S + Q + im * sum(Mx)) # Allocate sparsity pattern
 
     for cb ∈ callbacks
-        initialize!(cb, simulation, gradient, ξ, t)
+        initialize!(cb, problem, gradient, ξ, t)
     end
 
     # Crank-Nicolson time stepping
@@ -59,7 +59,7 @@ function solve(
             ldiv!(ξ, F, Ey)
             t += Δt
             for cb ∈ callbacks
-                update!(cb, simulation, gradient, ξ, t)
+                update!(cb, problem, gradient, ξ, t)
             end
         end
     end

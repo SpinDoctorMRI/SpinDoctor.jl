@@ -1,14 +1,14 @@
 """
-    solve(simulation::GeneralBTPDE, gradient[; callbacks])
+    solve(problem::GeneralBTPDE, gradient[; callbacks])
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 """
 function solve(
-    simulation::GeneralBTPDE{T},
+    problem::GeneralBTPDE{T},
     gradient;
     callbacks = AbstractCallback[],
 ) where {T}
-    @unpack model, matrices, reltol, abstol, odesolver = simulation
+    @unpack model, matrices, reltol, abstol, odesolver = problem
     @unpack mesh, D, T₂, ρ, γ = model
     @unpack M, S, R, Mx, Q, M_cmpts = matrices
 
@@ -31,7 +31,7 @@ function solve(
 
     function func(u, t, integrator)
         for cb ∈ callbacks
-            update!(cb, simulation, gradient, u, t)
+            update!(cb, problem, gradient, u, t)
         end
     end
 
@@ -44,7 +44,7 @@ function solve(
     TE = echotime(gradient)
 
     for cb ∈ callbacks
-        initialize!(cb, simulation, gradient, ρ, 0)
+        initialize!(cb, problem, gradient, ρ, 0)
     end
 
     odefunction = ODEFunction(Mdξ!; mass_matrix = M, jac = Jac!, jac_prototype)

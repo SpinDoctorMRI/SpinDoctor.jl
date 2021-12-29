@@ -1,9 +1,9 @@
-update!(p::Printer, problem, gradient, ξ, t)  = p.verbosity ≥ 2 && @info t 
+update!(p::Printer, problem, gradient, ξ, t)  = p.verbosity ≥ 2 && @info "t = $t"
 
-function update!(writer::VTKWriter, simulation, gradient, ξ, t)
+function update!(writer::VTKWriter, problem, gradient, ξ, t)
     if writer.n % writer.nupdate == 0 
         (; pvd, dir, filename, ifile) = writer
-        (; model) = simulation
+        (; model) = problem
 
         ncompartment = length(model.mesh.points)
         npoint_cmpts = size.(model.mesh.points, 2)
@@ -33,10 +33,10 @@ function update!(writer::VTKWriter, simulation, gradient, ξ, t)
     writer.n += 1
 end
 
-function update!(p::Plotter, simulation, gradient, ξ, t)
+function update!(p::Plotter, problem, gradient, ξ, t)
     if p.n % p.nupdate == 0 
-        femesh = simulation.model.mesh
-        M = simulation.matrices.M
+        femesh = problem.model.mesh
+        M = problem.matrices.M
         ncompartment, nboundary = size(femesh.facets)
         ξ_cmpts = split_field(femesh, ξ)
         push!(p.t[], t)

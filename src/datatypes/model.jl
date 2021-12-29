@@ -6,7 +6,7 @@ T₂-relaxation times `T₂`, wall permeabilities `κ`, and gyromacnetic ratio `
 the one of water protons).
 """
 Base.@kwdef struct Model{T}
-    mesh::FEMesh
+    mesh::FEMesh{T}
     ρ::Vector{Complex{T}}
     D::Vector{SMatrix{3,3,T,9}}
     T₂::Vector{T}

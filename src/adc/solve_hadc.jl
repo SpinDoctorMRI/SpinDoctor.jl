@@ -1,11 +1,11 @@
 """
-    solve_hadc(simulation::HADC, gradient::ScalarGradient)
+    solve_hadc(problem::HADC, gradient::ScalarGradient)
 
 Compute the ADC using a homogenized ADC model (HADC). This is currently only implemented for
 scalar gradients.
 """
-function solve(simulation::HADC, gradient::ScalarGradient)
-    @unpack model, matrices, odesolver, reltol, abstol = simulation 
+function solve(problem::HADC, gradient::ScalarGradient)
+    @unpack model, matrices, odesolver, reltol, abstol = problem 
     @unpack mesh, D, T₂, ρ, γ = model
     @unpack M_cmpts, S_cmpts, G, volumes = matrices
 

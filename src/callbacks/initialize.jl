@@ -2,16 +2,16 @@ function initialize!(p::Printer, problem, gradient, ξ, t)
     @info "Solving for" typeof(problem) gradient
 end
 
-function initialize!(writer::VTKWriter, simulation, gradient, ξ, t)
+function initialize!(writer::VTKWriter, problem, gradient, ξ, t)
     (; dir, filename) = writer
     ispath(dir) || mkdir(dir)
     writer.pvd = paraview_collection(joinpath(dir, filename))
-    update!(writer, simulation, gradient, ξ, t)
+    update!(writer, problem, gradient, ξ, t)
 end
 
-function initialize!(p::Plotter{T}, simulation, gradient, ξ, t) where {T}
-    femesh = simulation.model.mesh
-    M = simulation.matrices.M
+function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
+    femesh = problem.model.mesh
+    M = problem.matrices.M
     ncompartment, nboundary = size(femesh.facets)
     ξ_cmpts = split_field(femesh, ξ)
     ξmax = maximum(abs, ξ)

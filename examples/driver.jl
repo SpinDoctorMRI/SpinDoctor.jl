@@ -119,7 +119,7 @@ eigstep = 1e-8
 eiglim = length2eig(length_scale, D_avg)
 analytical_coeffs = analytical_coefficients(setup, coeffs)
 analytical_laplace = AnalyticalLaplace(; analytical_coeffs..., eiglim, eigstep)
-lap_mat = @time solve(analytical_laplace) 
+lap_mat = @time solve(analytical_laplace)
 
 # Compute analytical matrix formalism signal truncation
 analytical_mf = AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
