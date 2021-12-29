@@ -1,30 +1,16 @@
-function savefield(mesh, field, filename::String, fieldname = "Magnetization")
-
-    # Make sure that directory exists
+function savefield(mesh, ξ, filename::String; fieldname = "Magnetization")
+    ξ_cmpts = split_field(mesh, ξ)
     isdir(dirname(filename)) || mkpath(dirname(filename))
-
     vtmfile = vtk_multiblock(filename)
-
     for icmpt = 1:length(mesh.points)
-        f = field[icmpt]
+        ξᵢ = ξ_cmpts[icmpt]
         points = mesh.points[icmpt]
         elements = mesh.elements[icmpt]
-
         cells =
             [MeshCell(VTKCellTypes.VTK_TETRA, elements[:, i]) for i = 1:size(elements, 2)]
-
         vtkfile = vtk_grid(vtmfile, points, cells)
-        if size(f, 2) == 1
-            vtkfile[fieldname*" (real part)"] = real(f)
-            vtkfile[fieldname*" (imaginary part)"] = imag(f)
-        else
-            for ifield = 1:min(size(f, 2), 99)
-                fieldfieldname = "$fieldname $(@sprintf("%2d",ifield))"
-                vtkfile[fieldfieldname*" (real part)"] = real(f[:, ifield])
-                vtkfile[fieldfieldname*" (imaginary part)"] = imag(f[:, ifield])
-            end
-        end
+        vtkfile[fieldname * " (real part)"] = real(ξᵢ)
+        vtkfile[fieldname * " (imaginary part)"] = imag(ξᵢ)
     end
-
     vtk_save(vtmfile)
 end

@@ -29,7 +29,7 @@ Base.@kwdef mutable struct VTKWriter <: AbstractCallback
     nupdate::Int = 1
     n::Int = 1
     ifile::Int = 1
-    dir::String = "output"
+    dir::String = "output/time_stepping"
     filename::String = "solution"
     pvd::WriteVTK.CollectionFile = paraview_collection("")
 end

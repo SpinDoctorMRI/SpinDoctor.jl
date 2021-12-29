@@ -73,6 +73,9 @@ plot_field(model.mesh, ξ)
 compute_signal(matrices.M, ξ)
 compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
 
+## Save magnetization
+savefield(model.mesh, ξ, "output/magnetization")
+
 
 ## Matrix Formalism
 
