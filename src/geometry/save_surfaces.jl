@@ -9,7 +9,7 @@ function save_surfaces(filename, surfaces)
     default_refinement = 0.1
 
     # Extract surface triangulation
-    @unpack points, facets, facetmarkers, regions = surfaces
+    (; points, facets, facetmarkers, regions) = surfaces
 
     npoint = size(points, 2)
     nfacet = size(facets, 2)

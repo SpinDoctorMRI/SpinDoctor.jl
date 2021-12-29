@@ -4,7 +4,7 @@
 Prepare PDE compartments.
 """
 function coefficients(setup::AbstractSetup{T}; D, T₂, ρ, κ, γ) where T
-    @unpack ncell, include_in, in_ratio, ecs_shape, ecs_ratio = setup
+    (; ncell, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
 
     include_ecs = ecs_shape != "no_ecs"
 

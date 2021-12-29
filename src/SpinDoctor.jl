@@ -20,7 +20,6 @@ using StaticArrays
 using Statistics: mean
 using TetGen: RawTetGenIO, facetlist!, tetrahedralize
 using Triangulate: TriangulateIO, triangulate
-using UnPack
 using WriteVTK
 
 # Gradidents

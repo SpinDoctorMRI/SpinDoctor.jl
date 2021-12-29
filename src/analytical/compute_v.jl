@@ -1,5 +1,5 @@
 function compute_v(params, α, n, x, bc = compute_bc(params, α, n))
-    @unpack r, D, dim = params
+    (; r, D, dim) = params
 
     x = [x;]
 

@@ -14,7 +14,7 @@ directly instead. This requires facet and element labels.
 """
 function create_geometry(setup)
 
-    @unpack ncell, ecs_shape, refinement = setup
+    (; ncell, ecs_shape, refinement) = setup
 
     # File name for saving or loading geometry
     filename = "meshfiles" * "/" * setup.name

@@ -7,7 +7,7 @@ The file contains the spatial dimension: 2 for cylinders, 3 for spheres.
 function save_cells(cells, cellfilename)
 
     # Extract cell parameters
-    @unpack centers, radii = cells
+    (; centers, radii) = cells
 
     # Sizes
     d, ncell = size(centers)

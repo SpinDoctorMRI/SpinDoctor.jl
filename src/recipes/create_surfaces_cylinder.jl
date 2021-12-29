@@ -7,8 +7,8 @@ The ground surface is triangulated first, before the walls are "extruded" and
 the top surface is copied from the ground surface.
 """
 function create_surfaces(setup::CylinderSetup, cells)
-    @unpack radii, centers = cells
-    @unpack ncell, rmin, rmax, height, include_in, in_ratio, ecs_shape, ecs_ratio = setup
+    (; radii, centers) = cells
+    (; ncell, rmin, rmax, height, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
 
     # Choose approximate cylinder side length
     nside = 30

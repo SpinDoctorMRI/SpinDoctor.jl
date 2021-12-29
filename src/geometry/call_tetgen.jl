@@ -4,7 +4,7 @@
 Call Tetgen on surface geometry.
 """
 function call_tetgen(surfaces, refinement = nothing)
-    @unpack points, facets, facetmarkers, regions = surfaces
+    (; points, facets, facetmarkers, regions) = surfaces
 
     nregion = size(regions, 2)
 

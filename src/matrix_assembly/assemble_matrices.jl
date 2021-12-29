@@ -4,7 +4,7 @@
 Assemble finite element matrices.
 """
 function assemble_matrices(model)
-    @unpack mesh, D, T₂, ρ = model
+    (; mesh, D, T₂, ρ) = model
 
     # Deduce sizes
     ncompartment, nboundary = size(mesh.facets)

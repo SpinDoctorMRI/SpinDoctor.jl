@@ -8,9 +8,9 @@ function solve(
     gradient;
     callbacks = AbstractCallback[],
 ) where {T}
-    @unpack model, matrices, reltol, abstol, odesolver = problem
-    @unpack mesh, D, T₂, ρ, γ = model
-    @unpack M, S, R, Mx, Q, M_cmpts = matrices
+    (; model, matrices, reltol, abstol, odesolver) = problem
+    (; mesh, D, T₂, ρ, γ) = model
+    (; M, S, R, Mx, Q, M_cmpts) = matrices
 
     # Create initial conditions (enforce complex values)
     ρ = mapreduce((ρ, p) -> fill(ρ, size(p, 2)), vcat, ρ, mesh.points)
@@ -24,7 +24,7 @@ function solve(
 
     # Time dependent Jacobian of ODE function with respect to the state `ξ`
     function Jac!(J, ξ, p, t)
-        @unpack S, Q, R, gradient = p
+        (; S, Q, R, gradient) = p
          g⃗ = gradient(t)
            @. J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3]))
     end

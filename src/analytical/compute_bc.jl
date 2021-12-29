@@ -1,5 +1,5 @@
 function compute_bc(params, α, n)
-    @unpack r, D, W, dim = params
+    (; r, D, W, dim) = params
     m = length(D)
 
     bc = zeros(m, 2)

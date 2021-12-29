@@ -4,9 +4,9 @@
 Solve for magnetization using Matrix Formalism.
 """
 function solve(problem::MatrixFormalism, gradient)
-    @unpack model, matrices, lap_eig, ninterval = problem
-    @unpack mesh, ρ, γ = model
-    @unpack M, M_cmpts = matrices
+    (; model, matrices, lap_eig, ninterval) = problem
+    (; mesh, ρ, γ) = model
+    (; M, M_cmpts) = matrices
 
     # Laplace eigenmodes
     λ = lap_eig.values

@@ -12,9 +12,9 @@ function solve(
     gradient::ScalarGradient;
     callbacks = AbstractCallback[],
 ) where {T}
-    @unpack θ, timestep, model, matrices = problem
-    @unpack mesh, D, T₂, ρ, γ = model
-    @unpack M, S, R, Mx, Q, M_cmpts = matrices
+    (; θ, timestep, model, matrices) = problem
+    (; mesh, D, T₂, ρ, γ) = model
+    (; M, S, R, Mx, Q, M_cmpts) = matrices
 
     isconstant(gradient.profile) || error("Time profile must be interval-wise constant")
     ivals = intervals(gradient.profile)

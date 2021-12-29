@@ -1,5 +1,5 @@
 function α_func(params, α, n)
-    @unpack r, D, W, dim = params
+    (; r, D, W, dim) = params
 
     m = length(D)
     bc1 = zeros(size(α))

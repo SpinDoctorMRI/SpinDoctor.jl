@@ -6,7 +6,7 @@ Save mesh in the Tetgen output format.
 function save_tetgen(mesh_all, filename)
 
     # Extract mesh
-    @unpack points, facets, elements, facetmarkers, elementmarkers = mesh_all
+    (; points, facets, elements, facetmarkers, elementmarkers) = mesh_all
 
     @info "Saving mesh in Tetgen output format at " * filename
 

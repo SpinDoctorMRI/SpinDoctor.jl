@@ -5,9 +5,9 @@ Compute the ADC using a homogenized ADC model (HADC). This is currently only imp
 scalar gradients.
 """
 function solve(problem::HADC, gradient::ScalarGradient)
-    @unpack model, matrices, odesolver, reltol, abstol = problem 
-    @unpack mesh, D, T₂, ρ, γ = model
-    @unpack M_cmpts, S_cmpts, G, volumes = matrices
+    (; model, matrices, odesolver, reltol, abstol) = problem 
+    (; mesh, D, T₂, ρ, γ) = model
+    (; M_cmpts, S_cmpts, G, volumes) = matrices
 
     f = gradient.profile
     dir = gradient.dir
@@ -22,7 +22,7 @@ function solve(problem::HADC, gradient::ScalarGradient)
     # Time dependent ODE function
     function Mdω!(dω, ω, p, t)
         # @show t
-        @unpack mS, f, surfint = p
+        (; mS, f, surfint) = p
         mul!(dω, mS, ω)
         dω .+= integral(f, t) .* surfint
     end

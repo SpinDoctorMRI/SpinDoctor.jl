@@ -4,7 +4,7 @@
 Create geometrical configuration of cells. Return mathematical description (radii, centers).
 """
 function create_cells(setup)
-    @unpack ncell, rmin, rmax, dmin, dmax = setup
+    (; ncell, rmin, rmax, dmin, dmax) = setup
 
     # Choose between spheres and cylinders
     if isa(setup, SphereSetup)

@@ -5,8 +5,8 @@ Solve the finite pulse Karger model (FPK) using precomputed effective diffusion 
 `difftensors`.
 """
 function solve(problem::Karger, gradient::ScalarGradient)
-    @unpack model, difftensors, odesolver, timestep = problem
-    @unpack mesh, T₂, ρ, κ, γ = model
+    (; model, difftensors, odesolver, timestep) = problem
+    (; mesh, T₂, ρ, κ, γ) = model
 
     dt = timestep
     f = gradient.profile
@@ -59,7 +59,7 @@ function solve(problem::Karger, gradient::ScalarGradient)
 
     # Update function for linear ODE operator
     function update_func(J, u, p, t)
-        @unpack A, ADC_diag, R, f, γ, g = p
+        (; A, ADC_diag, R, f, γ, g) = p
         J .= A .- (integral(f, t)^2 * (γ * g)^2) .* ADC_diag .- R
     end
 

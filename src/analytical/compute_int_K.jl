@@ -1,5 +1,5 @@
 function compute_int_K(params, α₁, n₁, α₂, n₂)
-    @unpack r, D, dim = params
+    (; r, D, dim) = params
 
     m = length(D)
     R = r[m]

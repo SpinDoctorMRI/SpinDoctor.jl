@@ -1,5 +1,5 @@
 function compute_int_J(params, α)
-    @unpack r, D, W, dim = params
+    (; r, D, W, dim) = params
     m = length(D)
     R = r[m]
 
