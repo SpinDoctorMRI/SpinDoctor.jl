@@ -59,7 +59,7 @@ export Printer, VTKWriter, Plotter
 export initialize!, update!, finalize!
 
 # Recipes
-export AbstractSetup, CylinderSetup, SphereSetup, NeuronSetup
+export AbstractSetup, PlateSetup, CylinderSetup, SphereSetup, NeuronSetup
 export coefficients, analytical_coefficients, radial_dimension
 export create_surfaces_cylinder, create_surfaces_neuron, create_surfaces_sphere, create_geometry
 
