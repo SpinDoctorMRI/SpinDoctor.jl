@@ -10,10 +10,12 @@ This function is based on the following articles and corresponding code:
     [2] D. S. Grebenkov, Pulsed-gradient spin-echo monitoring of restricted diffusion in
         multilayered structures, J. Magn. Reson. 205, 181-195 (2010).
 """
-function solve(problem::AnalyticalMatrixFormalism, gradient)
+function solve(problem::AnalyticalMatrixFormalism, gradient::ScalarGradient)
     (; analytical_laplace, lap_mat, volumes) = problem
     (; r, ρ, γ) = analytical_laplace
     (; Λ, Br, B, U) = lap_mat
+
+    gradient.profile isa PGSE || error("Only implemeted for PGSE")
 
     w = γ * gradient.amplitude * 1e12 * r[end]
     δ = gradient.profile.δ * 1e-6
