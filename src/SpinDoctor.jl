@@ -131,7 +131,7 @@ include("analytical/compute_nu.jl")
 include("analytical/compute_v.jl")
 include("analytical/find_alpha.jl")
 include("analytical/solve_analytical_laplace.jl")
-include("analytical/solve_analytical_matrix_formaliism.jl")
+include("analytical/solve_analytical_mf.jl")
 
 # BTPDE
 include("btpde/solve_btpde.jl")

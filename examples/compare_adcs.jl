@@ -17,6 +17,7 @@ set_theme!(theme_dark())
 ## Choose setup recipe
 # include("setups/axon.jl")
 # include("setups/sphere.jl")
+# include("setups/plates.jl")
 # include("setups/cylinders.jl")
 # include("setups/spheres.jl")
 include("setups/neuron.jl")
