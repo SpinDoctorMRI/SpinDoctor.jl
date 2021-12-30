@@ -38,6 +38,8 @@ b = 1000
 g = √(b / int_F²(profile)) / model.γ
 gradient = ScalarGradient(dir, profile, g)
 
+## Short term approximation (STA)
+adc_sta_cmpts = compute_adc_sta(model, gradient)
 
 ## Solve BTPDE and fit ADC for different b-values
 bvalues = 0:100:1000

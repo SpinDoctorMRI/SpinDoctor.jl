@@ -38,6 +38,7 @@ export initial_conditions
 
 export savefield
 
+export compute_adc_sta
 export solve, solve_multigrad
 export fit_adc
 export fit_tensors
@@ -52,6 +53,7 @@ export solve
 export length2eig, eig2length, limit_lengthscale, compute_mf_diffusion_tensor
 
 # Utils
+export fresnels, fresnelc
 export unitcircle, unitsphere
 export compute_signal
 
@@ -67,6 +69,12 @@ export create_surfaces_cylinder, create_surfaces_neuron, create_surfaces_sphere,
 # Rexport default ODE solver
 export QNDF, MagnusGL6
 
+# Utils
+include("utils/fresnel.jl")
+include("utils/unitcircle.jl")
+include("utils/unitsphere.jl")
+include("utils/compute_signal.jl")
+
 # Magnetic field gradient sequences
 include("gradients/sequences.jl")
 include("gradients/gradient.jl")
@@ -75,6 +83,8 @@ include("gradients/int_F2.jl")
 include("gradients/intervals.jl")
 include("gradients/echotime.jl")
 include("gradients/isconstant.jl")
+include("gradients/diffusion_time.jl")
+include("gradients/diffusion_time_sta.jl")
 include("gradients/j_integral.jl")
 
 # Datatypes
@@ -142,6 +152,7 @@ include("btpde/solve_btpde_midpoint.jl")
 include("btpde/solve_karger.jl")
 
 # ADC
+include("adc/compute_adc_sta.jl")
 include("adc/solve_hadc.jl")
 
 # Postprocessing
@@ -152,11 +163,6 @@ include("postprocess/savefield.jl")
 # Plot
 include("plot/plot_mesh.jl")
 include("plot/plot_field.jl")
-
-# Utils
-include("utils/unitcircle.jl")
-include("utils/unitsphere.jl")
-include("utils/compute_signal.jl")
 
 # Callbacks
 include("callbacks/callbacks.jl")

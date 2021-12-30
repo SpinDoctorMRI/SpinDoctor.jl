@@ -1,7 +1,6 @@
 using LinearAlgebra
 using QuadGK
 using Test
-using TetGen: TetGen
 
 # LSP indexing solution
 # https://github.com/julia-vscode/julia-vscode/issues/800#issuecomment-650085983

@@ -22,8 +22,8 @@ set_theme!(theme_dark())
 # include("setups/spheres.jl")
 include("setups/neuron.jl")
 
-femesh, = @time create_geometry(setup)
-model = Model(; mesh = femesh, coeffs...)
+femesh, = @time create_geometry(setup; recreate = true);
+model = Model(; mesh = femesh, coeffs...);
 volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
 ncompartment = length(model.mesh.points)
