@@ -75,6 +75,7 @@ include("gradients/int_F2.jl")
 include("gradients/intervals.jl")
 include("gradients/echotime.jl")
 include("gradients/isconstant.jl")
+include("gradients/j_integral.jl")
 
 # Datatypes
 include("datatypes/femesh.jl")
