@@ -85,7 +85,7 @@ Return the time profile value at time `t`.
 """
 (f::TimeProfile)(t) = error("Not implemented")
 
-function (f::PGSE)(t) 
+function (f::PGSE)(t)
     if 0 ≤ t < f.δ
         one(t)
     elseif f.Δ ≤ t < f.Δ + f.δ
@@ -103,7 +103,7 @@ function (f::DoublePGSE)(t)
         -one(t)
     elseif 0 ≤ t - (p + Δ + δ) < δ
         one(t)
-    elseif Δ ≤ t - (p + Δ + δ)  < Δ + δ
+    elseif Δ ≤ t - (p + Δ + δ) < Δ + δ
         -one(t)
     else
         zero(t)
@@ -113,9 +113,9 @@ end
 function (f::CosOGSE)(t)
     δ, Δ, n = f.δ, f.Δ, f.nperiod
     if 0 ≤ t < δ
-        cos(2π * n * t / δ) 
+        cos(2π * n * t / δ)
     elseif Δ ≤ t < Δ + δ
-        -cos(2π * n* (t - Δ) / δ)
+        -cos(2π * n * (t - Δ) / δ)
     else
         zero(t)
     end

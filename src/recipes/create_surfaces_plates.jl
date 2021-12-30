@@ -13,8 +13,8 @@ function create_surfaces(setup::PlateSetup{T}, _) where {T}
     y = depth / 2
 
     points = zeros(T, 3, 4(n + 1))
-    for i = 1:(n + 1)
-        points[:, (1 + 4(i - 1)):(4i)] = [
+    for i = 1:(n+1)
+        points[:, (1+4(i-1)):(4i)] = [
             -x x x -x
             -y -y y y
             z[i] z[i] z[i] z[i]
@@ -43,17 +43,17 @@ function create_surfaces(setup::PlateSetup{T}, _) where {T}
     facetmarkers[1:10] .= n
 
     # Interfaces and side walls after interface
-    for i = 1:(n - 1)
-        facetmarkers[10i + 1] = i
-        facetmarkers[10i + 2] = i
-        facetmarkers[(10i + 3):(10(i + 1))] .= n + i
+    for i = 1:(n-1)
+        facetmarkers[10i+1] = i
+        facetmarkers[10i+2] = i
+        facetmarkers[(10i+3):(10(i+1))] .= n + i
     end
 
     # Top
-    facetmarkers[(end - 1):end] .= 2n - 1
+    facetmarkers[(end-1):end] .= 2n - 1
 
     regions = zeros(T, 3, n)
-    regions[3, :] .= (z[1:(end - 1)] .+ z[2:end]) ./ 2
+    regions[3, :] .= (z[1:(end-1)] .+ z[2:end]) ./ 2
 
 
     (; points, facets, facetmarkers, regions)

@@ -9,8 +9,8 @@ function savefield(mesh, ξ, filename::String; fieldname = "Magnetization")
         cells =
             [MeshCell(VTKCellTypes.VTK_TETRA, elements[:, i]) for i = 1:size(elements, 2)]
         vtkfile = vtk_grid(vtmfile, points, cells)
-        vtkfile[fieldname * " (real part)"] = real(ξᵢ)
-        vtkfile[fieldname * " (imaginary part)"] = imag(ξᵢ)
+        vtkfile[fieldname*" (real part)"] = real(ξᵢ)
+        vtkfile[fieldname*" (imaginary part)"] = imag(ξᵢ)
     end
     vtk_save(vtmfile)
 end

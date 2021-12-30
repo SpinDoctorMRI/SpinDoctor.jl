@@ -20,13 +20,17 @@ function compute_adc_sta(model::Model{T}, gradient::ScalarGradient) where {T}
 
         # Project surface areas onto plane orthogonal to gradient direction
         # (result is 1×1 matrix, extract scalar component)
-        SAu = ((d'normals) .^ 2 * areas)[1]
+        SAu = ((d'normals) .^ 2*areas)[1]
 
         t = diffusion_time_sta(gradient.profile)
         adcs[icmpt] = D₀ * (1 - 4 / 3 * √(D₀ / π) * SAu / v * √t)
     end
 
-    all(≥(0), adcs) || @warn "Obtained negative STA ADC, STA approximation does not hold" filter(<(0), adcs)
+    all(≥(0), adcs) ||
+        @warn "Obtained negative STA ADC, STA approximation does not hold" filter(
+            <(0),
+            adcs,
+        )
 
     adcs
 end

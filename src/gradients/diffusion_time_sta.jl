@@ -49,7 +49,7 @@ function diffusion_time_sta(f::CosOGSE)
             δ * FS4 * S - δ * FS3 * S - Δ * FS3 * S - Δ * FS4 * S + 2δ * FC1
         ) +
         9√δ / 32π / n^(3 / 2) *
-        (+2FS2 * C - FS3 * C - FS4 * C - 2FC2 * S + FC3 * S + FC4 * S + 2FS1)
+          (+2FS2 * C - FS3 * C - FS4 * C - 2FC2 * S + FC3 * S + FC4 * S + 2FS1)
     out^2
 end
 

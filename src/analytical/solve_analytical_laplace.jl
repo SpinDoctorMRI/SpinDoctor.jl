@@ -1,4 +1,4 @@
-function solve(laplace::AnalyticalLaplace) 
+function solve(laplace::AnalyticalLaplace)
     (; D, T₂, dim, eiglim, eigstep) = laplace
 
     # TODO: Add support for dim = 1 (PlateSetup)

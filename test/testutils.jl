@@ -65,8 +65,10 @@ get_coeffs(setup::PlateSetup) = coefficients(
     D = [0.002 * I(3) for _ = 1:length(setup.heights)],
     T₂ = [Inf for _ = 1:length(setup.heights)],
     ρ = [1.0 for _ = 1:length(setup.heights)],
-    κ = (; interfaces = [1e-4 for _ = 1:length(setup.heights)-1],
-         boundaries = [0.0 for _ = 1:length(setup.heights)]),
+    κ = (;
+        interfaces = [1e-4 for _ = 1:length(setup.heights)-1],
+        boundaries = [0.0 for _ = 1:length(setup.heights)],
+    ),
     γ = 2.67513e-4,
 )
 

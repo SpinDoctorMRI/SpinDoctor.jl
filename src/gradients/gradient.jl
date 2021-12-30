@@ -28,7 +28,7 @@ The direction is normalized upon construction.
 struct ScalarGradient{T}
     dir::Vector{T}
     profile::TimeProfile{T}
-    amplitude::T 
+    amplitude::T
     ScalarGradient(dir, profile, amplitude) =
         new{typeof(amplitude)}(dir / norm(dir), profile, amplitude)
 end

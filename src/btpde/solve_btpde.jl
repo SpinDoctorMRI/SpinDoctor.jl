@@ -3,14 +3,10 @@
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 """
-function solve(
-    problem::GeneralBTPDE{T},
-    gradient;
-    callbacks = AbstractCallback[],
-) where {T}
+function solve(problem::GeneralBTPDE{T}, gradient; callbacks = AbstractCallback[]) where {T}
     (; model, matrices, reltol, abstol, odesolver) = problem
-    (; mesh, D, T₂, ρ, γ) = model
-    (; M, S, R, Mx, Q, M_cmpts) = matrices
+    (; γ) = model
+    (; M, S, R, Mx, Q) = matrices
 
     ρ = initial_conditions(model)
 

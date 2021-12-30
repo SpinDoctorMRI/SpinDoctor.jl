@@ -46,7 +46,7 @@ function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
         ylims!(ax, pmin[2], pmax[2])
         zlims!(ax, pmin[3], pmax[3])
         lines!(ax, p.g⃗_hist)
-        arrows!(ax, [Point3f(0,0,0)], p.g⃗)
+        arrows!(ax, [Point3f(0, 0, 0)], p.g⃗)
     end
 
     ax = Axis(p.fig[2, 1]; xlabel = "t [μs]", title = "Signal attenuation")

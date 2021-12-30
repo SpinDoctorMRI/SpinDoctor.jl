@@ -56,7 +56,11 @@ callbacks = [printer, plotter, writer]
 
 # General BTPDE for all gradients
 btpde = GeneralBTPDE(;
-    model, matrices, reltol = 1e-4, abstol = 1e-6, odesolver = Rodas4(autodiff = false)
+    model,
+    matrices,
+    reltol = 1e-4,
+    abstol = 1e-6,
+    odesolver = Rodas4(autodiff = false),
 )
 
 # BTPDE specialized for `ScalarGradient`s with constant interval profiles (PGSE, DoublePGSE)

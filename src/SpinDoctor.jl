@@ -9,7 +9,8 @@ using LinearAlgebra
 using Makie
 using MiniQhull: delaunay
 using OrdinaryDiffEq: OrdinaryDiffEq
-using OrdinaryDiffEq: DiffEqArrayOperator, DiscreteCallback, ODEProblem, ODEFunction, QNDF, MagnusGL6
+using OrdinaryDiffEq:
+    DiffEqArrayOperator, DiscreteCallback, ODEProblem, ODEFunction, QNDF, MagnusGL6
 using Polynomials: fit
 using Printf
 using QuadGK
@@ -64,7 +65,8 @@ export initialize!, update!, finalize!
 # Recipes
 export AbstractSetup, PlateSetup, CylinderSetup, SphereSetup, NeuronSetup
 export coefficients, analytical_coefficients, radial_dimension
-export create_surfaces_cylinder, create_surfaces_neuron, create_surfaces_sphere, create_geometry
+export create_surfaces_cylinder,
+    create_surfaces_neuron, create_surfaces_sphere, create_geometry
 
 # Rexport default ODE solver
 export QNDF, MagnusGL6

@@ -53,7 +53,8 @@ btpde = IntervalConstanBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
 signals = [compute_signal(matrices.M, ξ) for ξ ∈ ξ]
 signals_cmpts = [compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ)) for ξ ∈ ξ]
 adc_fit = fit_adc(bvalues, signals)
-adc_fit_cmpts = [fit_adc(bvalues, [s[icmpt] for s ∈ signals_cmpts]) for icmpt = 1:ncompartment]
+adc_fit_cmpts =
+    [fit_adc(bvalues, [s[icmpt] for s ∈ signals_cmpts]) for icmpt = 1:ncompartment]
 
 
 ## Solve HADC

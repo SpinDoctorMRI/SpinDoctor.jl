@@ -5,9 +5,8 @@ Compute the Laplace eigenvalues, eigenfunctions and first order moments of produ
 """
 function solve(laplace::Laplace)
     (; model, matrices, neig_max) = laplace
-    (; mesh, D, T₂) = model
+    (; mesh) = model
     (; M, S, R, Mx, Q) = matrices
-    ncompartment = length(mesh.points)
 
     # Compute at most all eigenvalues in the given domain
     neig = Int(min(neig_max, size(M, 1)))
@@ -31,7 +30,7 @@ function solve(laplace::Laplace)
 
     # All Laplace eigenvalues are nonnegative
     all(0 .≤ λ) ||
-        @warn "Obtained negative eigenvalues for Laplace operator." findall(λ .< 0) λ[λ .< 0]
+        @warn "Obtained negative eigenvalues for Laplace operator." findall(λ .< 0) λ[λ.<0]
 
     # Normalize eigenfunctions with mass weighting
     ϕ ./= .√sum(ϕ .* (M * ϕ), dims = 1)

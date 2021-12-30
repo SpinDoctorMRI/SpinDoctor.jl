@@ -25,7 +25,8 @@ function create_geometry(setup; recreate = true)
     isdir(dir) || mkpath(dir)
 
     if hasfield(typeof(setup), :ecs_shape)
-        setup.ecs_shape ∈ [:no_ecs, :box, :convex_hull, :tight_wrap] || error("Invalid ECS shape")
+        setup.ecs_shape ∈ [:no_ecs, :box, :convex_hull, :tight_wrap] ||
+            error("Invalid ECS shape")
     end
 
     if setup isa Union{CylinderSetup,SphereSetup}
@@ -53,8 +54,7 @@ function create_geometry(setup; recreate = true)
     # Use an existing finite elements mesh or create a new finite elements mesh. The name of
     # the finite elements mesh is stored in the string `fname_tetgen_femesh`
     refinement_str = isinf(refinement) ? "" : "_refinement$refinement"
-    fname_tetgen =
-        "$save_meshdir_path/$(split(filename, "/")[end])$(refinement_str)_mesh"
+    fname_tetgen = "$save_meshdir_path/$(split(filename, "/")[end])$(refinement_str)_mesh"
 
     # Read or create surface triangulation
     if is_stl

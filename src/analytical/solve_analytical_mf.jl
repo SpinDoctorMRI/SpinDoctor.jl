@@ -20,7 +20,7 @@ function solve(problem::AnalyticalMatrixFormalism, gradient::ScalarGradient)
     w = γ * gradient.amplitude * 1e12 * r[end]
     δ = gradient.profile.δ * 1e-6
     Δ = gradient.profile.Δ * 1e-6
-    
+
     U₀ = complex(U)
     U = complex(U)
 

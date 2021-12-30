@@ -55,7 +55,11 @@ callbacks = [printer, plotter]
 
 # General BTPDE for all gradients
 btpde = GeneralBTPDE(;
-    model, matrices, reltol = 1e-4, abstol = 1e-6, odesolver = Rodas4(autodiff = false)
+    model,
+    matrices,
+    reltol = 1e-4,
+    abstol = 1e-6,
+    odesolver = Rodas4(autodiff = false),
 )
 
 # Solve BTPDE

@@ -1,7 +1,7 @@
 function find_α(params, α_min, α_max, dα)
     α = Float64[]
     n = Int[]
-    
+
     α₀ = [0.0]
     j = 0
     # pl = nothing

@@ -16,7 +16,7 @@ function analytical_coefficients(setup, coeffs)
     end
 
     # Get ECS parameters
-    if include_ecs 
+    if include_ecs
         # Include ECS
         r_ecs = r_out + setup.ecs_ratio * rmean
     else

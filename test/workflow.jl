@@ -71,7 +71,8 @@ general_gradient = GeneralGradient{T,typeof(g⃗)}(; g⃗, TE)
 @testset "Signal" begin
     ρ = initial_conditions(model)
     @test compute_signal(matrices.M, ρ) isa Complex{T}
-    @test compute_signal.(matrices.M_cmpts, split_field(model.mesh, ρ)) isa Vector{Complex{T}}
+    @test compute_signal.(matrices.M_cmpts, split_field(model.mesh, ρ)) isa
+          Vector{Complex{T}}
 end
 
 @testset "ADC STA" begin
@@ -81,7 +82,13 @@ end
 end
 
 @testset "HADC" begin
-    hadc = HADC(; model, matrices, odesolver = QNDF(autodiff = false), reltol = 1e-4, abstol = 1e-6)
+    hadc = HADC(;
+        model,
+        matrices,
+        odesolver = QNDF(autodiff = false),
+        reltol = 1e-4,
+        abstol = 1e-6,
+    )
     @test_throws MethodError solve(hadc, general_gradient)
     @test solve(hadc, pgse_gradient) isa Vector{T}
     @test solve(hadc, ogse_gradient) isa Vector{T}
@@ -111,7 +118,13 @@ end
         ScalarGradient(collect(d), pgse_gradient.profile, pgse_gradient.amplitude) for
         d ∈ eachcol(directions)
     ]
-    hadc = HADC(; model, matrices, odesolver = QNDF(autodiff = false), reltol = 1e-4, abstol = 1e-6)
+    hadc = HADC(;
+        model,
+        matrices,
+        odesolver = QNDF(autodiff = false),
+        reltol = 1e-4,
+        abstol = 1e-6,
+    )
     adcs, = solve_multigrad(hadc, gradients)
     difftensors = fit_tensors(directions, adcs)
 

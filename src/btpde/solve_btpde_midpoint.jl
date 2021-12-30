@@ -13,8 +13,8 @@ function solve(
     callbacks = AbstractCallback[],
 ) where {T}
     (; θ, timestep, model, matrices) = problem
-    (; mesh, D, T₂, ρ, γ) = model
-    (; M, S, R, Mx, Q, M_cmpts) = matrices
+    (; γ) = model
+    (; M, S, R, Mx, Q) = matrices
 
     isconstant(gradient.profile) || error("Time profile must be interval-wise constant")
     ivals = intervals(gradient.profile)
@@ -22,7 +22,7 @@ function solve(
     ρ = initial_conditions(model)
 
     Jac!(J, g⃗) =
-           @.(J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3])))
+        @.(J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3])))
 
     t = 0.0
     ξ = copy(ρ)
@@ -34,16 +34,16 @@ function solve(
     end
 
     # Crank-Nicolson time stepping
-    for i = 1:(length(ivals) - 1)
-        @debug "Solving for interval [%g, %g]\n" ivals[i] ivals[i + 1]
+    for i = 1:(length(ivals)-1)
+        @debug "Solving for interval [%g, %g]\n" ivals[i] ivals[i+1]
 
         # Adjust time step to divide interval uniformly
-        ival_length = ivals[i + 1] - ivals[i]
+        ival_length = ivals[i+1] - ivals[i]
         nt = round(Int, ival_length / timestep)
         Δt = ival_length / nt
 
         # Compute gradient at midpoint of interval
-        tmid = (ivals[i] + ivals[i + 1]) / 2
+        tmid = (ivals[i] + ivals[i+1]) / 2
         g⃗ = gradient(tmid)
 
         # Build matrices for interval
@@ -53,7 +53,7 @@ function solve(
         E = @. complex(M) + Δt * (1 - θ) * J
 
         # Step to end of interval
-        for it = 1:nt
+        for _ = 1:nt
             mul!(Ey, E, ξ)
             ldiv!(ξ, F, Ey)
             t += Δt

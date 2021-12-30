@@ -5,8 +5,8 @@ Compute the ADC using a homogenized ADC model (HADC). This is currently only imp
 scalar gradients.
 """
 function solve(problem::HADC, gradient::ScalarGradient)
-    (; model, matrices, odesolver, reltol, abstol) = problem 
-    (; mesh, D, T₂, ρ, γ) = model
+    (; model, matrices, odesolver, reltol, abstol) = problem
+    (; mesh, D) = model
     (; M_cmpts, S_cmpts, G, volumes) = matrices
 
     f = gradient.profile
@@ -14,7 +14,7 @@ function solve(problem::HADC, gradient::ScalarGradient)
     TE = echotime(f)
 
     # Deduce sizes
-    ncompartment, nboundary = size(mesh.facets)
+    ncompartment = length(D)
 
     # Initial conditions
     ω₀ = zeros.(size.(mesh.points, 2))
@@ -43,8 +43,12 @@ function solve(problem::HADC, gradient::ScalarGradient)
 
         p = (; mS = -S_cmpts[icmpt], f, surfint)
 
-        odefunction =
-            ODEFunction(Mdω!, jac = Jac!, jac_prototype = p.mS, mass_matrix = M_cmpts[icmpt])
+        odefunction = ODEFunction(
+            Mdω!,
+            jac = Jac!,
+            jac_prototype = p.mS,
+            mass_matrix = M_cmpts[icmpt],
+        )
         odeproblem = ODEProblem(odefunction, ω₀[icmpt], (0, TE), p, progress = false)
 
         # Solve ODE, keep all time steps (for integral)
@@ -57,5 +61,5 @@ function solve(problem::HADC, gradient::ScalarGradient)
         adc[icmpt] = D₀ - a / volumes[icmpt] / int_F²(f)
     end
 
-    adc 
+    adc
 end

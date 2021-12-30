@@ -5,15 +5,15 @@ Prepare PDE compartments.
 """
 function coefficients end
 
-coefficients(::PlateSetup{T}; D, T₂, ρ, κ, γ) where T = (;
+coefficients(::PlateSetup{T}; D, T₂, ρ, κ, γ) where {T} = (;
     D = SMatrix{3,3,T,9}.(D),
     T₂ = T.(T₂),
     κ = [T.(κ.interfaces); T.(κ.boundaries)],
     ρ = Complex{T}.(ρ),
     γ = T(γ),
-) 
+)
 
-function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where T
+function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where {T}
     (; ecs_shape, ecs_ratio) = setup
 
     include_ecs = ecs_shape != :no_ecs
@@ -38,7 +38,7 @@ function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where T
         κ = zeros(T, nboundary),
         ρ = zeros(Complex{T}, ncompartment),
         γ = T(γ),
-    ) 
+    )
 
     # Distribute material properties to compartments and boundaries
     coeffs.ρ[compartments.=="neuron"] .= ρ.neuron
@@ -51,10 +51,17 @@ function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where T
     coeffs.κ[boundaries.=="neuron"] .= κ.neuron
     coeffs.κ[boundaries.=="ecs"] .= κ.ecs
 
-    coeffs 
+    coeffs
 end
 
-function coefficients(setup::Union{CylinderSetup{T},SphereSetup{T}}; D, T₂, ρ, κ, γ) where T
+function coefficients(
+    setup::Union{CylinderSetup{T},SphereSetup{T}};
+    D,
+    T₂,
+    ρ,
+    κ,
+    γ,
+) where {T}
     (; ncell, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
 
     include_ecs = ecs_shape != :no_ecs
@@ -146,7 +153,7 @@ function coefficients(setup::Union{CylinderSetup{T},SphereSetup{T}}; D, T₂, ρ
         κ = zeros(T, nboundary),
         ρ = zeros(Complex{T}, ncompartment),
         γ = T(γ),
-    ) 
+    )
 
     # Distribute material properties to compartments and boundaries
     coeffs.ρ[compartments.=="in"] .= ρ.in
@@ -164,5 +171,5 @@ function coefficients(setup::Union{CylinderSetup{T},SphereSetup{T}}; D, T₂, ρ
     coeffs.κ[boundaries.=="out"] .= κ.out
     coeffs.κ[boundaries.=="ecs"] .= κ.ecs
 
-    coeffs 
+    coeffs
 end
