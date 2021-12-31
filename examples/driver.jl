@@ -26,7 +26,6 @@ femesh, = @time create_geometry(setup; recreate = true);
 model = Model(; mesh = femesh, coeffs...);
 volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
-ncompartment = length(model.mesh.points)
 @info "Number of nodes per compartment:" length.(model.mesh.points)
 
 ## Plot mesh

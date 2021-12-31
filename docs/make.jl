@@ -13,7 +13,24 @@ makedocs(;
         canonical = "https://agdestein.github.io/SpinDoctor.jl",
         assets = String[],
     ),
-    pages = ["Home" => "index.md"],
+    pages = [
+        "Home" => "index.md",
+        "Getting Started" => "getting_started.md",
+        "Examples" => [
+            "Solve BTPDE" => "examples/solve_btpde.md",
+            "Compare ADCs" => "examples/compute_adc.md",
+            "High Angular Resolution" => "examples/hardi.md",
+        ],
+        "Theory" => [
+            "Definitions" => "theory/definitions.md",
+            "BTPDE" => "theory/btpde.md",
+            "ADC" => "theory/adc.md",
+            "Matrix Formalism" => "theory/matrix_formalism.md",
+            "Discretization" => "theory/discretization.md",
+        ],
+        "Neurons" => "neurons.md",
+        "API Reference" => "api.md",
+    ],
 )
 
 deploydocs(; repo = "github.com/agdestein/SpinDoctor.jl", devbranch = "main")

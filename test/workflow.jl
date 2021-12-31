@@ -133,16 +133,17 @@ end
     signal = solve(karger, pgse_gradient)
 end
 
-@testset "Matrix fomalism" begin
+@testset "Matrix formalism" begin
     # Perform Laplace eigendecomposition
     laplace = Laplace{T}(; model, matrices, neig_max = 400)
-    lap_eig = @time solve(laplace)
+    lap_eig = solve(laplace)
     length_scales = eig2length.(lap_eig.values, D_avg)
 
     # Truncate basis at minimum length scale
     length_scale = 3
     λ_max = length2eig(length_scale, D_avg)
     lap_eig = limit_lengthscale(lap_eig, λ_max)
+    @test all(λ -> eig2length(λ, D_avg) ≥ length_scale, lap_eig.values)
 
     mf = MatrixFormalism(; model, matrices, lap_eig, ninterval = 500)
     @test solve(mf, general_gradient) isa Vector{Complex{T}}

@@ -25,7 +25,7 @@ The paper about SpinDoctor can be found at
 
 ## Neuron module
 
-The following article describes the application of SpindDoctor to neuron geometries
+The following article describes the application of SpinDoctor to neuron geometries
 (extracted from [NeuroMorpho](http://neuromorpho.org/)):
 
 ```bibtex
