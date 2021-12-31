@@ -36,7 +36,7 @@ matrices = @time assemble_matrices(model);
 
 
 ## Magnetic field gradient
-dir = [0.0, 0.0, 1.0]
+dir = [1.0, 0.0, 0.0]
 profile = PGSE(2000.0, 6000.0)
 # profile = CosOGSE(5000.0, 5000.0, 2)
 b = 1000

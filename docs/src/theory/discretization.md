@@ -153,7 +153,7 @@ times.
 
 ## Finite element solution to the Bloch-Torrey PDE
 
-The solution to the Bloch-Torrey partial differential equation \eqref{eq:btpde} may be
+The solution to the Bloch-Torrey partial differential equation may be
 projected onto the finite element nodal basis ``(\varphi_k)_{1\leq k\leq N_\text{node}}``, in
 which case it is given by
 
@@ -173,16 +173,9 @@ differential equations (ODE):
 \underline{\mathrm{i}} \gamma f(t) \mathbf{J}(\vec{g})\right)\bm{\xi}(t).
 ```
 
-We note that the notation ``^\mathsf{T}`` in Eq. \eqref{eq:btpde_solution_fe} only denotes the
-_transpose_, as opposed to the complex conjugate transpose ``^*``. The complex transverse
-water proton magnetization ``M`` and thus its coefficients ``\bm{\xi}`` may contain complex
-values. This is not the case for the finite element basis functions ``\bm{\varphi}``, which
-are real-valued.
-
-
 ## Finite element solution to the HADC model
 
-Similarly, the solution to the HADC model \eqref{eq:hadc_pde}, ``\omega``, may be obtained by
+Similarly, the solution to the HADC model, ``\omega``, may be obtained by
 solving the equation
 
 ```math
@@ -209,7 +202,7 @@ They can thus be assembled independently of the gradient sequence, and be reused
 solving for multiple sequences or directions. They are assembled using the same routine as
 for \mathbf{Q}.
 
-The boundary integral ``h`` from Eq. \eqref{eq:hadc_h_def} is then given by
+The boundary integral ``h`` is then given by
 
 ```math
 h(t) = \frac{1}{|\Omega|} \bm{\zeta}^\mathsf{T}\!(t) \mathbf{G} \vec{d},
@@ -236,7 +229,7 @@ find ``(\lambda, \mathbf{p}) \in \mathbb{R} \times \mathbb{R}^{N_\text{node}}`` 
 of which we will retain the ``N_\text{eig}`` smallest eigenvalues and corresponding
 eigenvectors ``\{(\lambda_n, \mathbf{p}_n)\}_{1 \leq n \leq N_\text{eig}}``, with ``N_\text{eig}
 \leq N_\text{node}``. Note however that there are in total ``N_\text{node}`` solutions to the
-problem \eqref{eq:matrixeig}. Moving back to the space of functions (the function space
+problem. Moving back to the space of functions (the function space
 ``P_1``), the eigenfunction ``\phi_n(\vec{x})`` associated to the eigenvalue ``\lambda_n`` is then
 
 ```math

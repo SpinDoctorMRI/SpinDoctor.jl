@@ -37,7 +37,7 @@ where ``t_1 \geq 0`` and ``t_1 + \Delta \geq T_\text{echo} / 2``.
 
 ## B-value
 
-In a DMRI experiment, ``f`` is usually fixed, while `g` or ``\vec{d}`` are varied. ``S`` is
+In a DMRI experiment, ``f`` is usually fixed, while ``g`` or ``\vec{d}`` are varied. ``S`` is
 usually plotted against a quantity called the ``b``-value. The ``b``-value depends on
 ``\vec{g}``:
 

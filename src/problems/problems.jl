@@ -3,9 +3,9 @@ abstract type AbstractProblem{T} end
 Base.@kwdef struct GeneralBTPDE{T,S} <: AbstractProblem{T}
     model::Model{T}
     matrices::NamedTuple
-    abstol::T
-    reltol::T
-    odesolver::S
+    abstol::T = 1e-6
+    reltol::T = 1e-4
+    odesolver::S = QNDF(autodiff = false)
 end
 
 Base.@kwdef struct IntervalConstanBTPDE{T} <: AbstractProblem{T}
@@ -18,9 +18,9 @@ end
 Base.@kwdef struct HADC{T,S} <: AbstractProblem{T}
     model::Model{T}
     matrices::NamedTuple
-    abstol::T
-    reltol::T
-    odesolver::S
+    abstol::T = 1e-6
+    reltol::T = 1e-4
+    odesolver::S = QNDF(autodiff = false)
 end
 
 Base.@kwdef struct Karger{T,S} <: AbstractProblem{T}
