@@ -35,8 +35,12 @@ function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
         lines!(ax, p.t, p.f)
     else
         grads = mapreduce(gradient, hcat, LinRange(0, TE, 200))
-        pmin = minimum(grads; dims = 2)
-        pmax = maximum(grads; dims = 2)
+        pmin = min.(minimum(grads; dims = 2), zero(T))
+        pmax = max.(maximum(grads; dims = 2), zero(T))
+        inds = pmin .≈ pmax
+        gmax = maximum(norm, grads)
+        pmin[inds] .-= gmax / 2 
+        pmax[inds] .+= gmax / 2 
         grad = Vec3f(gradient(t))
         p.g⃗ = Node([grad])
         p.g⃗_hist = Node([grad])
