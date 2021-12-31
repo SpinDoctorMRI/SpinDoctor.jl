@@ -18,6 +18,7 @@ makedocs(;
         "Getting Started" => "getting_started.md",
         "Examples" => [
             "Solve BTPDE" => "examples/solve_btpde.md",
+            "Custom gradients" => "examples/custom_gradient.md",
             "Compare ADCs" => "examples/compute_adc.md",
             "High Angular Resolution" => "examples/hardi.md",
         ],
