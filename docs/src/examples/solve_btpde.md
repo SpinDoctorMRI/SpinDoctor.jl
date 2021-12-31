@@ -18,7 +18,7 @@ setup = CylinderSetup(;
     rmax = 6.0,
     dmin = 0.2,
     dmax = 0.3,
-    height = 10.0,
+    height = 40.0,
     bend = 0.0,
     twist = π / 4,
     include_in = false,
@@ -57,6 +57,8 @@ using GLMakie
 plot_mesh(mesh)
 ```
 
+![Axons](../assets/axons.png)
+
 The mesh looks good, so we can proceed with the assembly our biological model and the
 associated finite element matrices.
 
@@ -65,13 +67,15 @@ model = Model(; mesh, coeffs...)
 matrices = assemble_matrices(model)
 ```
 
-The Bloch-Torrey PDE takes a magnetic field gradient pulse sequence as an input. We may
-define our gradient (given in T/m) and echo time `TE` (given in microseconds) as follows:
+The Bloch-Torrey PDE takes a magnetic field gradient pulse sequence as an input. Here
+we use `ScalarGradient` with a PGSE sequence.
 
 ```julia
-TE = 5000.0
-g⃗(t) = 0.5 * [sin(10π * t / TE), 0, 0]
-gradient = GeneralGradient(g⃗, TE)
+dir = [1.0, 0.0, 0.0]
+profile = PGSE(2000.0, 6000.0)
+b = 1000
+g = √(b / int_F²(profile)) / coeffs.γ
+gradient = ScalarGradient(dir, profile, g)
 ```
 
 SpinDoctor provides a `solve` function, which has the same base signature for all diffusion
@@ -79,7 +83,7 @@ MRI problems. The BTPDE is one such problem. They generally take a gradient sequ
 input.
 
 ```julia
-btpde = GeneralBTPDE(; model, mesh)
+btpde = GeneralBTPDE(; model, matrices)
 ξ = solve(btpde, gradient)
 ```
 
@@ -104,3 +108,5 @@ The final magnetization can be visualized using the `plot_field` function.
 ```julia
 plot_field(mesh, ξ)
 ```
+
+![Magnetization](../assets/magnetization.png)
