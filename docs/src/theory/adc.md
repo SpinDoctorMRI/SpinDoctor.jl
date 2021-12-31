@@ -61,7 +61,7 @@ b(\vec{g},\delta) = \gamma^2 \|\vec{g}\|^2 \frac{\delta^3}{4 n^2 \pi^2} = \gamma
 ```
 
 The reason for these definitions is that in a homogeneous medium, the signal attenuation is
-``\euler^{-\vec{d}^\transpose \mat{D}_0 \vec{d} b}``, where ``\mat{D}``
+``\mathrm{e}^{-\vec{d}^\mathsf{T} \mathbf{D}_0 \vec{d} b}``, where ``\mathbf{D}``
 is the intrinsic diffusion tensor and ``\vec{d} = \vec{g} / \|\vec{g}\|``.
 
 ## ADC
@@ -124,16 +124,16 @@ between the compartments, at least to the quadratic order in ``g``, which is the
 The ADC in compartment ``\Omega`` is given by
 
 ```math
-    D_\text{HADC}(\vec{g}, f) = \vec{d}^\transpose \mat{D} \vec{d} -
-    \frac{\int_0^{T_\text{echo}} F(t) h(t) \, \mathrm{d}t}{\int_0^{T_\text{echo}} F(t)^2 \,
-    \mathrm{d} t},
+D_\text{HADC}(\vec{g}, f) = \vec{d}^\mathsf{T} \mathbf{D} \vec{d} -
+\frac{\int_0^{T_\text{echo}} F(t) h(t) \, \mathrm{d}t}{\int_0^{T_\text{echo}} F(t)^2 \,
+\mathrm{d} t},
 ```
 
 where ``F(t) = \int_0^t f(s) \, \mathrm{d}s,`` and
 
 ```math
-    h(t) = \frac{1}{|\Omega|} \int_{\partial \Omega} \omega(\vec{x}, t) \, \vec{d} \cdot
-    \vec{n}(\vec{x}) \, \mathrm{d} \Gamma(\vec{x})
+h(t) = \frac{1}{|\Omega|} \int_{\partial \Omega} \omega(\vec{x}, t) \, \vec{d} \cdot
+\vec{n}(\vec{x}) \, \mathrm{d} \Gamma(\vec{x})
 ```
 
 is a quantity related to the directional gradient of a function ``\omega`` that is the
@@ -142,11 +142,11 @@ initial condition:
 
 ```math
 \begin{alignedat}{2}
-    \frac{\partial}{\partial t} \omega(\vec{x}, t) & = \nabla \cdot \left(\mat{D} \nabla
+    \frac{\partial}{\partial t} \omega(\vec{x}, t) & = \nabla \cdot \left(\mathbf{D} \nabla
     \omega(\vec{x}, t)\right), \quad & & (\vec{x}, t) \in \Omega \times [0, T_\text{echo}],
     \\
     \omega(\vec{x}, 0) & = 0, \quad & & \vec{x} \in \Omega, \\
-    \mat{D} \nabla \omega(\vec{x}, t) \cdot \vec{n} & = F(t) \mat{D} \vec{d} \cdot
+    \mathbf{D} \nabla \omega(\vec{x}, t) \cdot \vec{n} & = F(t) \mathbf{D} \vec{d} \cdot
     \vec{n}, \quad &  & \vec{x} \in \partial \Omega,
 \end{alignedat}
 ```
@@ -162,29 +162,29 @@ A well-known formula for the ADC in the short diffusion time regime is the follo
 time approximation (STA):
 
 ```math
-    D_\text{STA} = \left(1 - \frac{4\sqrt{D_0}}{3 \sqrt{\pi}}\sqrt{\Delta} \frac{{A}}{d\; V} \right) D_0,
+D_\text{STA} = \left(1 - \frac{4\sqrt{D_0}}{3 \sqrt{\pi}}\sqrt{\Delta} \frac{{A}}{d\; V}
+\right) D_0,
 ```
 where ``\dfrac{A}{V}`` is the surface to volume ratio, ``d`` is the spatial dimension and
-``D_0 = \vec{d}^\transpose \mat{D} \vec{d}`` is the intrinsic diffusion
+``D_0 = \vec{d}^\mathsf{T} \mathbf{D} \vec{d}`` is the intrinsic diffusion
 coefficient in the gradient direction. In the above formula, the pulse duration ``\delta``
 is assumed to be very small compared to ``\Delta``. A recent correction to the above formula
 , taking into account the finite pulse duration ``\delta`` and the
 gradient direction ``\vec{d}``, is the following:
 
 ```math
-    D_\text{STA} = \left(1 - \frac{4 \sqrt{D_0}}{3 \sqrt{\pi}}
-    C_{\delta,\Delta}
-    \frac{A_{\vec{d}}}{V} \right) D_0,
+D_\text{STA} = \left(1 - \frac{4 \sqrt{D_0}}{3 \sqrt{\pi}} C_{\delta,\Delta}
+\frac{A_{\vec{d}}}{V} \right) D_0,
 ```
 
 where
 
 ```math
-    A_{\vec{d}} = \int_{\partial \Omega} \left(\vec{d} \cdot \vec{n}(\vec{x})\right)^2 \,
-    \mathrm{d} \Gamma(\vec{x}) = \vec{d}^\transpose \mat{N} \vec{d}
+A_{\vec{d}} = \int_{\partial \Omega} \left(\vec{d} \cdot \vec{n}(\vec{x})\right)^2 \,
+\mathrm{d} \Gamma(\vec{x}) = \vec{d}^\mathsf{T} \mathbf{N} \vec{d}
 ```
 
-with ``\mat{N} = \int_{\partial \Omega} \vec{n}(\vec{x}) \vec{n}^\transpose\!(\vec{x}) \,
+with ``\mathbf{N} = \int_{\partial \Omega} \vec{n}(\vec{x}) \vec{n}^\mathsf{T}\!(\vec{x}) \,
 \mathrm{d} \Gamma(\vec{x})`` and
 
 ```math
