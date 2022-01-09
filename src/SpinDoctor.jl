@@ -1,4 +1,8 @@
-"Diffusion MRI modelling"
+"""
+    SpinDoctor
+
+Diffusion MRI simulation toolbox. 
+"""
 module SpinDoctor
 
 using Arpack: eigs
@@ -28,11 +32,9 @@ export PGSE, CosOGSE, SinOGSE, DoublePGSE, GeneralGradient, ScalarGradient
 export integral, int_F², intervals, isconstant, echotime
 
 export assemble_matrices
-export create_cells
-export create_model
 export split_mesh
 export split_field
-export get_cmpt_volumes, get_mesh_volumes
+export get_cmpt_volumes
 
 export Model
 export initial_conditions
@@ -44,7 +46,6 @@ export solve, solve_multigrad
 export fit_adc
 export fit_tensors
 export plot_mesh, plot_field
-export compute_lap_eig_analytical
 
 export IntervalConstanBTPDE, GeneralBTPDE, HADC, Karger
 export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
@@ -54,22 +55,16 @@ export solve
 export length2eig, eig2length, limit_lengthscale, compute_mf_diffusion_tensor
 
 # Utils
-export fresnels, fresnelc
 export unitcircle, unitsphere
 export compute_signal
 
 # Callbacks
 export Printer, VTKWriter, Plotter
-export initialize!, update!, finalize!
 
 # Recipes
 export AbstractSetup, PlateSetup, CylinderSetup, SphereSetup, NeuronSetup
-export coefficients, analytical_coefficients, radial_dimension
-export create_surfaces_cylinder,
-    create_surfaces_neuron, create_surfaces_sphere, create_geometry
-
-# Rexport default ODE solver
-export QNDF, MagnusGL6
+export coefficients, analytical_coefficients
+export create_geometry
 
 # Utils
 include("utils/fresnel.jl")

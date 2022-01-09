@@ -70,7 +70,7 @@ function solve(problem::Karger, gradient::ScalarGradient)
     J = DiffEqArrayOperator(J_prototype; update_func)
 
     prob = ODEProblem(J, S₀, (0.0, TE), p)
-    sol = OrdinaryDiffEq.solve(prob, odesolver, dt = dt)
+    sol = OrdinaryDiffEq.solve(prob, odesolver; dt)
 
     sol.u[end]
 end

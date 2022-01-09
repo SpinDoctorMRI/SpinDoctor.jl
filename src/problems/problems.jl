@@ -26,7 +26,7 @@ end
 Base.@kwdef struct Karger{T,S} <: AbstractProblem{T}
     model::Model{T}
     difftensors::Vector{SMatrix{3,3,T,9}}
-    odesolver::S
+    odesolver::S = MagnusGL6()
     timestep::T
 end
 

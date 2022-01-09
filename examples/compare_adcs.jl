@@ -46,7 +46,7 @@ bvalues = 0:100:1000
 gvalues = map(b -> √(b / int_F²(profile)) / coeffs.γ, bvalues)
 gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues]
 # btpde = GeneralBTPDE(;
-#     model, matrices, reltol = 1e-4, abstol = 1e-6, odesolver = QNDF(autodiff = false),
+#     model, matrices, reltol = 1e-4, abstol = 1e-6,
 # )
 btpde = IntervalConstanBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
 ξ, = solve_multigrad(btpde, gradients)
@@ -58,7 +58,7 @@ adc_fit_cmpts =
 
 
 ## Solve HADC
-hadc = HADC(; model, matrices, odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6)
+hadc = HADC(; model, matrices, reltol = 1e-4, abstol = 1e-6)
 adc_homogenized_cmpts = @time solve(hadc, gradient)
 
 

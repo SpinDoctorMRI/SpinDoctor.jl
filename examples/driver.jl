@@ -98,7 +98,7 @@ mf = MatrixFormalism(; model, matrices, lap_eig, ninterval = 500)
 
 
 ## Solve HADC
-hadc = HADC(; model, matrices, odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6)
+hadc = HADC(; model, matrices, reltol = 1e-4, abstol = 1e-6)
 adc_cmpts = @time solve(hadc, gradient)
 
 
@@ -110,12 +110,12 @@ gradients = [
     ScalarGradient(collect(d), gradient.profile, gradient.amplitude) for
     d ∈ eachcol(directions)
 ]
-hadc = HADC(; model, matrices, odesolver = QNDF(), reltol = 1e-4, abstol = 1e-6)
+hadc = HADC(; model, matrices, reltol = 1e-4, abstol = 1e-6)
 adcs, = @time solve_multigrad(hadc, gradients)
 difftensors = fit_tensors(directions, adcs)
 
 # Solve Karger
-karger = Karger(; model, difftensors, odesolver = MagnusGL6(), timestep = 5.0)
+karger = Karger(; model, difftensors, timestep = 5.0)
 signal = @time solve(karger, gradient)
 
 

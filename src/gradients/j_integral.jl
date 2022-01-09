@@ -3,9 +3,11 @@
 
 Compute the integral
 
-    ``j(f, \\lambda) = \\lambda \\frac{\\int_0^{T_\\text{echo}} F(t) \\int_0^t
-    e^{-\\lambda(t - s)} f(s) \\, \\mathrm{d} s \\, \\mathrm{d} t}{\\int_0^{T_\\text{echo}}
-    F^2(t) \\, \\mathrm{d} t}``
+```math
+j(f, \\lambda) = \\lambda \\frac{\\int_0^{T_\\text{echo}} F(t) \\int_0^t \mathrm{e}^{-\\lambda(t -
+s)} f(s) \\, \\mathrm{d} s \\, \\mathrm{d} t}{\\int_0^{T_\\text{echo}} F^2(t) \\,
+\\mathrm{d} t}
+```
 
 for the time profile `f` and Laplace eigenvalue `λ`.
 """
