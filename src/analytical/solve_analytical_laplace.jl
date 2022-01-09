@@ -1,3 +1,8 @@
+"""
+    solve(problem::AnalyticalLaplace)
+
+Solve analytical Laplace eigenvalue problem for symmetrical geometries.
+"""
 function solve(laplace::AnalyticalLaplace)
     (; D, T₂, dim, eiglim, eigstep) = laplace
 

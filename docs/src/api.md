@@ -2,13 +2,15 @@
 
 ## Gradients
 
+These functions deal with gradient pulse sequences.
+
 ```@docs
-PGSE
-CosOGSE
-SinOGSE
-DoublePGSE
 GeneralGradient
 ScalarGradient
+PGSE
+DoublePGSE
+CosOGSE
+SinOGSE
 integral
 int_F²
 intervals
@@ -39,6 +41,9 @@ plot_field
 ```
 
 ## Problems
+
+SpinDoctor allows for considering a wide range of diffusion MRI problems. These can be
+solved for using the [`solve`](@ref) function.
 
 ```@docs
 IntervalConstanBTPDE
@@ -72,6 +77,8 @@ compute_signal
 
 ## Callbacks
 
+Callbacks are called after every time step when solving the BTPDE.
+
 ```@docs
 Printer
 VTKWriter
@@ -80,8 +87,10 @@ Plotter
 
 ## Recipes
 
+SpinDoctor comes with pre-configures recipes for creating finite element meshes of plates,
+cylinders, spheres, and neurons.
+
 ```@docs
-AbstractSetup
 PlateSetup
 CylinderSetup
 SphereSetup

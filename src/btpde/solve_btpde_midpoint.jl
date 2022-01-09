@@ -1,5 +1,5 @@
 """
-    run(problem::IntervalConstanBTPDE, gradient)
+    solve(problem::IntervalConstanBTPDE, gradient; callbacks = AbstractCallback[])
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements.
 This function uses a manual time stepping scheme (theta-rule), that requires a degree of

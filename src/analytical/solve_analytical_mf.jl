@@ -1,5 +1,5 @@
 """
-    solve(problem::AnalyticalMatrixFormalism, gradient, volumes = nothing)
+    solve(problem::AnalyticalMatrixFormalism, gradient)
 
 Compute the signal in a multilayered cylinder or sphere using an analytical
 matrix formalism solution.

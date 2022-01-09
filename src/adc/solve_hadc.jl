@@ -1,5 +1,5 @@
 """
-    solve_hadc(problem::HADC, gradient::ScalarGradient)
+    solve(problem::HADC, gradient::ScalarGradient)
 
 Compute the ADC using a homogenized ADC model (HADC). This is currently only implemented for
 scalar gradients.

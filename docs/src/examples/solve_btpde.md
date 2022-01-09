@@ -1,14 +1,15 @@
 # Solve BTPDE
 
-We start by loading SpinDoctor.
+We start by loading SpinDoctor and a Makie plotting backend.
 
 ```julia
 using LinearAlgebra
 using SpinDoctor
+using GLMakie
 ```
 
 The built in geometry recipes allow for making various cell configuration. We here consider
-the case of twisted axons immersed in an extracellular space (ECS).
+the case of three twisted axons immersed in an extracellular space (ECS).
 
 ```julia
 setup = CylinderSetup(;
@@ -53,7 +54,6 @@ mesh, = create_geometry(setup)
 The resulting mesh can be plotted in 3D provided the `GLMakie` backend is loaded.
 
 ```julia
-using GLMakie
 plot_mesh(mesh)
 ```
 
@@ -68,7 +68,7 @@ matrices = assemble_matrices(model)
 ```
 
 The Bloch-Torrey PDE takes a magnetic field gradient pulse sequence as an input. Here
-we use `ScalarGradient` with a PGSE sequence.
+we consider a [`ScalarGradient`](@ref) with a [`PGSE`](@ref) sequence.
 
 ```julia
 dir = [1.0, 0.0, 0.0]
@@ -78,9 +78,9 @@ g = √(b / int_F²(profile)) / coeffs.γ
 gradient = ScalarGradient(dir, profile, g)
 ```
 
-SpinDoctor provides a `solve` function, which has the same base signature for all diffusion
-MRI problems. The BTPDE is one such problem. They generally take a gradient sequence as an
-input.
+SpinDoctor provides a [`solve`](@ref) function, which has the same base signature for all
+diffusion MRI problems. The BTPDE is one such problem. They generally take a gradient
+sequence as an input.
 
 ```julia
 btpde = GeneralBTPDE(; model, matrices)
@@ -103,10 +103,21 @@ respective compartments. The compartment mass matrices are also available.
 compute_signal.(matrices.M_cmpts, ξ_cmpts)
 ```
 
-The final magnetization can be visualized using the `plot_field` function.
+The final magnetization can be visualized using the [`plot_field`](@ref) function.
 
 ```julia
 plot_field(mesh, ξ)
 ```
 
 ![Magnetization](../assets/magnetization.png)
+
+In this example, we have computed the complex transverse water proton magnetization field
+using the finite element method. The measured diffusion MRI signal is the integral of this
+field, and other quantities of interest, such as the apparent diffusion coefficient (ADC),
+the or effective diffusion tensor, may easily be obtained from this reference field.
+Directly solving the BTPDE is thus considered to be the "gold standard" for computing these
+quantities, as arbitrary precision may be obtained.
+
+However, this is also often the most computationally expensive approach. In the following
+examples, we will consider some other specialized methods provided by SpinDoctor, each
+having their own domains of validity, use cases, and computational footprints.

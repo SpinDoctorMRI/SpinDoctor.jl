@@ -25,7 +25,7 @@ makedocs(;
         "Theory" => [
             "Definitions" => "theory/definitions.md",
             "Bloch-Torrey PDE" => "theory/btpde.md",
-            "Apparent Diffusion Coeefficient" => "theory/adc.md",
+            "Apparent Diffusion Coefficient" => "theory/adc.md",
             "Matrix Formalism" => "theory/matrix_formalism.md",
             "Discretization" => "theory/discretization.md",
         ],

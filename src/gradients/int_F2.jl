@@ -1,5 +1,5 @@
 """
-    b = int_F²(f)
+    int_F²(f)
 
 Compute the time profile contribution to the ``b``-value given the time profile `f`. The
 ``b``-value is given by

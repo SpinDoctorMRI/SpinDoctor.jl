@@ -1,5 +1,5 @@
 """
-    compute_signal(M, ξ) = sum(M * ξ)
+    compute_signal(M, ξ)
 
 Compute signal from magnetization `ξ`, using the mass matrix `M` for integration.
 

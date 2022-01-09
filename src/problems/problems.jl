@@ -1,3 +1,6 @@
+"""
+Abstract problem.
+"""
 abstract type AbstractProblem{T} end
 
 """
@@ -20,12 +23,7 @@ Base.@kwdef struct GeneralBTPDE{T,S} <: AbstractProblem{T}
 end
 
 """
-    IntervalConstanBTPDE(;
-        model,
-        matrices,
-        θ = 0.5,
-        timestep,
-    )
+    IntervalConstanBTPDE(; model, matrices, θ = 0.5, timestep)
 
 BTPDE problem specialized on intervalwise constant `ScalarGradient`s, e.g [`PGSE`](@ref),
 [`DoublePGSE`](@ref).
@@ -40,7 +38,7 @@ end
 """
     HADC(;
         model,
-        matrices,,
+        matrices,
         abstol = 1e-6,
         reltol = 1e-4,
         odesolver = QNDF(autodiff = false),
@@ -57,12 +55,7 @@ Base.@kwdef struct HADC{T,S} <: AbstractProblem{T}
 end
 
 """
-    Karger(;
-        model,
-        difftensors,
-        odesolver,
-        timestep,
-    )
+    Karger(; model, difftensors, odesolver, timestep)
 
 Karger problem.
 """
@@ -74,11 +67,7 @@ Base.@kwdef struct Karger{T,S} <: AbstractProblem{T}
 end
 
 """
-    Laplace(;
-        model,
-        matrices,
-        neig_max,
-    )
+    Laplace(; model, matrices, neig_max)
 
 Laplace eigenvalue problem.
 """
@@ -89,12 +78,7 @@ Base.@kwdef struct Laplace{T} <: AbstractProblem{T}
 end
 
 """
-    MatrixFormalism(;
-        model,
-        matrices,
-        lap_eig,
-        ninterval,
-    )
+    MatrixFormalism(; model, matrices, lap_eig, ninterval)
 
 Matrix formalism problem. Given a Laplace eigendecomposition `lap_eig`, this problem
 consists of computing the MF magnetization.
@@ -107,17 +91,7 @@ Base.@kwdef struct MatrixFormalism{T} <: AbstractProblem{T}
 end
 
 """
-    AnalyticalLaplace(;
-        ρ,
-        r,
-        D,
-        W,
-        T₂,
-        γ,
-        dim,
-        eiglim,
-        eigstep,
-    )
+    AnalyticalLaplace(; ρ, r, D, W, T₂, γ, dim, eiglim, eigstep)
 
 Analytical radial Laplace eigenvalue problem.
 """
@@ -134,11 +108,7 @@ Base.@kwdef struct AnalyticalLaplace{T} <: AbstractProblem{T}
 end
 
 """
-    AnalyticalMatrixFormalism(;
-        analytical_laplace,
-        lap_mat,
-        volumes,
-    )
+    AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
 
 Analytical Matrix formalism problem. Given a radial Laplace eigendecomposition
 `analytical_laplace`, this problem consists of computing the MF compartment signals.

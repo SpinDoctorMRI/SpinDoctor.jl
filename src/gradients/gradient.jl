@@ -1,14 +1,15 @@
 """
     AbstractGradient{T}
 
-Magnetic field gradient ``\\vec{g}(t)``.
+Magnetic field gradient ``\\vec{g}(t) \\in \\mathbb{R}^3``.
 """
 abstract type AbstractGradient{T} end
 
 """
     GeneralGradient(g⃗)
 
-General gradient sequence `g⃗(t) ∈ R³`. The direction and amplitude may vary in time.
+General gradient sequence ``\\vec{g}(t) \\in \\mathbb{R}^3``. The direction and amplitude may
+vary in time.
 """
 Base.@kwdef struct GeneralGradient{T,F}
     g⃗::F

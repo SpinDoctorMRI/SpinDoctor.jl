@@ -1,5 +1,7 @@
+function echotime end
+
 """
-    echotime(f)
+    echotime(f::TimeProfile)
 
 Get echo time ``TE`` of the time profile `f`, which is the end of the last characteristic
 interval.
@@ -7,7 +9,7 @@ interval.
 echotime(f::TimeProfile) = intervals(f)[end]
 
 """
-    echotime(gradient)
+    echotime(grad::AbstractGradient)
 
 Get echo time ``TE`` of `gradient`.
 """

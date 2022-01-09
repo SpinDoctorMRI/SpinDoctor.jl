@@ -1,7 +1,7 @@
 """
     coefficients(setup; D, T₂, ρ, κ, γ)
 
-Prepare PDE compartments.
+Order coefficients compartment arrays.
 """
 function coefficients end
 
