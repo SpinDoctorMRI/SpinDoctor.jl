@@ -126,7 +126,7 @@ end
     difftensors = fit_tensors(directions, adcs)
 
     # Solve Karger
-    karger = Karger(; model, difftensors, odesolver = MagnusGL6(), timestep = 5.0)
+    karger = Karger(; model, difftensors, timestep = 5.0)
     signal = solve(karger, pgse_gradient)
 end
 
