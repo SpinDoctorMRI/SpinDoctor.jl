@@ -85,7 +85,6 @@ end
     hadc = HADC(;
         model,
         matrices,
-        odesolver = QNDF(autodiff = false),
         reltol = 1e-4,
         abstol = 1e-6,
     )
@@ -100,7 +99,6 @@ end
         matrices,
         reltol = 1e-4,
         abstol = 1e-6,
-        odesolver = QNDF(autodiff = false),
     )
     @test solve(btpde, general_gradient) isa Vector{Complex{T}}
     @test solve(btpde, ogse_gradient) isa Vector{Complex{T}}
@@ -121,7 +119,6 @@ end
     hadc = HADC(;
         model,
         matrices,
-        odesolver = QNDF(autodiff = false),
         reltol = 1e-4,
         abstol = 1e-6,
     )
