@@ -21,9 +21,9 @@ function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
     p.n = 1
     p.t[] = [t]
     p.ξ[] = copy(ξ)
-    p.attenuation = Node(T[1])
-    p.magnitude = [Node(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
-    p.phase = [Node(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
+    p.attenuation = Observable(T[1])
+    p.magnitude = [Observable(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
+    p.phase = [Observable(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
 
     p.fig = Figure()
 
@@ -42,8 +42,8 @@ function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
         pmin[inds] .-= gmax / 2 
         pmax[inds] .+= gmax / 2 
         grad = Vec3f(gradient(t))
-        p.g⃗ = Node([grad])
-        p.g⃗_hist = Node([grad])
+        p.g⃗ = Observable([grad])
+        p.g⃗_hist = Observable([grad])
         ax = Axis3(p.fig[1, 1]; title = "Gradient [T/m]")
         ax.aspect = :data
         xlims!(ax, pmin[1], pmax[1])
