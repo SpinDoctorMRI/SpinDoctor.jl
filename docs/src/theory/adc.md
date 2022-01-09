@@ -1,4 +1,4 @@
-## [Apparent Diffusion Coefficient](@id ADC)
+## [Apparent Diffusion Coefficient](@id adc)
 
 Consider a unidirectional gradient ``\vec{g}(t) = g f(t) \vec{d}`` parametrized by an
 amplitude ``g > 0``, time profile ``f : [0, T_\text{echo}] \to [-1, 1]`` and direction

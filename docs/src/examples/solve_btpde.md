@@ -68,7 +68,7 @@ matrices = assemble_matrices(model)
 ```
 
 The Bloch-Torrey PDE takes a magnetic field gradient pulse sequence as an input. Here
-we consider a [`ScalarGradient`](@ref) with a [`PGSE`](@ref) sequence.
+we consider a [`ScalarGradient`](@ref) with a [`PGSE`](@ref) time profile.
 
 ```julia
 dir = [1.0, 0.0, 0.0]
@@ -114,7 +114,7 @@ plot_field(mesh, ξ)
 In this example, we have computed the complex transverse water proton magnetization field
 using the finite element method. The measured diffusion MRI signal is the integral of this
 field, and other quantities of interest, such as the apparent diffusion coefficient (ADC),
-the or effective diffusion tensor, may easily be obtained from this reference field.
+or the effective diffusion tensor, may easily be obtained from this reference field.
 Directly solving the BTPDE is thus considered to be the "gold standard" for computing these
 quantities, as arbitrary precision may be obtained.
 

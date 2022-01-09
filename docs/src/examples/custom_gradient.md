@@ -1,6 +1,6 @@
 # Custom gradients
 
-Here we will consider a custom gradient applie to a sphere geometry.
+Here we will consider a custom gradient applied to a spherical geometry.
 
 We start by loading SpinDoctor.
 
@@ -8,9 +8,6 @@ We start by loading SpinDoctor.
 using LinearAlgebra
 using SpinDoctor
 ```
-
-The built in geometry recipes allow for making various cell configuration. We here consider
-the case of twisted axons immersed in an extracellular space (ECS).
 
 ```julia
 setup = SphereSetup(;
@@ -50,8 +47,8 @@ matrices = assemble_matrices(model)
 ```
 
 The Bloch-Torrey PDE takes a magnetic field gradient pulse sequence as an input. We may
-define our custom gradient (given in T/m) and echo time `TE` (given in microseconds) as
-follows:
+define our custom three dimensional gradient sequence (given in T/m) as a simple Julia
+function. The echo time `TE` (given in microseconds) is also needed.
 
 ```julia
 TE = 5000.0
@@ -59,16 +56,23 @@ g⃗(t) = 0.5 * [sin(10π * t / TE), 0, 0]
 gradient = GeneralGradient(g⃗, TE)
 ```
 
-In order to follow the evolution of the solution during time stepping, we add a `Plotter` to
-a list of callbacks.
+In order to follow the evolution of the solution during time stepping, we add a
+[`Plotter`](@ref) to a list of callbacks. Other available callbacks are [`Printer`](@ref)
+for showing time stepping information, and [`VTKWriter`](@ref) for saving the solution time
+series for visualization in ParaView.
 
 ```julia
 callbacks = [Plotter{Float64}()]
 ```
 
-We may then define the problem and solve for our gradient and callbacks.
+We may then define the problem and solve for our gradient (with the callback). A
+[`GeneralBTPDE`](@ref) is needed ([`IntervalConstantBTPDE`](@ref) only accepts certain
+gradients).
 
 ```julia
 btpde = GeneralBTPDE(; model, matrices)
 ξ = solve(btpde, gradient; callbacks)
 ```
+
+[`MatrixFormalism`](@ref) also accepts [`GeneralGradient`](@ref)s. However, the ADC methods
+currently only support [`ScalarGradient`](@ref)s.

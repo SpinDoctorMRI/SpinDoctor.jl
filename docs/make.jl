@@ -23,7 +23,7 @@ makedocs(;
             "High Angular Resolution" => "examples/hardi.md",
         ],
         "Theory" => [
-            "Definitions" => "theory/definitions.md",
+            "Theory" => "theory/theory.md",
             "Bloch-Torrey PDE" => "theory/btpde.md",
             "Apparent Diffusion Coefficient" => "theory/adc.md",
             "Matrix Formalism" => "theory/matrix_formalism.md",

@@ -1,6 +1,6 @@
 # Compare ADCs
 
-The [apparent diffusion coefficient](@ref ADC) (ADC) may be sufficient to describe the
+The [apparent diffusion coefficient](@ref adc) (ADC) may be sufficient to describe the
 signal attenuation for small ``b``-values. SpinDoctor comes with multiple approaches for
 computing or estimating the ADC for a `ScalarGradient` ``\vec{g}(t) = f(t) g \vec{d}``:
 
