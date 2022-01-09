@@ -37,39 +37,38 @@ where ``t_1 \geq 0`` and ``t_1 + \Delta \geq T_\text{echo} / 2``.
 
 ## B-value
 
-In a DMRI experiment, ``f`` is usually fixed, while ``g`` or ``\vec{d}`` are varied. ``S`` is
-usually plotted against a quantity called the ``b``-value. The ``b``-value depends on
-``\vec{g}``:
+In a DMRI experiment, ``f`` is usually fixed, while ``g`` or ``\vec{d}`` are varied. ``S``
+is usually plotted against a quantity called the ``b``-value. The ``b``-value depends on
+``f`` and ``g``:
 
 ```math
-b(\vec{g}, f) = \gamma^2 \|\vec{g}\|^2 \int_0^{T_\text{echo}} \, \mathrm{d}t\left(\int_0^t
-f(s)\,\mathrm{d}s\right)^2.
+b(g, f) = \gamma^2 g^2 \int_0^{T_\text{echo}} \left( \int_0^t f(s) \, \mathrm{d} s \right)^2
+\, \mathrm{d}t.
 ```
 
 For PGSE, the b-value is:
 
 ```math
-b(\vec{g},\delta,\Delta) = \gamma^2 \|\vec{g}\|^2 \delta^2 \left(\Delta - \delta/3\right).
+b(g, \delta, \Delta) = \gamma^2 g^2 \delta^2 \left( \Delta - \delta / 3 \right).
 ```
 
-For the cosine OGSE with \emph{integer}\/ number of periods ``n`` in each of the two
+For the cosine OGSE with _integer_ number of periods ``n`` in each of the two
 durations ``\delta``, the corresponding ``b``-value is:
 
 ```math
-b(\vec{g},\delta) = \gamma^2 \|\vec{g}\|^2 \frac{\delta^3}{4 n^2 \pi^2} = \gamma^2
-\|\vec{g}\|^2 \frac{\delta}{\omega^2}.
+b(g, \delta) = \gamma^2 g^2 \frac{\delta^3}{4 n^2 \pi^2} = \gamma^2 g^2
+\frac{\delta}{\omega^2}.
 ```
 
 The reason for these definitions is that in a homogeneous medium, the signal attenuation is
-``\mathrm{e}^{-\vec{d}^\mathsf{T} \mathbf{D}_0 \vec{d} b}``, where ``\mathbf{D}``
-is the intrinsic diffusion tensor and ``\vec{d} = \vec{g} / \|\vec{g}\|``.
+``\exp(-\vec{d}^\mathsf{T} \mathbf{D}_0 \vec{d} b)``, where ``\mathbf{D}_0`` is the
+intrinsic diffusion tensor.
 
 ## ADC
 
 An important quantity that can be derived from the dMRI signal is the "Apparent Diffusion
-Coefficient" (ADC), which gives an indication of the root mean squared distance travelled
-by water molecules in the gradient direction ``\vec{g}/\|\vec{g}\|``, averaged over all
-starting positions:
+Coefficient" (ADC), which gives an indication of the root mean squared distance travelled by
+water molecules in the gradient direction ``\vec{d}``, averaged over all starting positions:
 
 ```math
 D_\text{ADC} = \left. -\frac{\partial}{\partial b} \log{\frac{S(b)}{S(0)}}\right\vert_{b=0}.
@@ -98,21 +97,18 @@ attenuation is given by
 \mathrm{e}^{-D_\text{ADC} b}.
 ```
 
-Another quantity of interest is a slight generalization of the ADC---an effective diffusion
+Another quantity of interest is a slight generalization of the ADC -- an effective diffusion
 tensor ``\mathbf{D}_\text{eff}``. The six coefficients of this symmetric positive tensor is
-fitted to best approximate the following signal attenuation, for all gradients ``\vec{g} \in
-\mathbb{R}^3``:
+fitted to best approximate the following signal attenuation, for all directions ``\vec{d}``:
 
 ```math
-\mathrm{e}^{- \frac{\vec{g}^\mathsf{T} \mathbf{D}_\text{eff} \vec{g}}{\vec{g}^\mathsf{T}
-\vec{g}} b}.
+\mathrm{e}^{-\vec{g}^\mathsf{T} \mathbf{D}_\text{eff} \vec{d} b}.
 ```
 
 The resulting ADC in direction ``\vec{d}`` is then given by
 
 ```math
-D_\text{ADC}(\vec{g}) = \frac{\vec{g}^\mathsf{T} \mathbf{D}_\text{eff}
-\vec{g}}{\vec{g}^\mathsf{T} \vec{g}} = \vec{d}^\mathsf{T} \mathbf{D}_\text{eff} \vec{d}.
+D_\text{ADC}(\vec{d}) = \vec{d}^\mathsf{T} \mathbf{D}_\text{eff} \vec{d}.
 ```
 
 ## HADC
@@ -124,7 +120,7 @@ between the compartments, at least to the quadratic order in ``g``, which is the
 The ADC in compartment ``\Omega`` is given by
 
 ```math
-D_\text{HADC}(\vec{g}, f) = \vec{d}^\mathsf{T} \mathbf{D} \vec{d} -
+D_\text{HADC}(\vec{d}, f) = \vec{d}^\mathsf{T} \mathbf{D} \vec{d} -
 \frac{\int_0^{T_\text{echo}} F(t) h(t) \, \mathrm{d}t}{\int_0^{T_\text{echo}} F(t)^2 \,
 \mathrm{d} t},
 ```

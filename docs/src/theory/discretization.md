@@ -145,8 +145,8 @@ mass matrices, where the three coordinate functions ``\vec{x} \mapsto x``, ``y``
 nodal weights in the assembly process, given by ``\mathbf{q}^x``, ``\mathbf{q}^y``, ``\mathbf{q}^z``; the
 vectors of ``x``, ``y``, and ``z`` coordinates of the finite element nodes.
 
-With compartment-wise constant ``T_2``-relaxation times, \mathbf{R} is a block-diagonally scaled
-version of the mass matrix \mathbf{M}, where the weights are the inverses of the relaxation
+With compartment-wise constant ``T_2``-relaxation times, ``\mathbf{R}`` is a block-diagonally scaled
+version of the mass matrix ``\mathbf{M}``, where the weights are the inverses of the relaxation
 times.
 
 
@@ -154,7 +154,7 @@ times.
 ## Finite element solution to the Bloch-Torrey PDE
 
 The solution to the Bloch-Torrey partial differential equation may be
-projected onto the finite element nodal basis ``(\varphi_k)_{1\leq k\leq N_\text{node}}``, in
+projected onto the finite element nodal basis ``(\varphi_k)_{1 \leq k \leq N_\text{node}}``, in
 which case it is given by
 
 ```math
@@ -170,24 +170,26 @@ differential equations (ODE):
 
 ```math
 \mathbf{M} \frac{\mathrm{d} \bm{\xi}}{\mathrm{d} t} = -\left(\mathbf{S} + \mathbf{Q} + \mathbf{R} +
-\underline{\mathrm{i}} \gamma f(t) \mathbf{J}(\vec{g})\right)\bm{\xi}(t).
+\underline{\mathrm{i}} \gamma \mathbf{J}(\vec{g}(t)) \right) \bm{\xi}(t).
 ```
 
 ## Finite element solution to the HADC model
 
-Similarly, the solution to the HADC model, ``\omega``, may be obtained by
-solving the equation
+Similarly, given an isolated compartment ``\Omega`` and a scalar gradient ``\vec{g}(t) =
+f(t) g \vec{d}``, the solution to the HADC model, ``\omega``, may be obtained by solving the
+equation
 
 ```math
 \mathbf{M} \frac{\mathrm{d} \bm{\zeta}}{\mathrm{d} t} = - \mathbf{S} \bm{\zeta}(t) + F(t)
 \mathbf{G} \mathbf{D} \vec{d},
 ```
 
-where ``\bm{\zeta} = (\zeta_1, \dots, \zeta_{N_\text{node}}) : [0, T_\text{echo}] \to
-\mathbb{R}^{N_\text{node}}`` is the unknown vector of coefficients of the solution
-``\omega(\vec{x}, t) = \bm{\zeta}^\mathsf{T}(t) \bm{\varphi}(\vec{x})``, ``\bm{\varphi} =
-(\varphi_1, \dots, \varphi_{N_\text{node}})`` is the vector of finite element basis
-functions, and ``\mathbf{G} \in \mathbb{R}^{N_\text{node} \times 3}`` is given by
+where ``F(t) = \int_0^t f(t) \, \mathrm{d} t``, ``\bm{\zeta} = (\zeta_1, \dots,
+\zeta_{N_\text{node}}) : [0, T_\text{echo}] \to \mathbb{R}^{N_\text{node}}`` is the unknown
+vector of coefficients of the solution ``\omega(\vec{x}, t) = \bm{\zeta}^\mathsf{T}(t)
+\bm{\varphi}(\vec{x})``, ``\bm{\varphi} = (\varphi_1, \dots, \varphi_{N_\text{node}})`` is
+the vector of finite element basis functions, and ``\mathbf{G} \in \mathbb{R}^{N_\text{node}
+\times 3}`` is given by
 
 ```math
 \mathbf{G} = \sum_{k = 1}^{N_\text{node}} \int_{\partial \Omega} \varphi_k(\vec{x})
@@ -200,7 +202,7 @@ matrix represents the components of the boundary integral of the quantity ``F(t)
 sequence dependent part ``F(t) \vec{d}^\mathsf{T} \mathbf{D}`` has been factored out.
 They can thus be assembled independently of the gradient sequence, and be reused when
 solving for multiple sequences or directions. They are assembled using the same routine as
-for \mathbf{Q}.
+for ``\mathbf{Q}``.
 
 The boundary integral ``h`` is then given by
 

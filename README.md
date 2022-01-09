@@ -1,6 +1,4 @@
-<!-- ![Logo](docs/src/assets/logo.svg) -->
-<!-- <img src="docs/src/assets/logo.svg" width="100"> -->
-<img src="docs/src/assets/logo_text.png" height="100">
+![Logo](docs/src/assets/logo_text.png)
 
 # SpinDoctor
 

@@ -6,5 +6,6 @@
 ```@autodocs
 Modules = [SpinDoctor]
 ```
+
 * [`Model`](@ref)
 * [`PGSE`](@ref)

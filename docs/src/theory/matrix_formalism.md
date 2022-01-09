@@ -62,7 +62,7 @@ eigenvalues:
 \R^{N_\text{eig} \times N_\text{eig}}.
 ```
 
-Then the matrix \mathbf{L} represents the generalized Laplace operator ``-\nabla \cdot \mathbf{D}
+Then the matrix ``\mathbf{L}`` represents the generalized Laplace operator ``-\nabla \cdot \mathbf{D}
 \nabla`` in the truncated Laplace eigenfunction basis.
 
 
@@ -90,7 +90,7 @@ product of pairs of eigenfunctions:
 \end{alignedat}
 ```
 
-Similarly, let \mathbf{T} be the ``N_\text{eig} \times N_\text{eig}`` Laplace relaxation matrix
+Similarly, let ``\mathbf{T}`` be the ``N_\text{eig} \times N_\text{eig}`` Laplace relaxation matrix
 defined by
 
 ```math
@@ -98,26 +98,20 @@ T_{mn} = \int_\Omega \frac{1}{T_2(\vec{x})} \phi_m(\vec{x}) \phi_n(\vec{x}) \, \
 \Omega(\vec{x}), \quad (m,n) \in \{1, \dots, N_\text{eig}\}^2.
 ```
 
-Then the general time dependent Bloch-Torrey operator "``-\nabla \cdot \mathbf{D} \nabla +
-\frac{1}{T_2} + \underline{\mathrm{i}} \gamma f(t) \vec{g} \cdot \vec{x}, \quad t \in [0,
-T_\text{echo}]``" in the truncated Laplace eigenfunction basis ``(\phi_j)_{j = 1, \dots,
-N_\text{eig}}`` is given by the complex-valued matrix
+Then the general time dependent Bloch-Torrey operator
 
 ```math
-\mathbf{K}(\vec{g}, f)(t) = \mathbf{L} + \mathbf{T} + \underline{\mathrm{i}} \gamma f(t)
-\mathbf{A}(\vec{g}),\quad t \in [0, T_\text{echo}].
+-\nabla \cdot \mathbf{D} \nabla + \frac{1}{T_2} + \underline{\mathrm{i}} \gamma \vec{g}(t)
+\cdot \vec{x}, \quad t \in [0, T_\text{echo}]
 ```
 
-For a piece-wise constant time profile (PGSE, double-PGSE), the Bloch-Torrey operator
-"``-\nabla \cdot \mathbf{D} \nabla + \frac{1}{T_2} + \underline{\mathrm{i}} \gamma \vec{g}
-\cdot \vec{x}``" is constant. In the truncated Laplace eigenfunction basis, it is given by
-the complex-valued matrix
+in the truncated Laplace eigenfunction basis ``(\phi_j)_{j = 1, \dots, N_\text{eig}}`` is
+given by the complex-valued matrix
 
 ```math
-\mathbf{K}(\vec{g}) = \mathbf{L} + \mathbf{T} + \underline{\mathrm{i}} \gamma \mathbf{A}(\vec{g}).
+\mathbf{K}(\vec{g}(t)) = \mathbf{L} + \mathbf{T} + \underline{\mathrm{i}} \gamma
+\mathbf{A}(\vec{g}(t)), \quad t \in [0, T_\text{echo}].
 ```
-
-
 
 ## Matrix Formalism approximation
 
@@ -133,8 +127,8 @@ where the vector of coefficients ``\vec{\nu} = (\nu_1, \dots, \nu_{N_\text{eig}}
 : [0, T_\text{echo}] \to \mathbb{C}^{N_\text{eig}}`` is the solution to
 
 ```math
-\frac{\mathrm{d} \vec{\nu}}{\mathrm{d} t} = -\mathbf{K}(\vec{g}, f)(t) \vec{\nu}(t), \quad t\in
-[0, T_\text{echo}].
+\frac{\mathrm{d} \vec{\nu}}{\mathrm{d} t} = -\mathbf{K}(\vec{g}(t)) \vec{\nu}(t), \quad t
+\in [0, T_\text{echo}].
 ```
 
 The initial coefficients are given by
@@ -143,43 +137,46 @@ The initial coefficients are given by
 \vec{\nu}(0) = \int_\Omega \rho(\vec{x}) \vec{\phi}(\vec{x}) \, \mathrm{d} \Omega(\vec{x}).
 ```
 
-By using a piece-wise constant approximation of the time profile ``f``, we obtain
+By using a piece-wise constant approximation of the gradient ``\vec{g}``, we obtain
 
 ```math
 \vec{\nu}(T_\text{echo}) \approx \left(\prod_{i = 1}^{N_\text{int}} \mathrm{e}^{-\delta_i
-\mathbf{K}_i}\right) \vec{\nu}(0) = \mathrm{e}^{-\delta_{N_\text{int}} \mathbf{K}_{N_\text{int}}}
-\dots \mathrm{e}^{-\delta_2 \mathbf{K}_2} \mathrm{e}^{-\delta_1 \mathbf{K}_1} \vec{\nu}(0),
+\mathbf{K}_i}\right) \vec{\nu}(0) = \mathrm{e}^{-\delta_{N_\text{int}}
+\mathbf{K}_{N_\text{int}}} \dots \mathrm{e}^{-\delta_2 \mathbf{K}_2} \mathrm{e}^{-\delta_1
+\mathbf{K}_1} \vec{\nu}(0),
 ```
 
 where ``\{I_i\}_{i = 1, \dots, N_\text{int}}`` are intervals such that ``[0, T_\text{echo}]
-= \bigcup_{i = 1}^{N_\text{int}} I_i``, ``f(t) = f_i`` for ``t \in I_i``, ``\delta_i =
-|I_i|``, and ``\mathbf{K}_i(\vec{g}) = \mathbf{L} + \underline{\mathrm{i}} \gamma f_i
-\mathbf{A}(\vec{g})``. The constants may be computed through quadrature:
+= \bigcup_{i = 1}^{N_\text{int}} I_i``, ``\vec{g}(t) = \vec{g}_i`` for ``t \in I_i``,
+``\delta_i = |I_i|``, and ``\mathbf{K}_i = \mathbf{K}(\vec{g}_i)``. The constants may be
+computed through quadrature:
 
 ```math
-f_i = \frac{1}{\delta_i}\int_{I_i} f(t) \, \mathrm{d} t \approx \frac{1}{2} \left(f(\min
-I_i) + f(\max I_i)\right).
+\vec{g}_i = \frac{1}{\delta_i}\int_{I_i} \vec{g}(t) \, \mathrm{d} t \approx \frac{1}{2}
+\left(\vec{g}(\min I_i) + \vec{g}(\max I_i)\right).
 ```
 
-For the PGSE and double-PGSE sequences, the coefficients of the final magnetization are
-given by
+For the PGSE and double-PGSE sequences ``\vec{g}(t) = f(t) g \vec{d}``, where ``f(t) \in
+\{-1, 0, 1\}`` for all ``t``, the coefficients of the final magnetization are given by
 
 ```math
-\vec{\nu}(T_\text{echo}) = \mathrm{e}^{-\delta\mathbf{K}^*} \mathrm{e}^{-(\Delta -
-\delta)(\mathbf{L} + \mathbf{T})} \mathrm{e}^{-\delta \mathbf{K}} \vec{\nu}(0)
+\vec{\nu}(T_\text{echo}) = \mathrm{e}^{-\delta\mathbf{K}(g \vec{d})^*} \mathrm{e}^{-(\Delta -
+\delta)(\mathbf{L} + \mathbf{T})} \mathrm{e}^{-\delta \mathbf{K}(g \vec{d}} \vec{\nu}(0)
 ```
 
 and
 
 ```math
-\vec{\nu}(T_\text{echo}) = \mathrm{e}^{-\delta \mathbf{K}^*} \mathrm{e}^{-(\Delta -
-\delta)(\mathbf{L} + \mathbf{T})} \mathrm{e}^{-\delta \mathbf{K}} \mathrm{e}^{-t_\text{pause}(\mathbf{L}
-+ \mathbf{T})} \mathrm{e}^{-\delta \mathbf{K}^*} \mathrm{e}^{-(\Delta - \delta)(\mathbf{L} +
-\mathbf{T})} \mathrm{e}^{-\delta \mathbf{K}} \vec{\nu}(0)
+\vec{\nu}(T_\text{echo}) = \mathrm{e}^{-\delta \mathbf{K}(g \vec{d})^*} \mathrm{e}^{-(\Delta
+- \delta)(\mathbf{L} + \mathbf{T})} \mathrm{e}^{-\delta \mathbf{K}(g \vec{d})}
+\mathrm{e}^{-t_\text{pause}(\mathbf{L}
++ \mathbf{T})} \mathrm{e}^{-\delta \mathbf{K}(g \vec{d})^*} \mathrm{e}^{-(\Delta -
++ \delta)(\mathbf{L} +
+\mathbf{T})} \mathrm{e}^{-\delta \mathbf{K}(g \vec{d})} \vec{\nu}(0)
 ```
 
 respectively. These are the exact solutions, although there may still be truncation errors
-from ``N_\text{eig}``. 
+from ``N_\text{eig}``.
 
 The signal is given by
 
@@ -237,9 +234,8 @@ In the case of a constant initial spin density ``\rho``, we also allow for compu
 Matrix Formalism Gaussian Approximation (MFGA) signal, given as
 
 ```math
-S^{\text{MFGA}}(\vec{g},f) = \rho|\Omega| \exp\left(-\vec{d}^\mathsf{T}
-\mathbf{D}^{\text{MF}}(f)\vec{d} \; b(\|\vec{g}\|,f)\right) \quad \vec{d} =
-\frac{\vec{g}}{\|\vec{g\|}}.
+S^{\text{MFGA}}(g, f, \vec{d}) = \rho |\Omega| \exp\left(-\vec{d}^\mathsf{T}
+\mathbf{D}^{\text{MF}}(f) \vec{d} \; b(g, f) \right) }.
 ```
 
 ## Eigenfunction length scale and orientation
