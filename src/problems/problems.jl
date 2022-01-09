@@ -23,12 +23,12 @@ Base.@kwdef struct GeneralBTPDE{T,S} <: AbstractProblem{T}
 end
 
 """
-    IntervalConstanBTPDE(; model, matrices, θ = 0.5, timestep)
+    IntervalConstantBTPDE(; model, matrices, θ = 0.5, timestep)
 
 BTPDE problem specialized on intervalwise constant `ScalarGradient`s, e.g [`PGSE`](@ref),
 [`DoublePGSE`](@ref).
 """
-Base.@kwdef struct IntervalConstanBTPDE{T} <: AbstractProblem{T}
+Base.@kwdef struct IntervalConstantBTPDE{T} <: AbstractProblem{T}
     model::Model{T}
     matrices::NamedTuple
     θ::T = 0.5

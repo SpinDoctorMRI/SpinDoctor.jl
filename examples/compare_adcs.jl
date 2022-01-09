@@ -51,7 +51,7 @@ gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues
 # btpde = GeneralBTPDE(;
 #     model, matrices, reltol = 1e-4, abstol = 1e-6,
 # )
-btpde = IntervalConstanBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
+btpde = IntervalConstantBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
 ξ, = solve_multigrad(btpde, gradients)
 signals = [compute_signal(matrices.M, ξ) for ξ ∈ ξ]
 signals_cmpts = [compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ)) for ξ ∈ ξ]

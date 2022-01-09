@@ -108,7 +108,7 @@ gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues
 The [`solve_multigrad`](@ref) function computes the magnetization for each gradient.
 
 ```julia
-btpde = IntervalConstanBTPDE(; model, matrices, θ = 0.5, timestep = 5)
+btpde = IntervalConstantBTPDE(; model, matrices, θ = 0.5, timestep = 5)
 ξ, = solve_multigrad(btpde, gradients)
 ```
 

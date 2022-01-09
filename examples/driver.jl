@@ -65,7 +65,7 @@ btpde = GeneralBTPDE(;
 )
 
 # BTPDE specialized for `ScalarGradient`s with constant interval profiles (PGSE, DoublePGSE)
-btpde = IntervalConstanBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
+btpde = IntervalConstantBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
 
 # Solve BTPDE
 ξ = @time solve(btpde, gradient; callbacks)

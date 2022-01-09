@@ -46,7 +46,7 @@ export fit_adc
 export fit_tensors
 export plot_mesh, plot_field
 
-export IntervalConstanBTPDE, GeneralBTPDE, HADC, Karger
+export IntervalConstantBTPDE, GeneralBTPDE, HADC, Karger
 export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
 export solve, solve_multigrad
 

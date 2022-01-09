@@ -103,7 +103,7 @@ end
     @test solve(btpde, general_gradient) isa Vector{Complex{T}}
     @test solve(btpde, ogse_gradient) isa Vector{Complex{T}}
 
-    btpde = IntervalConstanBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
+    btpde = IntervalConstantBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
     @test_throws MethodError solve(btpde, general_gradient) isa Vector{Complex{T}}
     @test_throws ErrorException solve(btpde, ogse_gradient) isa Vector{Complex{T}}
     @test solve(btpde, pgse_gradient) isa Vector{Complex{T}}
