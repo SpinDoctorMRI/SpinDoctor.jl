@@ -42,14 +42,13 @@ export initial_conditions
 export savefield
 
 export compute_adc_sta
-export solve, solve_multigrad
 export fit_adc
 export fit_tensors
 export plot_mesh, plot_field
 
 export IntervalConstanBTPDE, GeneralBTPDE, HADC, Karger
 export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
-export solve
+export solve, solve_multigrad
 
 # Matrix formalism
 export length2eig, eig2length, limit_lengthscale, compute_mf_diffusion_tensor

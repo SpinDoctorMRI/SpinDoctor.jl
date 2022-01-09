@@ -1,5 +1,11 @@
+"""
+Abstract setup recipe.
+"""
 abstract type AbstractSetup{T} end
 
+"""
+Setup recipe for a set of stacked plates.
+"""
 Base.@kwdef struct PlateSetup{T} <: AbstractSetup{T}
     name::String
     width::T
@@ -10,6 +16,9 @@ Base.@kwdef struct PlateSetup{T} <: AbstractSetup{T}
     refinement::T = Inf
 end
 
+"""
+Setup recipe for a set of cylinders immersed in a ECS.
+"""
 Base.@kwdef struct CylinderSetup{T} <: AbstractSetup{T}
     name::String
     ncell::Int
@@ -27,6 +36,9 @@ Base.@kwdef struct CylinderSetup{T} <: AbstractSetup{T}
     refinement::T = Inf
 end
 
+"""
+Setup recipe for a set of spheres immersed in a ECS.
+"""
 Base.@kwdef struct SphereSetup{T} <: AbstractSetup{T}
     name::String
     ncell::Int
@@ -41,6 +53,9 @@ Base.@kwdef struct SphereSetup{T} <: AbstractSetup{T}
     refinement::T = Inf
 end
 
+"""
+Setup recipe for a neuron, possibly wrapped in a ECS.
+"""
 Base.@kwdef struct NeuronSetup{T} <: AbstractSetup{T}
     name::String
     ecs_shape::Symbol

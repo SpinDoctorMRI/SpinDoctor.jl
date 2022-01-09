@@ -1,3 +1,8 @@
+"""
+    analytical_coefficients(setup, coeffs)
+
+Get coefficients for the analytical module.
+"""
 function analytical_coefficients(setup, coeffs)
     rmean = (setup.rmin + setup.rmax) / 2
     include_in = setup.include_in

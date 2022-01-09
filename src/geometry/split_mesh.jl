@@ -1,5 +1,9 @@
-function split_mesh(mesh_all)
+"""
+    split_mesh(mesh_all)
 
+Split global mesh into compartments.
+"""
+function split_mesh(mesh_all)
     # Extract mesh_all in global numbering system (tag: "all")
     points_all = mesh_all.points
     facets_all = mesh_all.facets

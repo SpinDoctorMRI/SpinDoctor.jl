@@ -1,3 +1,8 @@
+"""
+    savefield(mesh, ξ, filename::String; fieldname = "Magnetization")
+
+Save field `ξ` to a VTK file. It may then be visualized in Paraview.
+"""
 function savefield(mesh, ξ, filename::String; fieldname = "Magnetization")
     ξ_cmpts = split_field(mesh, ξ)
     isdir(dirname(filename)) || mkpath(dirname(filename))
