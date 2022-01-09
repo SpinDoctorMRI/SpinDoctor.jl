@@ -9,7 +9,7 @@ setup = PlateSetup{T}(;
     heights = fill(5.0, 5),
     bend = 0.0,
     twist = 0.0,
-    # refinement = 5.0,
+    refinement = 10.0,
 )
 
 ncell = length(setup.heights)

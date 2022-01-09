@@ -1,17 +1,19 @@
-using LinearAlgebra
-using GLMakie
-using OrdinaryDiffEq: Rodas4
-
 # LSP indexing solution
 # https://github.com/julia-vscode/julia-vscode/issues/800#issuecomment-650085983
 if isdefined(@__MODULE__, :LanguageServer)
     include("../src/SpinDoctor.jl")
     using .SpinDoctor
-else
-    using SpinDoctor
 end
 
+using SpinDoctor
+using LinearAlgebra
+using GLMakie
+using OrdinaryDiffEq: Rodas4
+
+## Chose a plotting theme
+set_theme!(theme_light())
 set_theme!(theme_dark())
+set_theme!(theme_black())
 
 
 ## Create model from setup recipe
@@ -22,8 +24,8 @@ set_theme!(theme_dark())
 # include("setups/spheres.jl")
 include("setups/neuron.jl")
 
-femesh, = @time create_geometry(setup; recreate = true);
-model = Model(; mesh = femesh, coeffs...);
+mesh, = @time create_geometry(setup; recreate = true);
+model = Model(; mesh, coeffs...);
 volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
 @info "Number of nodes per compartment:" length.(model.mesh.points)

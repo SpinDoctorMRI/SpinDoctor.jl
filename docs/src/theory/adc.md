@@ -111,7 +111,7 @@ The resulting ADC in direction ``\vec{d}`` is then given by
 D_\text{ADC}(\vec{d}) = \vec{d}^\mathsf{T} \mathbf{D}_\text{eff} \vec{d}.
 ```
 
-## HADC
+## [HADC](@id HADC)
 
 In a previous work, a PDE model for the time-dependent ADC was obtained
 starting from the Bloch-Torrey equation, using homogenization techniques. In the case of
@@ -152,7 +152,7 @@ model that we call the HADC model.
 
 
 
-## Short diffusion time approximation
+## [Short diffusion time approximation](@id STA)
 
 A well-known formula for the ADC in the short diffusion time regime is the following short
 time approximation (STA):

@@ -10,29 +10,29 @@ T = Float64
     @testset "PlateSetup" begin
         setup = get_setup(PlateSetup{T})
         coeffs = get_coeffs(setup)
-        femesh, = create_geometry(setup; recreate = true)
-        model = Model(; mesh = femesh, coeffs...)
+        mesh, = create_geometry(setup; recreate = true)
+        model = Model(; mesh, coeffs...)
     end
 
     @testset "CylinderSetup" begin
         setup = get_setup(CylinderSetup{T})
         coeffs = get_coeffs(setup)
-        femesh, = create_geometry(setup; recreate = true)
-        model = Model(; mesh = femesh, coeffs...)
+        mesh, = create_geometry(setup; recreate = true)
+        model = Model(; mesh, coeffs...)
     end
 
     @testset "SphereSetup" begin
         setup = get_setup(SphereSetup{T})
         coeffs = get_coeffs(setup)
-        @test_broken femesh, = create_geometry(setup; recreate = true)
-        @test_broken model = Model(; mesh = femesh, coeffs...)
+        @test_broken mesh, = create_geometry(setup; recreate = true)
+        @test_broken model = Model(; mesh, coeffs...)
     end
 
     @testset "NeuronSetup" begin
         setup = get_setup(NeuronSetup{T})
         coeffs = get_coeffs(setup)
-        femesh, = create_geometry(setup; recreate = true)
-        model = Model(; mesh = femesh, coeffs...)
+        mesh, = create_geometry(setup; recreate = true)
+        model = Model(; mesh, coeffs...)
     end
 end
 
@@ -41,8 +41,8 @@ setup = get_setup(CylinderSetup{T})
 coeffs = get_coeffs(setup)
 
 # Get compartimentalized coefficient vectors
-femesh, = create_geometry(setup; recreate = true)
-model = Model(; mesh = femesh, coeffs...)
+mesh, = create_geometry(setup; recreate = true)
+model = Model(; mesh, coeffs...)
 volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
 ncompartment = length(model.mesh.points)
