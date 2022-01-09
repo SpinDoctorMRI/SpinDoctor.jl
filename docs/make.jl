@@ -20,6 +20,7 @@ makedocs(;
             "Solve BTPDE" => "examples/solve_btpde.md",
             "Custom gradients" => "examples/custom_gradient.md",
             "Compare ADCs" => "examples/compute_adc.md",
+            "Matrix Formalism" => "examples/matrix_formalism.md",
             "High Angular Resolution" => "examples/hardi.md",
         ],
         "Theory" => [
