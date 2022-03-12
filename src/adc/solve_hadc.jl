@@ -1,11 +1,20 @@
 """
-    solve(problem::HADC, gradient::ScalarGradient)
+    solve(problem::HADC, gradient::ScalarGradient, odesolver = QNDF();
+        abstol = 1e-6,
+        reltol = 1e-4,
+    )
 
 Compute the ADC using a homogenized ADC model (HADC). This is currently only implemented for
 scalar gradients.
 """
-function solve(problem::HADC, gradient::ScalarGradient)
-    (; model, matrices, odesolver, reltol, abstol) = problem
+function solve(
+    problem::HADC,
+    gradient::ScalarGradient,
+    odesolver = QNDF(autodiff = false);
+    abstol = 1e-6,
+    reltol = 1e-4,
+)
+    (; model, matrices) = problem
     (; mesh, D) = model
     (; M_cmpts, S_cmpts, G, volumes) = matrices
 

@@ -4,66 +4,33 @@ Abstract problem.
 abstract type AbstractProblem{T} end
 
 """
-    GeneralBTPDE(;
-        model,
-        matrices,
-        abstol = 1e-6,
-        reltol = 1e-4,
-        odesolver = QNDF(autodiff = false),
-    )
+    GeneralBTPDE(; model, matrices)
 
-General BTPDE problem.
+Bloch-Torrey PDE problem.
 """
-Base.@kwdef struct GeneralBTPDE{T,S} <: AbstractProblem{T}
+Base.@kwdef struct BTPDE{T} <: AbstractProblem{T}
     model::Model{T}
     matrices::NamedTuple
-    abstol::T = 1e-6
-    reltol::T = 1e-4
-    odesolver::S = QNDF(autodiff = false)
 end
 
 """
-    IntervalConstantBTPDE(; model, matrices, θ = 0.5, timestep)
-
-BTPDE problem specialized on intervalwise constant `ScalarGradient`s, e.g [`PGSE`](@ref),
-[`DoublePGSE`](@ref).
-"""
-Base.@kwdef struct IntervalConstantBTPDE{T} <: AbstractProblem{T}
-    model::Model{T}
-    matrices::NamedTuple
-    θ::T = 0.5
-    timestep::T
-end
-
-"""
-    HADC(;
-        model,
-        matrices,
-        abstol = 1e-6,
-        reltol = 1e-4,
-        odesolver = QNDF(autodiff = false),
-    )
+    HADC(; model, matrices)
 
 HADC problem.
 """
-Base.@kwdef struct HADC{T,S} <: AbstractProblem{T}
+Base.@kwdef struct HADC{T} <: AbstractProblem{T}
     model::Model{T}
     matrices::NamedTuple
-    abstol::T = 1e-6
-    reltol::T = 1e-4
-    odesolver::S = QNDF(autodiff = false)
 end
 
 """
-    Karger(; model, difftensors, odesolver, timestep)
+    Karger(; model, difftensors)
 
 Karger problem.
 """
-Base.@kwdef struct Karger{T,S} <: AbstractProblem{T}
+Base.@kwdef struct Karger{T} <: AbstractProblem{T}
     model::Model{T}
     difftensors::Vector{SMatrix{3,3,T,9}}
-    odesolver::S = MagnusGL6()
-    timestep::T
 end
 
 """
@@ -78,7 +45,7 @@ Base.@kwdef struct Laplace{T} <: AbstractProblem{T}
 end
 
 """
-    MatrixFormalism(; model, matrices, lap_eig, ninterval)
+    MatrixFormalism(; model, matrices, lap_eig)
 
 Matrix formalism problem. Given a Laplace eigendecomposition `lap_eig`, this problem
 consists of computing the MF magnetization.
@@ -87,7 +54,6 @@ Base.@kwdef struct MatrixFormalism{T} <: AbstractProblem{T}
     model::Model{T}
     matrices::NamedTuple
     lap_eig::NamedTuple
-    ninterval::Int
 end
 
 """

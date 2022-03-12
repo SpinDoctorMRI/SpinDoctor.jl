@@ -46,8 +46,9 @@ export fit_adc
 export fit_tensors
 export plot_mesh, plot_field
 
-export IntervalConstantBTPDE, GeneralBTPDE, HADC, Karger
+export BTPDE, HADC, Karger
 export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
+export QNDF, IntervalConstantSolver
 export solve, solve_multigrad
 
 # Matrix formalism
@@ -143,6 +144,7 @@ include("analytical/solve_analytical_mf.jl")
 
 # BTPDE
 include("btpde/initial_conditions.jl")
+include("btpde/interval_constant_solver.jl")
 include("btpde/solve_btpde.jl")
 include("btpde/solve_btpde_midpoint.jl")
 include("btpde/solve_karger.jl")

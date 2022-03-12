@@ -79,8 +79,8 @@ gradient = ScalarGradient(dir, profile, g)
 ```
 
 ```julia
-mf = MatrixFormalism(; model, matrices, lap_eig, ninterval = 500)
-ξ = @time solve(mf, gradient)
+mf = MatrixFormalism(; model, matrices, lap_eig)
+ξ = @time solve(mf, gradient; ninterval = 500)
 ```
 
 ```julia

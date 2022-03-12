@@ -1,18 +1,28 @@
 """
-    solve(problem::IntervalConstantBTPDE, gradient; callbacks = AbstractCallback[])
+    function solve(
+        problem::BTPDE,
+        gradient::ScalarGradient,
+        odesolver::IntervalConstantSolver;
+        callbacks = [],
+    )
 
-Solve the Bloch-Torrey partial differential equation using P1 finite elements.
-This function uses a manual time stepping scheme (theta-rule), that requires a degree of
-implicitness `θ` and a time step `Δt`.
-    `θ = 0.5`: Crank-Nicolson (second order)
-    `θ = 1.0`: Implicit Euler (first order)
+Solve the Bloch-Torrey partial differential equation using P1 finite elements in space and a
+theta-rule in time.
+This time stepping scheme requires a degree of
+implicitness `θ` and a time step `Δt`:
+- `θ = 0.5`: Crank-Nicolson (second order)
+- `θ = 1.0`: Implicit Euler (first order)
+
+The function only works for interval-wise constant `ScalarGradient`s, and errors otherwise.
 """
 function solve(
-    problem::IntervalConstantBTPDE{T},
-    gradient::ScalarGradient;
+    problem::BTPDE{T},
+    gradient::ScalarGradient,
+    odesolver::IntervalConstantSolver{T};
     callbacks = AbstractCallback[],
 ) where {T}
-    (; θ, timestep, model, matrices) = problem
+    (; model, matrices) = problem
+    (; θ, timestep) = odesolver
     (; γ) = model
     (; M, S, R, Mx, Q) = matrices
 

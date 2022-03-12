@@ -83,7 +83,7 @@ diffusion MRI problems. The BTPDE is one such problem. They generally take a gra
 sequence as an input.
 
 ```julia
-btpde = GeneralBTPDE(; model, matrices)
+btpde = BTPDE(; model, matrices)
 ξ = solve(btpde, gradient)
 ```
 

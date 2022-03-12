@@ -8,7 +8,6 @@ end
 using SpinDoctor
 using LinearAlgebra
 using GLMakie
-using OrdinaryDiffEq: Rodas4
 
 ## Chose a plotting theme
 set_theme!(theme_light())
@@ -55,20 +54,13 @@ plotter = Plotter{T}(; nupdate = 5)
 # callbacks = [printer, plotter]
 callbacks = [printer, plotter, writer]
 
-# General BTPDE for all gradients
-btpde = GeneralBTPDE(;
-    model,
-    matrices,
-    reltol = 1e-4,
-    abstol = 1e-6,
-    odesolver = Rodas4(autodiff = false),
-)
-
-# BTPDE specialized for `ScalarGradient`s with constant interval profiles (PGSE, DoublePGSE)
-btpde = IntervalConstantBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
+# Choose BTDPE solver (specialized solver only for PGSE)
+solver = IntervalConstantSolver{T}(; θ = 0.5, timestep = 5.0)
+solver = QNDF(autodiff = false)
 
 # Solve BTPDE
-ξ = @time solve(btpde, gradient; callbacks)
+btpde = BTPDE(; model, matrices)
+ξ = @time solve(btpde, gradient, solver; callbacks)
 
 
 ## Plot magnetization
@@ -95,12 +87,12 @@ length_scale = 3
 lap_eig = limit_lengthscale(lap_eig, λ_max)
 
 # Compute magnetization using the matrix formalism reduced order model
-mf = MatrixFormalism(; model, matrices, lap_eig, ninterval = 500)
-ξ = @time solve(mf, gradient)
+mf = MatrixFormalism(; model, matrices, lap_eig)
+ξ = @time solve(mf, gradient; ninterval = 500)
 
 
 ## Solve HADC
-hadc = HADC(; model, matrices, reltol = 1e-4, abstol = 1e-6)
+hadc = HADC(; model, matrices)
 adc_cmpts = @time solve(hadc, gradient)
 
 
@@ -112,13 +104,13 @@ gradients = [
     ScalarGradient(collect(d), gradient.profile, gradient.amplitude) for
     d ∈ eachcol(directions)
 ]
-hadc = HADC(; model, matrices, reltol = 1e-4, abstol = 1e-6)
+hadc = HADC(; model, matrices)
 adcs, = @time solve_multigrad(hadc, gradients)
 difftensors = fit_tensors(directions, adcs)
 
 # Solve Karger
-karger = Karger(; model, difftensors, timestep = 5.0)
-signal = @time solve(karger, gradient)
+karger = Karger(; model, difftensors)
+signal = @time solve(karger, gradient; timestep = 5.0)
 
 
 ## Solve analytical model

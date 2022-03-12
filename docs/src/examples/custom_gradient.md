@@ -65,12 +65,10 @@ series for visualization in ParaView.
 callbacks = [Plotter{Float64}()]
 ```
 
-We may then define the problem and solve for our gradient (with the callback). A
-[`GeneralBTPDE`](@ref) is needed ([`IntervalConstantBTPDE`](@ref) only accepts certain
-gradients).
+We may then define the problem and solve for our gradient (with the callback).
 
 ```julia
-btpde = GeneralBTPDE(; model, matrices)
+btpde = BTPDE(; model, matrices)
 ξ = solve(btpde, gradient; callbacks)
 ```
 

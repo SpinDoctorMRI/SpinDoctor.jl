@@ -108,8 +108,9 @@ gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues
 The [`solve_multigrad`](@ref) function computes the magnetization for each gradient.
 
 ```julia
-btpde = IntervalConstantBTPDE(; model, matrices, θ = 0.5, timestep = 5)
-ξ, = solve_multigrad(btpde, gradients)
+btpde = BTPDE(; model, matrices)
+solver = IntervalConstantSolver(; θ = 0.5, timestep = 5)
+ξ, = solve_multigrad(btpde, gradients, solver)
 ```
 
 The signals can be computed from the magnetization fields.
@@ -133,7 +134,7 @@ The [HADC](@ref)-model uses homogenization and assumes negligible permeability b
 compartments. This does require solving an ODE involving all the degrees of freedom.
 
 ```julia
-hadc = HADC(; model, matrices, reltol = 1e-4, abstol = 1e-6)
+hadc = HADC(; model, matrices)
 adc_homogenized_cmpts = solve(hadc, gradient)
 adc_homogenized = volumes'adc_homogenized_cmpts / sum(volumes)
 ```

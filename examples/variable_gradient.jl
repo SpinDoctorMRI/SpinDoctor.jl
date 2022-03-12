@@ -8,7 +8,6 @@ end
 using SpinDoctor
 using LinearAlgebra
 using GLMakie
-using OrdinaryDiffEq: Rodas4
 
 ## Chose a plotting theme
 set_theme!(theme_light())
@@ -39,11 +38,11 @@ matrices = @time assemble_matrices(model);
 
 
 ## Magnetic field gradient
-TE = 5000
+TE = 5000.0
 φ = -π / 6
 R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
 g⃗(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
-gradient = GeneralGradient{T,typeof(g⃗)}(; g⃗, TE)
+gradient = GeneralGradient(; g⃗, TE)
 
 
 ## Solve BTPDE
@@ -51,18 +50,12 @@ gradient = GeneralGradient{T,typeof(g⃗)}(; g⃗, TE)
 # Callbacks for time stepping (plot solution, save time series)
 printer = Printer(; nupdate = 1, verbosity = 2)
 writer = VTKWriter(; nupdate = 5)
-plotter = Plotter{T}(; nupdate = 5)
+plotter = Plotter{T}(; nupdate = 1)
 callbacks = [printer, plotter]
 # callbacks = [printer, plotter, writer]
 
 # General BTPDE for all gradients
-btpde = GeneralBTPDE(;
-    model,
-    matrices,
-    reltol = 1e-4,
-    abstol = 1e-6,
-    odesolver = Rodas4(autodiff = false),
-)
+btpde = BTPDE(; model, matrices)
 
 # Solve BTPDE
 ξ = @time solve(btpde, gradient; callbacks)
@@ -89,5 +82,5 @@ length_scale = 3
 lap_eig = limit_lengthscale(lap_eig, λ_max)
 
 # Compute magnetization using the matrix formalism reduced order model
-mf = MatrixFormalism(; model, matrices, lap_eig, ninterval = 500)
-ξ = @time solve(mf, gradient)
+mf = MatrixFormalism(; model, matrices, lap_eig)
+ξ = @time solve(mf, gradient; ninterval = 500)

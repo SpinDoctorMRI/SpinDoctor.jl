@@ -41,8 +41,8 @@ SpinDoctor has support for the following features:
    * the pulsed gradient spin echo sequence (PGSE),
    * the double-PGSE,
    * the oscillating gradient spin echo (OGSE), and
-   * custom three-dimensional pulse sequences ``\vec{g}(t) = (g_x(t), g_y(t),
-     g_z(t))^\mathsf{T}``;
+   * custom three-dimensional pulse sequences `g⃗(t) = (g_x(t), g_y(t),
+     g_z(t))`;
 3. uniformly distributed gradient directions in 2D and 3D for high angular resolution
    diffusion imaging (HARDI).
 

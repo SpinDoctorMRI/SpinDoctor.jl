@@ -1,11 +1,11 @@
 """
-    solve(problem::Karger, gradient)
+    solve(problem::Karger, gradient, odesolver = MagnusGL6(); timestep)
 
 Solve the finite pulse Karger model (FPK) using precomputed effective diffusion tensors
 `difftensors`.
 """
-function solve(problem::Karger, gradient::ScalarGradient)
-    (; model, difftensors, odesolver, timestep) = problem
+function solve(problem::Karger, gradient::ScalarGradient, odesolver = MagnusGL6(); timestep)
+    (; model, difftensors) = problem
     (; mesh, T₂, ρ, κ, γ) = model
 
     dt = timestep

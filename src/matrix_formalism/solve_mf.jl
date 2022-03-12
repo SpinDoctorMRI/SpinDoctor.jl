@@ -1,10 +1,10 @@
 """
-    solve(problem::MatrixFormalism, matrices, lap_eig, gradient)
+    solve(problem::MatrixFormalism, gradient; ninterval = 500)
 
 Solve for magnetization using Matrix Formalism.
 """
-function solve(problem::MatrixFormalism, gradient)
-    (; model, matrices, lap_eig, ninterval) = problem
+function solve(problem::MatrixFormalism, gradient; ninterval = 500)
+    (; model, matrices, lap_eig) = problem
     (; γ) = model
     (; M) = matrices
 

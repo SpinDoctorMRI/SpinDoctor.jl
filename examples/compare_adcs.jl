@@ -34,7 +34,7 @@ matrices = @time assemble_matrices(model);
 
 
 ## Magnetic field gradient
-dir = [1.0, .0, 1.0]
+dir = [1.0, 0.0, 1.0]
 profile = PGSE(2500.0, 4000.0)
 b = 1000
 g = √(b / int_F²(profile)) / model.γ
@@ -48,11 +48,10 @@ adc_sta = volumes'adc_sta_cmpts / sum(volumes)
 bvalues = 0:400:4000
 gvalues = map(b -> √(b / int_F²(profile)) / coeffs.γ, bvalues)
 gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues]
-# btpde = GeneralBTPDE(;
-#     model, matrices, reltol = 1e-4, abstol = 1e-6,
-# )
-btpde = IntervalConstantBTPDE{T}(; model, matrices, θ = 0.5, timestep = 5)
-ξ, = solve_multigrad(btpde, gradients)
+btpde = BTPDE{T}(; model, matrices)
+# solver = QNDF(autodiff = false)
+solver = IntervalConstantSolver{T}(; θ = 0.5, timestep = 5)
+ξ, = solve_multigrad(btpde, gradients, solver)
 signals = [compute_signal(matrices.M, ξ) for ξ ∈ ξ]
 signals_cmpts = [compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ)) for ξ ∈ ξ]
 adc_fit = fit_adc(bvalues, signals)
@@ -60,7 +59,7 @@ adc_fit_cmpts =
     [fit_adc(bvalues, [s[icmpt] for s ∈ signals_cmpts]) for icmpt = 1:ncompartment]
 
 ## Solve HADC
-hadc = HADC(; model, matrices, reltol = 1e-4, abstol = 1e-6)
+hadc = HADC(; model, matrices)
 adc_homogenized_cmpts = @time solve(hadc, gradient)
 adc_homogenized = volumes'adc_homogenized_cmpts / sum(volumes)
 
@@ -74,7 +73,6 @@ D_mf = compute_mf_diffusion_tensor(model.mesh, matrices.M, lap_eig, gradient)
 adc_mf = dir'D_mf * dir / dir'dir
 
 ## Compare ADCs
-begin
 n = ncompartment
 fig = Figure()
 ax = Axis(fig[1, 1];
@@ -86,11 +84,8 @@ barplot!(ax, fill(1, n), adc_sta_cmpts ./ D_avg; dodge = 1:n)
 barplot!(ax, fill(2, n), adc_fit_cmpts ./ D_avg; dodge = 1:n)
 barplot!(ax, fill(3, n), adc_homogenized_cmpts ./ D_avg; dodge = 1:n)
 barplot!(ax, [4], [adc_mf / D_avg])
-save("adc_bars.png", fig) 
-end
 
 ## Inspect signal attenuation
-begin
 a₀ = abs(signals[1])
 a = abs.(signals) ./ a₀
 fig = Figure()
@@ -102,5 +97,3 @@ lines!(ax, [0, bvalues[end]], [1, exp(-adc_mf * bvalues[end])]; linestyle = :das
 lines!(ax, [0, bvalues[end]], [1, exp(-D_avg * bvalues[end])]; linestyle = :dash, label = "Free diffusion")
 scatterlines!(ax, bvalues, a; label = "BTPDE Signal")
 axislegend(ax)
-save("attenuation.png", fig) 
-end
