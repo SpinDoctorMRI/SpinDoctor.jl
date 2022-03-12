@@ -89,7 +89,7 @@ end
 end
 
 @testset "BTPDE" begin
-    btpde = GeneralBTPDE(; model, matrices)
+    btpde = BTPDE(; model, matrices)
 
     @test solve(btpde, general_gradient) isa Vector{Complex{T}}
     @test solve(btpde, ogse_gradient) isa Vector{Complex{T}}
@@ -112,8 +112,8 @@ end
     difftensors = fit_tensors(directions, adcs)
 
     # Solve Karger
-    karger = Karger(; model, difftensors, timestep = 5.0)
-    signal = solve(karger, pgse_gradient)
+    karger = Karger(; model, difftensors)
+    signal = solve(karger, pgse_gradient; timestep = 5.0)
 end
 
 @testset "Matrix formalism" begin
