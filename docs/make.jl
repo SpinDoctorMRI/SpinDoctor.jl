@@ -5,12 +5,12 @@ DocMeta.setdocmeta!(SpinDoctor, :DocTestSetup, :(using SpinDoctor); recursive = 
 
 makedocs(;
     modules = [SpinDoctor],
-    authors = "Syver Døving Agdestein <syverda@icloud.com> and contributors",
-    repo = "https://github.com/agdestein/SpinDoctor.jl/blob/{commit}{path}#{line}",
+    authors = "Syver Døving Agdestein and contributors",
+    repo = "https://github.com/SpinDoctorMRI/SpinDoctor.jl/blob/{commit}{path}#{line}",
     sitename = "SpinDoctor.jl",
     format = Documenter.HTML(;
         prettyurls = get(ENV, "CI", "false") == "true",
-        canonical = "https://agdestein.github.io/SpinDoctor.jl",
+        canonical = "https://spindoctormri.github.io/SpinDoctor.jl",
         assets = String[],
     ),
     pages = [
@@ -35,4 +35,4 @@ makedocs(;
     ],
 )
 
-deploydocs(; repo = "github.com/agdestein/SpinDoctor.jl", devbranch = "main")
+deploydocs(; repo = "github.com/SpinDoctorMRI/SpinDoctor.jl", devbranch = "main")

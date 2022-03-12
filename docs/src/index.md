@@ -4,9 +4,9 @@ CurrentModule = SpinDoctor
 
 # SpinDoctor
 
-This is the documentation for [SpinDoctor](https://github.com/agdestein/SpinDoctor.jl), and
-is based on
-[the SpinDoctor User Guide](https://github.com/jingrebeccali/SpinDoctor/blob/master/user_guide.pdf).
+This is the documentation for [SpinDoctor](https://github.com/SpinDoctorMRI/SpinDoctor.jl), and
+is based on the
+[SpinDoctor User Guide](https://github.com/jingrebeccali/SpinDoctor/blob/master/user_guide.pdf).
 
 SpinDoctor is a software package that performs numerical simulations of diffusion magnetic
 resonance imaging (dMRI) for prototyping purposes.
@@ -38,7 +38,8 @@ SpinDoctor has support for the following features:
     * the pulsed gradient spin echo sequence (PGSE),
     * the double-PGSE,
     * the oscillating gradient spin echo (OGSE), and
-    * custom three-dimensional pulse sequences `g(t) = (gx(t), gy(t), gz(t))`;
+    * custom three-dimensional pulse sequences ``\vec{g}(t) = (g_x(t), g_y(t),
+      g_z(t))^\mathsf{T}``;
 4. uniformly distributed gradient directions in 2D and 3D for high angular resolution
    diffusion imaging (HARDI).
 

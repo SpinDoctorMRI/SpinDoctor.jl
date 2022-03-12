@@ -2,10 +2,10 @@
 
 # SpinDoctor
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://agdestein.github.io/SpinDoctor.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://agdestein.github.io/SpinDoctor.jl/dev)
-[![Build Status](https://github.com/agdestein/SpinDoctor.jl/workflows/CI/badge.svg)](https://github.com/agdestein/SpinDoctor.jl/actions)
-[![Coverage](https://codecov.io/gh/agdestein/SpinDoctor.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/agdestein/SpinDoctor.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/dev)
+[![Build Status](https://github.com/SpinDoctorMRI/SpinDoctor.jl/workflows/CI/badge.svg)](https://github.com/SpinDoctorMRI/SpinDoctor.jl/actions)
+[![Coverage](https://codecov.io/gh/SpinDoctorMRI/SpinDoctor.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/SpinDoctorMRI/SpinDoctor.jl)
 
 This is a Julia implementation of the SpinDoctor toolbox. The original MATLAB toolbox can be
 found at https://github.com/jingrebeccali/SpinDoctor.
@@ -41,7 +41,8 @@ SpinDoctor has support for the following features:
    * the pulsed gradient spin echo sequence (PGSE),
    * the double-PGSE,
    * the oscillating gradient spin echo (OGSE), and
-   * custom three-dimensional pulse sequences `g(t) = (gx(t), gy(t), gz(t))`;
+   * custom three-dimensional pulse sequences ``\vec{g}(t) = (g_x(t), g_y(t),
+     g_z(t))^\mathsf{T}``;
 3. uniformly distributed gradient directions in 2D and 3D for high angular resolution
    diffusion imaging (HARDI).
 
@@ -81,8 +82,7 @@ sequence.
    different models. 
 3. Multiple neuron meshes are found in the folder `examples/meshfiles`. These can be loaded
    in the file `examples/setups/neuron.jl`.
-4. The user guide is found
-   [here](https://github.com/jingrebeccali/SpinDoctor/blob/master/user_guide.pdf).
+4. See the [documentation page](https://spindoctormri.github.io/SpinDoctor.jl/dev) for more details.
 
 
 ## How to cite us

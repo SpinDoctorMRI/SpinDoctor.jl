@@ -5,7 +5,7 @@
 To install SpinDoctor, run the following commands:
 
 ```
-git clone https://github.com/agdestein/SpinDoctor.jl
+git clone https://github.com/SpinDoctorMRI/SpinDoctor.jl
 cd SpinDoctor.jl
 julia --project
 ]instantiate
