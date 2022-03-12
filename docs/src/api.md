@@ -46,14 +46,14 @@ SpinDoctor allows for considering a wide range of diffusion MRI problems. These 
 solved for using the [`solve`](@ref) function.
 
 ```@docs
-IntervalConstantBTPDE
-GeneralBTPDE
+BTPDE
 HADC
 Karger
 Laplace
 MatrixFormalism
 AnalyticalLaplace
 AnalyticalMatrixFormalism
+IntervalConstantSolver
 solve
 solve_multigrad
 ```
