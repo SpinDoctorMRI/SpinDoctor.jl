@@ -1,7 +1,7 @@
 """
     SpinDoctor
 
-Diffusion MRI simulation toolbox. 
+Diffusion MRI simulation toolbox.
 """
 module SpinDoctor
 
@@ -14,7 +14,13 @@ using Makie
 using MiniQhull: delaunay
 using OrdinaryDiffEq: OrdinaryDiffEq
 using OrdinaryDiffEq:
-    DiffEqArrayOperator, DiscreteCallback, ODEProblem, ODEFunction, QNDF, MagnusGL6
+    DiffEqArrayOperator,
+    DiscreteCallback,
+    ODEProblem,
+    ODEFunction,
+    OrdinaryDiffEqAlgorithm,
+    QNDF,
+    MagnusGL6
 using Polynomials: fit
 using Printf
 using QuadGK

@@ -6,6 +6,7 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/dev)
 [![Build Status](https://github.com/SpinDoctorMRI/SpinDoctor.jl/workflows/CI/badge.svg)](https://github.com/SpinDoctorMRI/SpinDoctor.jl/actions)
 [![Coverage](https://codecov.io/gh/SpinDoctorMRI/SpinDoctor.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/SpinDoctorMRI/SpinDoctor.jl)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 This is a Julia implementation of the SpinDoctor toolbox. The original MATLAB toolbox can be
 found at https://github.com/jingrebeccali/SpinDoctor.
