@@ -22,7 +22,7 @@ end
     Aqua.test_all(
         SpinDoctor;
         ambiguities = false,
-        # stale_deps = false,
+        project_toml_formatting = false, # https://github.com/JuliaTesting/Aqua.jl/issues/72
     )
 end
 
