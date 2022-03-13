@@ -35,7 +35,6 @@ setup = PlateSetup(;
     heights = fill(5.0, ncell),
     bend = 0.0,
     twist = 0.0,
-    # refinement = 10.0,
 )
 coeffs = coefficients(
     setup;
