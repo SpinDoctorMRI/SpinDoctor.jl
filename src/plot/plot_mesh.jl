@@ -1,13 +1,13 @@
 """
-    plot_mesh(femesh)
+    plot_mesh(femesh, compartments = 1:ncompartment)
 
-Plot finite element mesh.
+Plot finite element mesh, with a subset of the compartments.
 """
-function plot_mesh(femesh::FEMesh)
-    ncompartment, nboundary = size(femesh.facets)
+function plot_mesh(femesh::FEMesh, compartments = 1:length(femesh.points))
+    nboundary = size(femesh.facets, 2)
     scene = nothing
     first = true
-    for icmpt = 1:ncompartment, iboundary = 1:nboundary
+    for icmpt ∈ compartments, iboundary = 1:nboundary
         facets = femesh.facets[icmpt, iboundary]
         points = femesh.points[icmpt]
         color = points[3, :]
