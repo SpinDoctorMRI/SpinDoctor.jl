@@ -4,6 +4,13 @@
 #
 # We start by loading SpinDoctor and a Makie plotting backend.
 
+# LSP indexing solution                                                          #src
+# https://github.com/julia-vscode/julia-vscode/issues/800#issuecomment-650085983 #src
+if isdefined(@__MODULE__, :LanguageServer)                                       #src
+    include("../src/SpinDoctor.jl")                                              #src
+    using .SpinDoctor                                                            #src
+end                                                                              #src
+
 using SpinDoctor
 using LinearAlgebra
 
@@ -12,13 +19,6 @@ if haskey(ENV, "GITHUB_ACTIONS")
 else
     using GLMakie
 end
-
-# LSP indexing solution                                                          #src
-# https://github.com/julia-vscode/julia-vscode/issues/800#issuecomment-650085983 #src
-if isdefined(@__MODULE__, :LanguageServer)                                       #src
-    include("../src/SpinDoctor.jl")                                              #src
-    using .SpinDoctor                                                            #src
-end                                                                              #src
 
 setup = SphereSetup(;
     name = "gaze-into-the-orb",

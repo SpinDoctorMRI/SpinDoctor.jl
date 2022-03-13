@@ -34,13 +34,6 @@ makedocs(;
     pages = [
         "Home" => "index.md",
         "Getting Started" => "getting_started.md",
-        # "Examples" => [
-        #     "Solve BTPDE" => "examples/solve_btpde.md",
-        #     "Custom gradients" => "examples/custom_gradients.md",
-        #     "Compare ADCs" => "examples/compare_adcs.md",
-        #     "Matrix Formalism" => "examples/matrix_formalism.md",
-        #     "High Angular Resolution" => "examples/hardi.md",
-        # ],
         "Examples" => [e.first => joinpath(output, e.second * ".md") for e ∈ examples],
         "Theory" => [
             "Theory" => "theory/theory.md",
