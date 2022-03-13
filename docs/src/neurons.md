@@ -12,6 +12,9 @@ these neuron and components finite element meshes can be seamlessly coupled with
 functionalities of SpinDoctor to provide the diffusion MRI signal that can be attributed to
 spins inside neurons.
 
+The neuron mesh files are available at
+[https://github.com/SpinDoctorMRI/NeuronMeshes](https://github.com/SpinDoctorMRI/NeuronMeshes).
+
 The table below lists the names and the finite element mesh sizes of the group of 36
 pyramidal neurons and the group of 29 spindle neurons.
 

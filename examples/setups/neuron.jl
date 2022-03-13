@@ -32,12 +32,18 @@ name = "spindle/separated_neurons/03b_spindle6aACC_soma"
 # name = "pyramidal/whole_neurons/04b_pyramidal6aFI"
 # name = "pyramidal/whole_neurons/25o_pyramidal18aFI"
 
+neuron_dir = "NeuronMeshes"
+isdir(neuron_dir) || error("""Cannot find neuron meshes.
+                           Run `git clone https://github.com/SpinDoctorMRI/NeuronMeshes.git`
+                           to download the mesh files.""")
+
 # Floating point type for simulations
 T = Float64
 
 # Geometrical setup
 setup = NeuronSetup{T}(;
     name,
+    meshdir = neuron_dir,
     ecs_shape = :no_ecs,
     ecs_ratio = 0.3,
     # refinement = 0.5,

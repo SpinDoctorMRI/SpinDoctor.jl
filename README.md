@@ -80,9 +80,10 @@ sequence.
 1. The `examples` folder contains three drivers showing how to create geometry and solve
    different problems.
 2. The input files for the drivers are found in the folder `examples/setups`, and define
-   different models. 
-3. Multiple neuron meshes are found in the folder `examples/meshfiles`. These can be loaded
-   in the file `examples/setups/neuron.jl`.
+   different models.
+3. Multiple neuron meshes are available from
+   [NeuronMeshes](https://github.com/SpinDoctorMRI/NeuronMeshes). These can be loaded in
+   the file `examples/setups/neuron.jl`.
 4. See the [documentation page](https://spindoctormri.github.io/SpinDoctor.jl/dev) for more details.
 
 

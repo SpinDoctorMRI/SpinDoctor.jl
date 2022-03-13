@@ -18,7 +18,7 @@ function create_geometry(setup; recreate = true)
     (; refinement) = setup
 
     # File name for saving or loading geometry
-    filename = joinpath("meshfiles", setup.name)
+    filename = joinpath(setup.meshdir, setup.name)
 
     # Make sure that folder exists
     dir = dirname(filename)
