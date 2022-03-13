@@ -19,7 +19,11 @@ include("testutils.jl")
 end
 
 @testset "Aqua" begin
-    Aqua.test_all(SpinDoctor; ambiguities = false, stale_deps = false)
+    Aqua.test_all(
+        SpinDoctor;
+        ambiguities = false,
+        # stale_deps = false,
+    )
 end
 
 #= TODO: Restructure tests
