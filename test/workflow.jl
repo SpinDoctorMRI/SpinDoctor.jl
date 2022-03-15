@@ -24,8 +24,8 @@ T = Float64
     @testset "SphereSetup" begin
         setup = get_setup(SphereSetup{T})
         coeffs = get_coeffs(setup)
-        @test_broken mesh, = create_geometry(setup; recreate = true)
-        @test_broken model = Model(; mesh, coeffs...)
+        mesh, = create_geometry(setup; recreate = true)
+        model = Model(; mesh, coeffs...)
     end
 
     @testset "NeuronSetup" begin

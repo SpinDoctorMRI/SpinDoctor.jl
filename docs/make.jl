@@ -7,7 +7,7 @@ DocMeta.setdocmeta!(SpinDoctor, :DocTestSetup, :(using SpinDoctor); recursive = 
 # Generate examples
 examples = [
     "Solve BTPDE" => "solve_btpde",
-    # "Custom gradients" => "custom_gradients",
+    "Custom gradients" => "custom_gradients",
     "Compare ADCs" => "compare_adcs",
     "Matrix Formalism" => "matrix_formalism",
     "High Angular Resolution" => "hardi",
