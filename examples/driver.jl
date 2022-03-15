@@ -18,10 +18,10 @@ set_theme!(theme_black())
 ## Create model from setup recipe
 # include("setups/axon.jl")
 # include("setups/sphere.jl")
-# include("setups/plates.jl")
+include("setups/plates.jl")
 # include("setups/cylinders.jl")
 # include("setups/spheres.jl")
-include("setups/neuron.jl")
+# include("setups/neuron.jl")
 
 mesh, surfaces, cells = @time create_geometry(setup; recreate = true);
 model = Model(; mesh, coeffs...);

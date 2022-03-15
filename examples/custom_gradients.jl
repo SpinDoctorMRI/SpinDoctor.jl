@@ -63,7 +63,6 @@ R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
 g⃗(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
 gradient = GeneralGradient(; g⃗, TE)
 
-
 # In order to follow the evolution of the solution during time stepping, we add a
 # [`Plotter`](@ref) to a list of callbacks. Other available callbacks are [`Printer`](@ref)
 # for showing time stepping information, and [`VTKWriter`](@ref) for saving the solution time

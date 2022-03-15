@@ -6,7 +6,7 @@ Magnetic field gradient ``\\vec{g}(t) \\in \\mathbb{R}^3``.
 abstract type AbstractGradient{T} end
 
 """
-    GeneralGradient(g⃗)
+    GeneralGradient(g⃗, TE)
 
 General gradient sequence ``\\vec{g}(t) \\in \\mathbb{R}^3``. The direction and amplitude may
 vary in time.
@@ -36,3 +36,5 @@ end
 
 (g::GeneralGradient)(t) = g.g⃗(t)
 (g::ScalarGradient)(t) = g.amplitude * g.profile(t) * g.dir
+
+Base.show(io::IO, g::ScalarGradient) = "$(g.amplitude) * $(g.profile) * $(g.dir)"
