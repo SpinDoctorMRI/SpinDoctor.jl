@@ -11,7 +11,6 @@ using Expokit: expmv!
 using GLPK: Optimizer
 using LinearAlgebra
 using Makie
-using MiniQhull: delaunay
 using OrdinaryDiffEq: OrdinaryDiffEq
 using OrdinaryDiffEq:
     DiffEqArrayOperator,
