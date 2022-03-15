@@ -23,14 +23,15 @@ set_theme!(theme_black())
 # include("setups/spheres.jl")
 include("setups/neuron.jl")
 
-mesh, = @time create_geometry(setup; recreate = true);
+mesh, surfaces, cells = @time create_geometry(setup; recreate = true);
 model = Model(; mesh, coeffs...);
 volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
 @info "Number of nodes per compartment:" length.(model.mesh.points)
 
 ## Plot mesh
-plot_mesh(model.mesh)
+plot_surfaces(surfaces, 1:3)
+plot_mesh(model.mesh, 1:1)
 
 ## Assemble finite element matrices
 matrices = @time assemble_matrices(model);
