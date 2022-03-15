@@ -11,7 +11,12 @@ function convexhull(points)
     dim, npoint = size(points)
 
     # Compute Delaunay triangulation
-    D = Int.(delaunay(points))
+    if dim == 2
+        return convexhull2(points)
+    else
+        # D = Int.(delaunay3(points))
+        D = Int.(delaunay(points))
+    end
 
     # Sort each column of d
     for i = 1:size(D, 2)
@@ -107,3 +112,68 @@ end
 #     display(pl)
 #     sleep(0.5)
 # end
+
+
+"""
+    delaunay3(points)
+
+3D Delaunay triangulation from Tetgen.
+"""
+function delaunay3(points)
+    input = RawTetGenIO{Cdouble}()
+    input.pointlist = points
+    tetgen = tetrahedralize(input, "cQ")
+
+    tetgen.tetrahedronlist
+end
+
+
+"""
+    convexhull2(points)
+
+Convex hull of 2D points (gift wrapping).
+https://en.wikipedia.org/wiki/Gift_wrapping_algorithm
+"""
+function convexhull2(p)
+    function swap!(points, i, j)
+        tmp = points[:, i]
+        points[:, i] = points[:, j]
+        points[:, j] = tmp
+    end
+
+    isclock(u, v) = u[2]v[1] - u[1]v[2] ≥ 0
+
+    npoint = size(p, 2)
+
+    # First point with lowest x-coordinate
+    swap!(p, 1, argmin(p[1, :]))
+
+    # First u (turn clockwise from here)
+    u = [0, 1]
+
+    # Iterate through points
+    i = 1
+    for i = 1:npoint-1
+        done = true
+        jnext = i
+        for j = i+1:npoint
+            if isclock(u, p[:, j] - p[:, i])
+                u = p[:, j] - p[:, i]
+                jnext = j
+                done = false
+            end
+        end
+        swap!(p, i + 1, jnext)
+        u = p[:, i] - p[:, i+1]
+
+        if done || (i ≥ 2 && isclock(u, p[:, i] - p[:, 1]))
+            p = p[:, 1:i]
+            break
+        end
+    end
+
+    n = size(p, 2)
+    e = [(1:n)'; (2:n)' 1]
+
+    e, p
+end
