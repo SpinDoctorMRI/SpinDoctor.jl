@@ -26,6 +26,7 @@ Manifest.toml
 
 # Input and output configurations
 meshfiles
+RealNeuronMeshes
 output
 test.jl
 

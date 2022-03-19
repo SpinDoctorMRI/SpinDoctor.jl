@@ -36,5 +36,3 @@ end
 
 (g::GeneralGradient)(t) = g.g⃗(t)
 (g::ScalarGradient)(t) = g.amplitude * g.profile(t) * g.dir
-
-Base.show(io::IO, g::ScalarGradient) = "$(g.amplitude) * $(g.profile) * $(g.dir)"
