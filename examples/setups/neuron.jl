@@ -32,9 +32,9 @@ name = "spindle/separated_neurons/03b_spindle6aACC_soma"
 # name = "pyramidal/whole_neurons/04b_pyramidal6aFI"
 # name = "pyramidal/whole_neurons/25o_pyramidal18aFI"
 
-neuron_dir = "NeuronMeshes"
+neuron_dir = "RealNeuronMeshes"
 isdir(neuron_dir) || error("""Cannot find neuron meshes.
-                           Run `git clone https://github.com/SpinDoctorMRI/NeuronMeshes.git`
+                           Run `git clone https://github.com/SpinDoctorMRI/RealNeuronMeshes.git`
                            to download the mesh files.""")
 
 # Floating point type for simulations

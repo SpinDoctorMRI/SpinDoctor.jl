@@ -82,7 +82,7 @@ sequence.
 2. The input files for the drivers are found in the folder `examples/setups`, and define
    different models.
 3. Multiple neuron meshes are available from
-   [NeuronMeshes](https://github.com/SpinDoctorMRI/NeuronMeshes). These can be loaded in
+   [RealNeuronMeshes](https://github.com/SpinDoctorMRI/RealNeuronMeshes). These can be loaded in
    the file `examples/setups/neuron.jl`.
 4. See the [documentation page](https://spindoctormri.github.io/SpinDoctor.jl/dev) for more details.
 
