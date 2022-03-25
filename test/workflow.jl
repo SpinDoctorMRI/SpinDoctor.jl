@@ -11,41 +11,41 @@ T = Float64
         setup = get_setup(PlateSetup{T})
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup; recreate = true)
-        model = Model(; mesh, coeffs...)
+        # model = Model(; mesh, coeffs...)
     end
 
     @testset "CylinderSetup" begin
         setup = get_setup(CylinderSetup{T})
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup; recreate = true)
-        model = Model(; mesh, coeffs...)
+        # model = Model(; mesh, coeffs...)
     end
 
     @testset "SphereSetup" begin
         setup = get_setup(SphereSetup{T})
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup; recreate = true)
-        model = Model(; mesh, coeffs...)
+        # model = Model(; mesh, coeffs...)
     end
 
     @testset "NeuronSetup" begin
         setup = get_setup(NeuronSetup{T})
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup; recreate = true)
-        model = Model(; mesh, coeffs...)
+        # model = Model(; mesh, coeffs...)
     end
 end
 
 # Geometrical setup
 setup = get_setup(CylinderSetup{T})
 coeffs = get_coeffs(setup)
-
+(; ρ, D, T₂, κ, γ) = coeffs
 # Get compartimentalized coefficient vectors
 mesh, = create_geometry(setup; recreate = true)
-model = Model(; mesh, coeffs...)
 volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
 ncompartment = length(model.mesh.points)
+model = Model(; mesh, ρ, D, T₂, κ, γ, D_avg, volumes, ncompartment)
 matrices = assemble_matrices(model);
 
 ## Gradients

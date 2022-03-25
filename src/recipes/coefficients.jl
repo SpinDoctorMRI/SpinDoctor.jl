@@ -5,16 +5,16 @@ Order coefficients compartment arrays.
 """
 function coefficients end
 
-coefficients(::PlateSetup{T}; D, T₂, ρ, κ, γ) where {T} = (;
-    D = SMatrix{3,3,T,9}.(D),
-    T₂ = T.(T₂),
-    κ = [T.(κ.interfaces); T.(κ.boundaries)],
-    ρ = Complex{T}.(ρ),
-    γ = T(γ),
+coefficients(setup::PlateSetup{T}) where {T} = (;
+    D = SMatrix{3,3,T,9}.(setup.D),
+    T₂ = setup.T₂,
+    κ = [setup.κ.interfaces; setup.κ.boundaries],
+    ρ = setup.ρ,
+    γ = setup.γ,
 )
 
-function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where {T}
-    (; ecs_shape, ecs_ratio) = setup
+function coefficients(setup::NeuronSetup{T}) where {T}
+    (; ecs_shape, D, ρ, T₂, κ, γ) = setup
 
     include_ecs = ecs_shape != :no_ecs
 
@@ -33,11 +33,11 @@ function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where {T}
 
     # Initialize output arrays
     coeffs = (;
-        D = [zeros(SMatrix{3,3,T}) for _ = 1:ncompartment],
-        T₂ = zeros(T, ncompartment),
-        κ = zeros(T, nboundary),
-        ρ = zeros(Complex{T}, ncompartment),
-        γ = T(γ),
+        D = Vector{SMatrix{3,3,T,9}}(undef,ncompartment),
+        T₂ = Vector{T}(undef, ncompartment),
+        κ = Vector{T}(undef, nboundary),
+        ρ = Vector{Complex{T}}(undef, ncompartment),
+        γ = γ,
     )
 
     # Distribute material properties to compartments and boundaries
@@ -55,19 +55,13 @@ function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where {T}
 end
 
 function coefficients(
-    setup::Union{CylinderSetup{T},SphereSetup{T}};
-    D,
-    T₂,
-    ρ,
-    κ,
-    γ,
-) where {T}
-    (; ncell, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
+    setup::Union{CylinderSetup{T},SphereSetup{T},EMSetup{T},FiberSetup{T}}) where {T}
+    (; ncell, include_in, in_ratio, ecs_shape, ecs_ratio, D, T₂, ρ, κ, γ) = setup
 
     include_ecs = ecs_shape != :no_ecs
 
     # Check for correct radius ratios and that neurons do not have in-compartments
-    @assert !include_in || 0 < in_ratio && in_ratio < 1
+    # @assert !include_in || 0 < in_ratio && in_ratio < 1
     @assert !include_ecs || 0 < ecs_ratio
 
     # Determine number of compartments and boundaries
@@ -75,7 +69,7 @@ function coefficients(
     if isa(setup, SphereSetup)
         # For a sphere, there is one interface
         nboundary = (include_in + 1) * ncell + include_ecs
-    elseif isa(setup, CylinderSetup)
+    elseif isa(setup, Union{CylinderSetup,EMSetup,FiberSetup})
         # An axon has a side interface, and a top-bottom boundary
         nboundary = (2 * include_in + 1 + include_ecs) * ncell + include_ecs
     end
@@ -90,8 +84,8 @@ function coefficients(
         ncompartment_old = ncell
         nboundary_old = ncell
     else
-        compartments = []
-        boundaries = []
+        compartments = String[]
+        boundaries = String[]
         ncompartment_old = 0
         nboundary_old = 0
     end
@@ -110,7 +104,7 @@ function coefficients(
         nboundary_old = nboundary_old + ncell
     end
 
-    if isa(setup, CylinderSetup)
+    if isa(setup, Union{CylinderSetup,EMSetup,FiberSetup})
         if include_in
             # Add in boundary
             append!(boundaries, repeat(["in"], ncell))
@@ -148,11 +142,11 @@ function coefficients(
 
     # Initialize output arrays
     coeffs = (;
-        D = [zeros(SMatrix{3,3,T}) for _ = 1:ncompartment],
-        T₂ = zeros(T, ncompartment),
-        κ = zeros(T, nboundary),
-        ρ = zeros(Complex{T}, ncompartment),
-        γ = T(γ),
+        D = Vector{SMatrix{3,3,T,9}}(undef,ncompartment),
+        T₂ = Vector{T}(undef, ncompartment),
+        κ = Vector{T}(undef, nboundary),
+        ρ = Vector{Complex{T}}(undef, ncompartment),
+        γ = γ,
     )
 
     # Distribute material properties to compartments and boundaries

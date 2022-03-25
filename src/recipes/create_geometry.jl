@@ -24,10 +24,10 @@ function create_geometry(setup; recreate = true)
     dir = dirname(filename)
     isdir(dir) || mkpath(dir)
 
-    if hasfield(typeof(setup), :ecs_shape)
-        setup.ecs_shape ∈ [:no_ecs, :box, :convex_hull, :tight_wrap] ||
-            error("Invalid ECS shape")
-    end
+    # if hasfield(typeof(setup), :ecs_shape)
+    #     setup.ecs_shape ∈ [:no_ecs, :box, :convex_hull, :tight_wrap] ||
+    #         error("Invalid ECS shape")
+    # end
 
     if setup isa Union{CylinderSetup,SphereSetup}
         # Check if cell description file is already available
@@ -84,9 +84,9 @@ function create_geometry(setup; recreate = true)
     end
 
     # Deform domain
-    if isa(setup, CylinderSetup) && (setup.bend > 1e-16 || setup.twist > 1e-16)
+    if isa(setup, CylinderSetup) && (setup.deform_angle.bend > 1e-16 || setup.deform_angle.twist > 1e-16)
         @debug "Deforming domain with bend $(setup.bend) and twist $(setup.twist)"
-        deform_domain!(mesh_all.points, setup.bend, setup.twist)
+        deform_domain!(mesh_all.points, setup.deform_angle.bend, setup.deform_angle.twist)
     end
 
     # Split mesh into compartments

@@ -23,7 +23,7 @@ if isdefined(@__MODULE__, :LanguageServer)                                      
     include("../src/SpinDoctor.jl")                                              #src
     using .SpinDoctor                                                            #src
 end                                                                              #src
-
+using MKL
 using SpinDoctor
 using LinearAlgebra
 
@@ -32,47 +32,30 @@ if haskey(ENV, "GITHUB_ACTIONS")
 else
     using GLMakie
 end
-
+T = Float64
 # Here we create a recipe for five stacked plates with isotropic diffusion tensors. They
 # should allow for free diffusion in the horizontal direction, but a rather restricted
 # vertical diffusion with the permeable membranes.
 
 ncell = 5
-setup = PlateSetup(;
+setup = PlateSetup{T}(;
     name = "Plates",
     width = 50.0,
     depth = 50.0,
     heights = fill(5.0, ncell),
-    bend = 0.0,
-    twist = 0.0,
+    deform_angle = (; bend = 0.0, twist =  0.0),
     refinement = 10.0,
-)
-coeffs = coefficients(
-    setup;
     D = [0.002 * I(3) for _ = 1:ncell],
     T₂ = fill(Inf, ncell),
     ρ = fill(1.0, ncell),
     κ = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
-    γ = 2.67513e-4,
 )
 
 # We then proceed to build the geometry and finite element mesh.
 
-mesh, = create_geometry(setup; recreate = true)
-plot_mesh(mesh)
+model, matrices, surfaces, = prepare_simulation(setup;recreate = true)
 
-# The mesh looks good, so we may then proceed to assemble the biological model and the
-# associated finite element matrices.
-
-model = Model(; mesh, coeffs...)
-matrices = assemble_matrices(model);
-
-# We may also compute some useful quantities, including a scalar diffusion coefficient from
-# the diffusion tensors.
-
-volumes = get_cmpt_volumes(model.mesh)
-D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
-ncompartment = length(model.mesh.points)
+plot_mesh(model.mesh)
 
 # The gradient pulse sequence will be a PGSE with both vertical and horizontal components.
 # This allows for both restricted vertical diffusion and almost unrestricted horizontal
@@ -99,7 +82,7 @@ adc_sta = volumes'adc_sta_cmpts / sum(volumes)
 # is however more computationally expensive. We start by building a set of gradients.
 
 bvalues = 0:400:4000
-gvalues = map(b -> √(b / int_F²(profile)) / coeffs.γ, bvalues)
+gvalues = map(b -> √(b / int_F²(profile)) / model.γ, bvalues)
 gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues]
 
 # The [`solve_multigrad`](@ref) function computes the magnetization for each gradient. Since
@@ -118,7 +101,7 @@ signals_cmpts = [compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ)) 
 
 adc_fit = fit_adc(bvalues, signals)
 adc_fit_cmpts =
-    [fit_adc(bvalues, [s[icmpt] for s ∈ signals_cmpts]) for icmpt = 1:ncompartment]
+    [fit_adc(bvalues, [s[icmpt] for s ∈ signals_cmpts]) for icmpt = 1:model.ncompartment]
 
 # ### Homogenized ADC model
 
@@ -127,7 +110,7 @@ adc_fit_cmpts =
 
 hadc = HADC(; model, matrices)
 adc_homogenized_cmpts = solve(hadc, gradient)
-adc_homogenized = volumes'adc_homogenized_cmpts / sum(volumes)
+adc_homogenized = model.volumes'adc_homogenized_cmpts / sum(volumes)
 
 # ### Matrix Formalism
 
@@ -156,17 +139,17 @@ adc_mf = dir'D_mf * dir / dir'dir
 
 # Here we make a comparison between the compartment ADCs. For MF, only a global ADC was computed.
 
-n = ncompartment
+n = model.ncompartment
 fig = Figure()
 ax = Axis(fig[1, 1];
     xticks = (1:4, ["STA", "Fit BTPDE", "HADC", "MF"]),
     ylabel = "ADC / D",
     title = "Compartment ADCs",
 )
-barplot!(ax, fill(1, n), adc_sta_cmpts ./ D_avg; dodge = 1:n)
-barplot!(ax, fill(2, n), adc_fit_cmpts ./ D_avg; dodge = 1:n)
-barplot!(ax, fill(3, n), adc_homogenized_cmpts ./ D_avg; dodge = 1:n)
-barplot!(ax, [4], [adc_mf / D_avg])
+barplot!(ax, fill(1, n), adc_sta_cmpts ./ model.D_avg; dodge = 1:n)
+barplot!(ax, fill(2, n), adc_fit_cmpts ./ model.D_avg; dodge = 1:n)
+barplot!(ax, fill(3, n), adc_homogenized_cmpts ./ model.D_avg; dodge = 1:n)
+barplot!(ax, [4], [adc_mf / model.D_avg])
 fig
 
 # The STA and HADC are the same for all compartments, as they consider them separately and

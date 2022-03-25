@@ -4,8 +4,9 @@
 Create geometrical configuration of cells. Return mathematical description (radii, centers).
 """
 function create_cells(setup)
-    (; ncell, rmin, rmax, dmin, dmax) = setup
-
+    (; ncell, r_range, d_range) = setup
+    (; rmin, rmax)  = r_range
+    (; dmin, dmax)  = d_range
     # Choose between spheres and cylinders
     if isa(setup, SphereSetup)
         ndim = 3

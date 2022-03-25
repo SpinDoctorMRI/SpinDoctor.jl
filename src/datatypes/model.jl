@@ -12,4 +12,7 @@ Base.@kwdef struct Model{T}
     T₂::Vector{T}
     κ::Vector{T}
     γ::T
+    D_avg::T
+    volumes::Vector{T}
+    ncompartment::T
 end

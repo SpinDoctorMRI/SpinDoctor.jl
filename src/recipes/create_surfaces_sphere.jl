@@ -5,8 +5,8 @@ Create surface triangulation of [inner and] outer spheres [and ECS].
 """
 function create_surfaces(setup::SphereSetup, cells)
     (; radii, centers) = cells
-    (; ncell, rmin, rmax, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
-
+    (; ncell, r_range, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
+    (; rmin, rmax)  = r_range
     include_ecs = ecs_shape != :no_ecs
 
     rmean = (rmin + rmax) / 2

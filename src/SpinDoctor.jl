@@ -5,6 +5,15 @@ Diffusion MRI simulation toolbox.
 """
 module SpinDoctor
 
+# mf
+using MKL
+using Pardiso
+using LinearMaps
+
+# save result 
+using BSON
+using JLD2
+
 using Arpack: eigs
 using DiffEqCallbacks: PresetTimeCallback, FunctionCallingCallback
 using Expokit: expmv!
@@ -31,6 +40,9 @@ using Statistics: mean
 using TetGen: RawTetGenIO, facetlist!, tetrahedralize
 using Triangulate: TriangulateIO, triangulate
 using WriteVTK
+using Parameters
+using CRC32c: crc32c
+using ArraysOfArrays
 
 # Gradidents
 export PGSE, CosOGSE, SinOGSE, DoublePGSE, GeneralGradient, ScalarGradient
@@ -67,9 +79,10 @@ export compute_signal
 export Printer, VTKWriter, Plotter
 
 # Recipes
-export AbstractSetup, PlateSetup, CylinderSetup, SphereSetup, NeuronSetup
+export AbstractSetup, PlateSetup, CylinderSetup, SphereSetup, NeuronSetup, EMSetup, FiberSetup
 export coefficients, analytical_coefficients
 export create_geometry
+export prepare_simulation
 
 # Utils
 include("utils/fresnel.jl")
@@ -186,5 +199,6 @@ include("recipes/create_surfaces_neuron.jl")
 include("recipes/create_geometry.jl")
 include("recipes/radial_dimension.jl")
 include("recipes/analytical_coefficients.jl")
+include("recipes/prepare_simulation.jl")
 
 end

@@ -8,8 +8,8 @@ the top surface is copied from the ground surface.
 """
 function create_surfaces(setup::CylinderSetup, cells)
     (; radii, centers) = cells
-    (; ncell, rmin, rmax, height, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
-
+    (; ncell, r_range, height, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
+    (; rmin, rmax)  = r_range
     # Choose approximate cylinder side length
     nside = 30
     nside_min = 12

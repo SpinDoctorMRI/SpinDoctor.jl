@@ -4,10 +4,10 @@ if isdefined(@__MODULE__, :LanguageServer)
     include("../src/SpinDoctor.jl")
     using .SpinDoctor
 end
-
+using MKL
 using SpinDoctor
 using LinearAlgebra
-using GLMakie
+using CairoMakie
 
 ## Chose a plotting theme
 set_theme!(theme_light())
@@ -18,31 +18,23 @@ set_theme!(theme_black())
 ## Create model from setup recipe
 # include("setups/axon.jl")
 # include("setups/sphere.jl")
-include("setups/plates.jl")
-# include("setups/cylinders.jl")
+# include("setups/plates.jl")
+include("setups/cylinders.jl")
 # include("setups/spheres.jl")
 # include("setups/neuron.jl")
 
-mesh, surfaces, cells = @time create_geometry(setup; recreate = true);
-model = Model(; mesh, coeffs...);
-volumes = get_cmpt_volumes(model.mesh)
-D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
-@info "Number of nodes per compartment:" length.(model.mesh.points)
+model, matrices, surfaces, = prepare_simulation(setup;recreate = true)
 
 ## Plot mesh
 plot_surfaces(surfaces, 1:3)
 plot_mesh(model.mesh, 1:1)
-
-## Assemble finite element matrices
-matrices = @time assemble_matrices(model);
-
 
 ## Magnetic field gradient
 dir = [1.0, 0.0, 0.0]
 profile = PGSE(2000.0, 6000.0)
 # profile = CosOGSE(5000.0, 5000.0, 2)
 b = 1000
-g = √(b / int_F²(profile)) / coeffs.γ
+g = √(b / int_F²(profile)) / model.γ
 gradient = ScalarGradient(dir, profile, g)
 
 
@@ -80,11 +72,11 @@ savefield(model.mesh, ξ, "output/magnetization")
 # Perform Laplace eigendecomposition
 laplace = Laplace{T}(; model, matrices, neig_max = 400)
 lap_eig = @time solve(laplace)
-length_scales = eig2length.(lap_eig.values, D_avg)
+length_scales = eig2length.(lap_eig.values, model.D_avg)
 
 # Truncate basis at minimum length scale
 length_scale = 3
-λ_max = length2eig(length_scale, D_avg)
+λ_max = length2eig(length_scale, model.D_avg)
 lap_eig = limit_lengthscale(lap_eig, λ_max)
 
 # Compute magnetization using the matrix formalism reduced order model
@@ -114,15 +106,15 @@ karger = Karger(; model, difftensors)
 signal = @time solve(karger, gradient; timestep = 5.0)
 
 
-## Solve analytical model
-# Compute analytical Laplace eigenfunctions
-length_scale = 0.3
-eigstep = 1e-8
-eiglim = length2eig(length_scale, D_avg)
-analytical_coeffs = analytical_coefficients(setup, coeffs)
-analytical_laplace = AnalyticalLaplace(; analytical_coeffs..., eiglim, eigstep)
-lap_mat = @time solve(analytical_laplace)
+# ## Solve analytical model
+# # Compute analytical Laplace eigenfunctions
+# length_scale = 0.3
+# eigstep = 1e-8
+# eiglim = length2eig(length_scale, D_avg)
+# analytical_coeffs = analytical_coefficients(setup, coeffs)
+# analytical_laplace = AnalyticalLaplace(; analytical_coeffs..., eiglim, eigstep)
+# lap_mat = @time solve(analytical_laplace)
 
-# Compute analytical matrix formalism signal truncation
-analytical_mf = AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
-signal = solve(analytical_mf, gradient)
+# # Compute analytical matrix formalism signal truncation
+# analytical_mf = AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
+# signal = solve(analytical_mf, gradient)

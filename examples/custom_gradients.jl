@@ -10,7 +10,7 @@ if isdefined(@__MODULE__, :LanguageServer)                                      
     include("../src/SpinDoctor.jl")                                              #src
     using .SpinDoctor                                                            #src
 end                                                                              #src
-
+using MKL
 using SpinDoctor
 using LinearAlgebra
 
@@ -19,38 +19,26 @@ if haskey(ENV, "GITHUB_ACTIONS")
 else
     using GLMakie
 end
-
-setup = SphereSetup(;
-    name = "gaze-into-the-orb",
+T = Float64
+setup = SphereSetup{T}(;
+    name = "spheres/gaze-into-the-orb",
     ncell = 1,
-    rmin = 2.0,
-    rmax = 6.0,
-    dmin = 0.2,
-    dmax = 0.3,
+    r_range = (; rmin = 2.0, rmax =  6.0),
+    d_range = (; dmin = 0.2, dmax =  0.3),
     include_in = false,
     in_ratio = 0.6,
     ecs_shape = :no_ecs,
     ecs_ratio = 0.5,
-)
-coeffs = coefficients(
-    setup;
     D = (; in = 0.002 * I(3), out = 0.002 * I(3), ecs = 0.002 * I(3)),
     T₂ = (; in = Inf, out = Inf, ecs = Inf),
     ρ = (; in = 1.0, out = 1.0, ecs = 1.0),
     κ = (; in_out = 1e-4, out_ecs = 1e-4, in = 0.0, out = 0.0, ecs = 0.0),
-    γ = 2.67513e-4,
 )
 
 # We then proceed to build the geometry and finite element mesh.
+model, matrices, surfaces, = prepare_simulation(setup;recreate = true)
 
-mesh, = create_geometry(setup; recreate = true)
-plot_mesh(mesh)
-
-# The mesh looks good, so we may then proceed to assemble the biological model and the
-# associated finite element matrices.
-
-model = Model(; mesh, coeffs...)
-matrices = assemble_matrices(model)
+plot_mesh(model.mesh)
 
 # The Bloch-Torrey PDE takes a magnetic field gradient pulse sequence as an input. We may
 # define our custom three dimensional gradient sequence (given in T/m) as a simple Julia
