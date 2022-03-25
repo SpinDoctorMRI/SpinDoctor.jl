@@ -7,7 +7,7 @@ DocMeta.setdocmeta!(SpinDoctor, :DocTestSetup, :(using SpinDoctor); recursive = 
 # Generate examples
 examples = [
     "Solve BTPDE" => "solve_btpde",
-    # "Custom gradients" => "custom_gradients",
+    "Custom gradients" => "custom_gradients",
     "Compare ADCs" => "compare_adcs",
     "Matrix Formalism" => "matrix_formalism",
     "High Angular Resolution" => "hardi",
@@ -17,8 +17,8 @@ for e ∈ examples
     e = joinpath(@__DIR__, "..", "examples", "$(e.second).jl")
     o = joinpath(@__DIR__, "src", output)
     Literate.markdown(e, o)
-    Literate.notebook(e, o)
-    Literate.script(e, o)
+    # Literate.notebook(e, o)
+    # Literate.script(e, o)
 end
 
 makedocs(;

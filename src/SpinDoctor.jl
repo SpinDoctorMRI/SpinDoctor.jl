@@ -11,7 +11,6 @@ using Expokit: expmv!
 using GLPK: Optimizer
 using LinearAlgebra
 using Makie
-using MiniQhull: delaunay
 using OrdinaryDiffEq: OrdinaryDiffEq
 using OrdinaryDiffEq:
     DiffEqArrayOperator,
@@ -50,7 +49,7 @@ export savefield
 export compute_adc_sta
 export fit_adc
 export fit_tensors
-export plot_mesh, plot_field, plot_hardi
+export plot_surfaces, plot_mesh, plot_field, plot_hardi
 
 export BTPDE, HADC, Karger
 export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
@@ -165,9 +164,10 @@ include("postprocess/fit_tensors.jl")
 include("postprocess/savefield.jl")
 
 # Plot
-include("plot/plot_mesh.jl")
 include("plot/plot_field.jl")
 include("plot/plot_hardi.jl")
+include("plot/plot_mesh.jl")
+include("plot/plot_surfaces.jl")
 
 # Callbacks
 include("callbacks/callbacks.jl")
