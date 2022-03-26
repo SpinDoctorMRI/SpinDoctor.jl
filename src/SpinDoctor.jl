@@ -9,6 +9,7 @@ module SpinDoctor
 using MKL
 using Pardiso
 using LinearMaps
+using KrylovKit: exponentiate
 
 # save result 
 using BSON
@@ -16,7 +17,7 @@ using JLD2
 
 using Arpack: eigs
 using DiffEqCallbacks: PresetTimeCallback, FunctionCallingCallback
-using Expokit: expmv!
+# using Expokit: expmv!
 using GLPK: Optimizer
 using LinearAlgebra
 using Makie
@@ -83,6 +84,9 @@ export AbstractSetup, PlateSetup, CylinderSetup, SphereSetup, NeuronSetup, EMSet
 export coefficients, analytical_coefficients
 export create_geometry
 export prepare_simulation
+
+# Save results
+export add_checksum
 
 # Utils
 include("utils/fresnel.jl")
@@ -196,9 +200,14 @@ include("recipes/create_surfaces_plates.jl")
 include("recipes/create_surfaces_cylinder.jl")
 include("recipes/create_surfaces_sphere.jl")
 include("recipes/create_surfaces_neuron.jl")
+include("recipes/create_surfaces_em.jl")
+include("recipes/create_surfaces_fiber.jl")
 include("recipes/create_geometry.jl")
 include("recipes/radial_dimension.jl")
 include("recipes/analytical_coefficients.jl")
 include("recipes/prepare_simulation.jl")
+
+# Save results
+include("save_results/add_checksum.jl")
 
 end

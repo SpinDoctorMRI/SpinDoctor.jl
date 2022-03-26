@@ -3,15 +3,15 @@
 
 Assemble finite element matrices.
 """
-function assemble_matrices(model)
-    (; mesh, D, T₂, ρ) = model
+function assemble_matrices(model::Model{T}) where{T}
+    (; mesh, D, T₂, κ, ρ) = model
 
     # Deduce sizes
     ncompartment, nboundary = size(mesh.facets)
     npoint_cmpts = size.(mesh.points, 2)
 
     # Assemble finite element matrices
-    volumes = zeros(ncompartment)
+    volumes = Vector{T}(undef, ncompartment)
     for icmpt = 1:ncompartment
         points = mesh.points[icmpt]
         elements = mesh.elements[icmpt]
@@ -24,6 +24,7 @@ function assemble_matrices(model)
     S_cmpts = []
     Mx_cmpts = [[] for _ = 1:3]
     G = []
+    ρ_cmpts = VectorOfArrays{Complex{T}, 1}()
     for icmpt = 1:ncompartment
         # Finite elements
         points = mesh.points[icmpt]
@@ -54,7 +55,7 @@ function assemble_matrices(model)
                 end
             end
         end
-
+        push!(ρ_cmpts, fill(ρ[icmpt], size(points, 2)))
     end
 
     # Assemble global finite element matrices
@@ -62,8 +63,9 @@ function assemble_matrices(model)
     S = blockdiag(S_cmpts...)
     R = blockdiag((M_cmpts ./ T₂)...)
     Mx = [blockdiag(Mx_cmpts[dim]...) for dim = 1:3]
+    ρ_init = flatview(ρ_cmpts)
     Q_blocks = assemble_flux_matrices(mesh.points, mesh.facets)
     Q = couple_flux_matrix(model, Q_blocks, false)
 
-    (; M, S, R, Mx, Q, M_cmpts, S_cmpts, Mx_cmpts, G, volumes)
+    (; M, S, R, Mx, Q, M_cmpts, S_cmpts, Mx_cmpts, G, volumes, ρ_init, ρ_cmpts)
 end

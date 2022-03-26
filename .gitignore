@@ -27,6 +27,7 @@ Manifest.toml
 # Input and output configurations
 meshfiles
 output
+res_mf
 test.jl
 
 # Local configurations

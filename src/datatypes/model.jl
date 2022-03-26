@@ -14,5 +14,5 @@ Base.@kwdef struct Model{T}
     γ::T
     D_avg::T
     volumes::Vector{T}
-    ncompartment::T
+    ncompartment::Int
 end

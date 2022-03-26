@@ -23,7 +23,9 @@ include("setups/cylinders.jl")
 # include("setups/spheres.jl")
 # include("setups/neuron.jl")
 
-model, matrices, surfaces, = prepare_simulation(setup;recreate = true)
+model, matrices, surfaces, = prepare_simulation(setup;recreate = false)
+
+savepath = add_checksum("res_mf",setup)
 
 ## Plot mesh
 plot_surfaces(surfaces, 1:3)
@@ -60,9 +62,9 @@ btpde = BTPDE(; model, matrices)
 plot_field(model.mesh, ξ)
 
 ## Compute signal
-compute_signal(matrices.M, ξ)
-compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
-
+S = compute_signal(matrices.M, ξ)
+S_cmpts = compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
+@info S, S_cmpts, ξ
 ## Save magnetization
 savefield(model.mesh, ξ, "output/magnetization")
 
@@ -70,40 +72,34 @@ savefield(model.mesh, ξ, "output/magnetization")
 ## Matrix Formalism
 
 # Perform Laplace eigendecomposition
-laplace = Laplace{T}(; model, matrices, neig_max = 400)
-lap_eig = @time solve(laplace)
-length_scales = eig2length.(lap_eig.values, model.D_avg)
-
-# Truncate basis at minimum length scale
-length_scale = 3
-λ_max = length2eig(length_scale, model.D_avg)
-lap_eig = limit_lengthscale(lap_eig, λ_max)
+laplace = Laplace{T}(; model, matrices, neig_max = 400, length_scale = 3)
+lap_eig = @time solve(laplace;rerun=true,savepath=savepath)
 
 # Compute magnetization using the matrix formalism reduced order model
 mf = MatrixFormalism(; model, matrices, lap_eig)
-ξ = @time solve(mf, gradient; ninterval = 500)
+S, S_cmpts, ξ = @time solve(mf, gradient; ninterval = 500)
 
 
-## Solve HADC
-hadc = HADC(; model, matrices)
-adc_cmpts = @time solve(hadc, gradient)
+# ## Solve HADC
+# hadc = HADC(; model, matrices)
+# adc_cmpts = @time solve(hadc, gradient)
 
 
 ## Solve Karger model
 
-# Compute HADC and fit difftensors
-directions = unitsphere(50)
-gradients = [
-    ScalarGradient(collect(d), gradient.profile, gradient.amplitude) for
-    d ∈ eachcol(directions)
-]
-hadc = HADC(; model, matrices)
-adcs, = @time solve_multigrad(hadc, gradients)
-difftensors = fit_tensors(directions, adcs)
+# # Compute HADC and fit difftensors
+# directions = unitsphere(50)
+# gradients = [
+#     ScalarGradient(collect(d), gradient.profile, gradient.amplitude) for
+#     d ∈ eachcol(directions)
+# ]
+# hadc = HADC(; model, matrices)
+# adcs, = @time solve_multigrad(hadc, gradients)
+# difftensors = fit_tensors(directions, adcs)
 
-# Solve Karger
-karger = Karger(; model, difftensors)
-signal = @time solve(karger, gradient; timestep = 5.0)
+# # Solve Karger
+# karger = Karger(; model, difftensors)
+# signal = @time solve(karger, gradient; timestep = 5.0)
 
 
 # ## Solve analytical model

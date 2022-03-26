@@ -38,10 +38,16 @@ end
 
 Laplace eigenvalue problem.
 """
-Base.@kwdef struct Laplace{T} <: AbstractProblem{T}
+@with_kw struct Laplace{T} <: AbstractProblem{T}
     model::Model{T}
     matrices::NamedTuple
     neig_max::Int
+    ncv::Int = max(2 * neig_max, 20 )
+    tol::T = 0.0
+    maxiter::Int = 300
+    length_scale::T = 1 # cut length scale
+
+    @assert ncv>neig_max "Krylov subspace dimension should be larger than neig"
 end
 
 """
