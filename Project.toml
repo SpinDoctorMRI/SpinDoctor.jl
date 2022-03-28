@@ -4,7 +4,6 @@ authors = ["Syver Døving Agdestein <syverda@gmail.com>"]
 version = "0.1.0"
 
 [deps]
-Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
 ArraysOfArrays = "65a8f2f4-9b39-5baf-92e2-a9cc46fdf018"
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
 CRC32c = "8bf52ea8-c179-5cab-976a-9e18b702a9bc"
@@ -33,7 +32,6 @@ Triangulate = "f7e6ffb2-c36d-4f8f-a77e-16e897189344"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
-Arpack = "0.5"
 DiffEqCallbacks = "2"
 GLPK = "0.14, 0.15, 1"
 Makie = "0.15, 0.16"

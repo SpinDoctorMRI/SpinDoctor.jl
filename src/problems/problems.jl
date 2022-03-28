@@ -43,7 +43,7 @@ Laplace eigenvalue problem.
     matrices::NamedTuple
     neig_max::Int
     ncv::Int = max(2 * neig_max, 20 )
-    tol::T = 0.0
+    tol::T = 1e-12
     maxiter::Int = 300
     length_scale::T = 1 # cut length scale
 

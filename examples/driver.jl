@@ -40,33 +40,33 @@ g = √(b / int_F²(profile)) / model.γ
 gradient = ScalarGradient(dir, profile, g)
 
 
-## Solve BTPDE
+# ## Solve BTPDE
 
-# Callbacks for time stepping (plot solution, save time series)
-printer = Printer(; nupdate = 1, verbosity = 2)
-writer = VTKWriter(; nupdate = 5)
-plotter = Plotter{T}(; nupdate = 5)
-# callbacks = [printer, plotter]
-callbacks = [printer, plotter, writer]
+# # Callbacks for time stepping (plot solution, save time series)
+# printer = Printer(; nupdate = 1, verbosity = 2)
+# writer = VTKWriter(; nupdate = 5)
+# plotter = Plotter{T}(; nupdate = 5)
+# # callbacks = [printer, plotter]
+# callbacks = [printer, plotter, writer]
 
-# Choose BTDPE solver (specialized solver only for PGSE)
-solver = IntervalConstantSolver{T}(; θ = 0.5, timestep = 5.0)
-solver = QNDF(autodiff = false)
+# # Choose BTDPE solver (specialized solver only for PGSE)
+# solver = IntervalConstantSolver{T}(; θ = 0.5, timestep = 5.0)
+# solver = QNDF(autodiff = false)
 
-# Solve BTPDE
-btpde = BTPDE(; model, matrices)
-ξ = @time solve(btpde, gradient, solver; callbacks)
+# # Solve BTPDE
+# btpde = BTPDE(; model, matrices)
+# ξ = @time solve(btpde, gradient, solver; callbacks)
 
 
-## Plot magnetization
-plot_field(model.mesh, ξ)
+# ## Plot magnetization
+# plot_field(model.mesh, ξ)
 
-## Compute signal
-S = compute_signal(matrices.M, ξ)
-S_cmpts = compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
-@info S, S_cmpts, ξ
-## Save magnetization
-savefield(model.mesh, ξ, "output/magnetization")
+# ## Compute signal
+# S = compute_signal(matrices.M, ξ)
+# S_cmpts = compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
+# @info S, S_cmpts, ξ
+# ## Save magnetization
+# savefield(model.mesh, ξ, "output/magnetization")
 
 
 ## Matrix Formalism
@@ -78,6 +78,7 @@ lap_eig = @time solve(laplace;rerun=true,savepath=savepath)
 # Compute magnetization using the matrix formalism reduced order model
 mf = MatrixFormalism(; model, matrices, lap_eig)
 S, S_cmpts, ξ = @time solve(mf, gradient; ninterval = 500)
+lap_eig.λ[end], lap_eig.ϕ[end]
 
 
 # ## Solve HADC

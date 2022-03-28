@@ -8,14 +8,15 @@ module SpinDoctor
 # mf
 using MKL
 using Pardiso
+# using MKLSparse
 using LinearMaps
-using KrylovKit: exponentiate
+using KrylovKit
 
 # save result 
 using BSON
 using JLD2
 
-using Arpack: eigs
+# using Arpack: eigs
 using DiffEqCallbacks: PresetTimeCallback, FunctionCallingCallback
 # using Expokit: expmv!
 using GLPK: Optimizer

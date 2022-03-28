@@ -160,34 +160,34 @@ function eigendecompose(SQ, M, laplace::Laplace, λ_max, ps; isQherm::Bool=true)
     else
         if isQherm
             # set_msglvl!(ps, Pardiso.MESSAGE_LEVEL_ON)
-            lm, lm_phi, ps = @time construct_linear_map(SQ+1e-16.*M, transpose(M), ps)
+            lm, lm_phi, ps = @time construct_linear_map(SQ+1e-15.*M, transpose(M), ps)
 
-            λ, ϕ = @time eigs(lm, nev = neig, ncv = ncv, which = :LR, tol = tol, maxiter = maxiter)
-            ϕ = @time reduce(hcat,[lm_phi(x) for x ∈ eachcol(ϕ) ]);
+            # λ, ϕ = @time eigs(lm, nev = neig, ncv = ncv, which = :LR, tol = tol, maxiter = maxiter)
+            # ϕ = @time reduce(hcat,[lm_phi(x) for x ∈ eachcol(ϕ) ]);
 
             # TODO: Consider KrylovKit.jl
-            # λ, ϕ, = @time eigsolve(lm, ones(sizeofM), neig, :LR,
-            #     Lanczos(krylovdim = ncv, maxiter = maxiter, tol = 1e-16, verbosity = 1) )
-            # ϕ = @time reduce(hcat,[lm_phi(x) for x ∈ ϕ ])
+            λ, ϕ, = @time eigsolve(lm, rand(eltype(M),sizeofM), neig, :LR,
+                Lanczos(krylovdim = ncv, maxiter = maxiter, tol = tol, verbosity = 1) )
+            ϕ = @time reduce(hcat,[lm_phi(x) for x ∈ ϕ ])
              
-            λ .= -1e-16 .+ (1. ./ λ)
+            λ .= -1e-15 .+ (1. ./ λ)
 
         else
-            lm, ps = @time construct_nonsymmetric_linear_map(SQ+1e-20.*M, transpose(M), ps)
-            λ, ϕ = @time eigs(lm, nev = neig, ncv = ncv, which = :LR, tol = tol, maxiter = maxiter)
+            lm, ps = @time construct_nonsymmetric_linear_map(SQ+1e-15.*M, transpose(M), ps)
+            # λ, ϕ = @time eigs(lm, nev = neig, ncv = ncv, which = :LR, tol = tol, maxiter = maxiter)
 
-            # λ, ϕ, = @time eigsolve(lm, ones(sizeofM), neig, :LR,
-            #     Arnoldi(krylovdim = ncv, maxiter = maxiter,tol = 1e-14, verbosity = 0) )
-            # ϕ = @time reduce(hcat,ϕ)
+            λ, ϕ, = @time eigsolve(lm, rand(eltype(M),sizeofM), neig, :LR,
+                Arnoldi(krylovdim = ncv, maxiter = maxiter, tol = tol, verbosity = 1) )
+            ϕ = @time reduce(hcat,ϕ)
 
 
-            λ .= -1e-20 .+ (1. ./ λ)
+            λ .= -1e-15 .+ (1. ./ λ)
         end
         set_phase!(ps, Pardiso.RELEASE_ALL);
         pardiso(ps);
     end
 
-    if abs(λ[1]) ≤ eps()  λ[1] = 0.0 end 
+    if abs(λ[1]) ≤ 10*eps()  λ[1] = 0.0 end 
     # All Laplace eigenvalues are nonnegative
     all(≥(0), λ) || @warn "Obtained negative eigenvalues for Laplace operator." findall(λ .< 0) λ[λ.<0] 
     # if any(<(0), λ)
@@ -230,7 +230,7 @@ function construct_linear_map(H, S,ps)
     fix_iparm!(ps, :N)
 
     H_pardiso = get_matrix(ps, H, :N)
-    b = rand(Float64, size(H, 1))
+    b = rand(eltype(S), size(H, 1))
 
     set_phase!(ps, Pardiso.ANALYSIS_NUM_FACT)
     pardiso(ps, H_pardiso, b)
@@ -271,7 +271,7 @@ function construct_nonsymmetric_linear_map(H, S,ps)
     fix_iparm!(ps, :N)
 
     H_pardiso = get_matrix(ps, H, :N)
-    b = rand(Float64, size(H, 1))
+    b = rand(eltype(H), size(H, 1))
 
     set_phase!(ps, Pardiso.ANALYSIS_NUM_FACT)
     pardiso(ps, H_pardiso, b)
