@@ -8,11 +8,11 @@ the top surface is copied from the ground surface.
 """
 function create_surfaces(setup::CylinderSetup, cells)
     (; radii, centers) = cells
-    (; ncell, rmin, rmax, height, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
+    (; ncell, nsidewall, rmin, rmax, height, include_in, in_ratio, ecs_shape, ecs_ratio) = setup
 
     # Choose approximate cylinder side length
-    nside = 30
-    nside_min = 12
+    nside = nsidewall
+    nside_min = 8
 
     include_ecs = ecs_shape != :no_ecs
     nboundary = (2 * include_in + 1 + include_ecs) * ncell + include_ecs
@@ -112,7 +112,7 @@ function create_surfaces(setup::CylinderSetup, cells)
     npoint = size(points, 2)
     nedge = size(edges, 2)
 
-    # Perform Delaynay triangulation of entire domain
+    # Perform Delaunay triangulation of entire domain
     triin = TriangulateIO()
     triin.pointlist = points
     triin.segmentlist = edges

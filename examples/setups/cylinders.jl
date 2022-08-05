@@ -5,6 +5,7 @@ T = Float64
 setup = CylinderSetup{T}(;
     name = "cylinders/somecylinders",
     ncell = 3,
+    nsidewall = 12,
     rmin = 2.0,
     rmax = 6.0,
     dmin = 0.2,

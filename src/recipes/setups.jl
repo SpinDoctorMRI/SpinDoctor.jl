@@ -24,6 +24,7 @@ Base.@kwdef struct CylinderSetup{T} <: AbstractSetup{T}
     name::String
     meshdir = "meshfiles"
     ncell::Int
+    nsidewall::Int # Average number of edges of circle defining the cylinder
     rmin::T
     rmax::T
     dmin::T

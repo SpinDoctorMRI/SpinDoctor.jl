@@ -21,13 +21,14 @@ end
 setup = CylinderSetup(;
     name = "Slice",
     ncell = 3,
+    nsidewall = 15,
     rmin = 2.0,
     rmax = 6.0,
     dmin = 0.2,
     dmax = 0.3,
-    height = 1.0,
+    height = 30.0,
     bend = 0.0,
-    twist = 0.0,
+    twist = π / 6,
     ecs_shape = :convex_hull,
     ecs_ratio = 0.5,
 )
