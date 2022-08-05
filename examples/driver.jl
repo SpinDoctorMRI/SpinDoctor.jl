@@ -5,37 +5,35 @@ if isdefined(@__MODULE__, :LanguageServer)
     using .SpinDoctor
 end
 
+using GLMakie
+
+
 using SpinDoctor
 using LinearAlgebra
 using GLMakie
 
-## Chose a plotting theme
-set_theme!(theme_light())
-set_theme!(theme_dark())
-set_theme!(theme_black())
-
-
 ## Create model from setup recipe
 # include("setups/axon.jl")
-# include("setups/sphere.jl")
-include("setups/plates.jl")
 # include("setups/cylinders.jl")
-# include("setups/spheres.jl")
 # include("setups/neuron.jl")
+include("setups/plates.jl")
+# include("setups/sphere.jl")
+# include("setups/spheres.jl")
 
 mesh, surfaces, cells = @time create_geometry(setup; recreate = true);
 model = Model(; mesh, coeffs...);
+dim = size(surfaces.points, 1)
 volumes = get_cmpt_volumes(model.mesh)
-D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
+D_avg = 1 / 2 * tr.(model.D)' * volumes / sum(volumes)
 @info "Number of nodes per compartment:" length.(model.mesh.points)
 
 ## Plot mesh
-plot_surfaces(surfaces, 1:3)
-plot_mesh(model.mesh, 1:1)
+plot_surfaces(surfaces, 1:4)
+plot_mesh(model.mesh, 1:2)
+plot_mesh(model.mesh)
 
 ## Assemble finite element matrices
 matrices = @time assemble_matrices(model);
-
 
 ## Magnetic field gradient
 dir = [1.0, 0.0, 0.0]
@@ -51,7 +49,7 @@ gradient = ScalarGradient(dir, profile, g)
 # Callbacks for time stepping (plot solution, save time series)
 printer = Printer(; nupdate = 1, verbosity = 2)
 writer = VTKWriter(; nupdate = 5)
-plotter = Plotter{T}(; nupdate = 5)
+plotter = Plotter{T,dim}(; nupdate = 5)
 # callbacks = [printer, plotter]
 callbacks = [printer, plotter, writer]
 
@@ -78,7 +76,7 @@ savefield(model.mesh, ξ, "output/magnetization")
 ## Matrix Formalism
 
 # Perform Laplace eigendecomposition
-laplace = Laplace{T}(; model, matrices, neig_max = 400)
+laplace = Laplace(; model, matrices, neig_max = 400)
 lap_eig = @time solve(laplace)
 length_scales = eig2length.(lap_eig.values, D_avg)
 

@@ -6,7 +6,7 @@ Order coefficients compartment arrays.
 function coefficients end
 
 coefficients(::PlateSetup{T}; D, T₂, ρ, κ, γ) where {T} = (;
-    D = SMatrix{3,3,T,9}.(D),
+    D = T.(D),
     T₂ = T.(T₂),
     κ = [T.(κ.interfaces); T.(κ.boundaries)],
     ρ = Complex{T}.(ρ),
@@ -33,7 +33,7 @@ function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where {T}
 
     # Initialize output arrays
     coeffs = (;
-        D = [zeros(SMatrix{3,3,T}) for _ = 1:ncompartment],
+        D = [zeros(T, 3, 3) for _ = 1:ncompartment],
         T₂ = zeros(T, ncompartment),
         κ = zeros(T, nboundary),
         ρ = zeros(Complex{T}, ncompartment),
@@ -75,25 +75,21 @@ function coefficients(
     if isa(setup, SphereSetup)
         # For a sphere, there is one interface
         nboundary = (include_in + 1) * ncell + include_ecs
+        dim = 3
     elseif isa(setup, CylinderSetup)
         # An axon has a side interface, and a top-bottom boundary
         nboundary = (2 * include_in + 1 + include_ecs) * ncell + include_ecs
+        dim = 3
     end
 
     boundaries = String[]
-    boundary_markers = fill(false, ncompartment, nboundary)
     if include_in
         # Add in-compartments and in-out-interfaces
         compartments = repeat(["in"], ncell)
         boundaries = repeat(["in,out"], ncell)
-        boundary_markers[CartesianIndex.(1:2*ncell, repeat(1:ncell, 2))] .= true
-        ncompartment_old = ncell
-        nboundary_old = ncell
     else
         compartments = []
         boundaries = []
-        ncompartment_old = 0
-        nboundary_old = 0
     end
 
     # Add out-compartments
@@ -103,52 +99,32 @@ function coefficients(
         # Add ecs-compartment and out-ecs interfaces
         push!(compartments, "ecs")
         append!(boundaries, repeat(["out,ecs"], ncell))
-        boundary_markers[CartesianIndex.(
-            [ncompartment_old+1:ncompartment_old+ncell; fill(ncompartment, ncell)],
-            repeat(nboundary_old+1:nboundary_old+ncell, 2),
-        )] .= true
-        nboundary_old = nboundary_old + ncell
     end
 
     if isa(setup, CylinderSetup)
         if include_in
             # Add in boundary
             append!(boundaries, repeat(["in"], ncell))
-            ncompartment_old = ncell
-            boundary_markers[CartesianIndex.(
-                1:ncell,
-                nboundary_old+1:nboundary_old+ncell,
-            )] .= true
-            nboundary_old = nboundary_old + ncell
-        else
-            ncompartment_old = 0
         end
 
         # Add out boundary
         append!(boundaries, repeat(["out"], ncell))
-        boundary_markers[CartesianIndex.(
-            ncompartment_old+1:ncompartment_old+ncell,
-            nboundary_old+1:nboundary_old+ncell,
-        )] .= true
 
         if include_ecs
             # Add ecs boundary
             push!(boundaries, "ecs")
-            boundary_markers[end, end] = true
         end
     elseif include_ecs
         # Add ecs boundary
         push!(boundaries, "ecs")
-        boundary_markers[end, end] = true
     else
         # Add out boundary
         push!(boundaries, "out")
-        boundary_markers[end, end] = true
     end
 
     # Initialize output arrays
     coeffs = (;
-        D = [zeros(SMatrix{3,3,T}) for _ = 1:ncompartment],
+        D = [zeros(T, dim, dim) for _ = 1:ncompartment],
         T₂ = zeros(T, ncompartment),
         κ = zeros(T, nboundary),
         ρ = zeros(Complex{T}, ncompartment),

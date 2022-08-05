@@ -12,30 +12,34 @@ Solve the Bloch-Torrey partial differential equation using P1 finite elements in
 `odesolver` in time.
 """
 function solve(
-    problem::BTPDE{T},
+    problem::BTPDE{T,dim},
     gradient,
-    odesolver::OrdinaryDiffEqAlgorithm = QNDF(autodiff = false);
+    odesolver::OrdinaryDiffEqAlgorithm = QNDF(; autodiff = false);
     abstol = 1e-6,
     reltol = 1e-4,
     callbacks = AbstractCallback[],
-) where {T}
+) where {T,dim}
     (; model, matrices) = problem
     (; γ) = model
     (; M, S, R, Mx, Q) = matrices
 
     ρ = initial_conditions(model)
 
+    # Time dependent Jacobian of ODE function with respect to the state `ξ`
+    function Jac!(J, ξ, p, t)
+        (; S, Q, R, gradient) = p
+         g⃗ = gradient(t)
+        if dim == 2
+            @. J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2]))
+        elseif dim == 3
+            @. J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3]))
+        end
+    end
+
     # Time dependent ODE function
     function Mdξ!(dξ, ξ, p, t)
         Jac!(p.J, ξ, p, t)
         mul!(dξ, p.J, ξ)
-    end
-
-    # Time dependent Jacobian of ODE function with respect to the state `ξ`
-    function Jac!(J, ξ, p, t)
-        (; S, Q, R, gradient) = p
-        g⃗ = gradient(t)
-        @. J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3]))
     end
 
     function func(u, t, integrator)
@@ -56,8 +60,13 @@ function solve(
         initialize!(cb, problem, gradient, ρ, 0)
     end
 
-    odefunction = ODEFunction(Mdξ!; mass_matrix = M, jac = Jac!, jac_prototype)
-    odeproblem = ODEProblem(odefunction, ρ, (0, TE), p, progress = false)
+    function jac(J, ξ, p, t)
+        println("Jac $t")
+        Jac!(J, ξ, p, t)
+    end
+
+    odefunction = ODEFunction(Mdξ!; mass_matrix = M, jac, jac_prototype)
+    odeproblem = ODEProblem(odefunction, ρ, (0, TE), p; progress = false)
 
     callback = FunctionCallingCallback(func; func_start = false)
 

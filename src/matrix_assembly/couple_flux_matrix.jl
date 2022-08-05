@@ -4,7 +4,6 @@
 Create global flux matrix with coupling between compartments.
 """
 function couple_flux_matrix(model, Q_blocks, symmetrical = false)
-
     # Extract mesh fields
     (; mesh, ρ, κ) = model
     (; point_map, points, facets) = mesh

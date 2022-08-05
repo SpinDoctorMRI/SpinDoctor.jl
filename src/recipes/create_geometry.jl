@@ -75,12 +75,12 @@ function create_geometry(setup; recreate = true)
 
     if isfile(fname_tetgen_femesh * ".node") && !recreate
         # Read global mesh from Tetgen output
-        mesh_all = read_tetgen(fname_tetgen_femesh)
+        mesh_all = read_mesh(fname_tetgen_femesh)
     elseif is_stl
         error("Not implemented")
     else
-        mesh_all = call_tetgen(surfaces, refinement)
-        save_tetgen(mesh_all, fname_tetgen_femesh)
+        mesh_all = create_mesh(surfaces, refinement)
+        save_mesh(mesh_all, fname_tetgen_femesh)
     end
 
     # Deform domain

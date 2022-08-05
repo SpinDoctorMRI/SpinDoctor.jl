@@ -4,12 +4,12 @@ Abstract problem.
 abstract type AbstractProblem{T} end
 
 """
-    GeneralBTPDE(; model, matrices)
+    BTPDE(; model, matrices)
 
 Bloch-Torrey PDE problem.
 """
-Base.@kwdef struct BTPDE{T} <: AbstractProblem{T}
-    model::Model{T}
+Base.@kwdef struct BTPDE{T,N} <: AbstractProblem{T}
+    model::Model{T,N}
     matrices::NamedTuple
 end
 
@@ -18,8 +18,8 @@ end
 
 HADC problem.
 """
-Base.@kwdef struct HADC{T} <: AbstractProblem{T}
-    model::Model{T}
+Base.@kwdef struct HADC{T,N} <: AbstractProblem{T}
+    model::Model{T,N}
     matrices::NamedTuple
 end
 
@@ -28,9 +28,9 @@ end
 
 Karger problem.
 """
-Base.@kwdef struct Karger{T} <: AbstractProblem{T}
-    model::Model{T}
-    difftensors::Vector{SMatrix{3,3,T,9}}
+Base.@kwdef struct Karger{T,N} <: AbstractProblem{T}
+    model::Model{T,N}
+    difftensors::Vector{Matrix{T}}
 end
 
 """
@@ -38,8 +38,8 @@ end
 
 Laplace eigenvalue problem.
 """
-Base.@kwdef struct Laplace{T} <: AbstractProblem{T}
-    model::Model{T}
+Base.@kwdef struct Laplace{T,N} <: AbstractProblem{T}
+    model::Model{T,N}
     matrices::NamedTuple
     neig_max::Int
 end
@@ -50,8 +50,8 @@ end
 Matrix formalism problem. Given a Laplace eigendecomposition `lap_eig`, this problem
 consists of computing the MF magnetization.
 """
-Base.@kwdef struct MatrixFormalism{T} <: AbstractProblem{T}
-    model::Model{T}
+Base.@kwdef struct MatrixFormalism{T,N} <: AbstractProblem{T}
+    model::Model{T,N}
     matrices::NamedTuple
     lap_eig::NamedTuple
 end

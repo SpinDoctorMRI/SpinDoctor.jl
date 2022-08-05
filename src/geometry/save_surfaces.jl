@@ -11,24 +11,27 @@ function save_surfaces(filename, surfaces)
     # Extract surface triangulation
     (; points, facets, facetmarkers, regions) = surfaces
 
-    npoint = size(points, 2)
+    dim, npoint = size(points)
     nfacet = size(facets, 2)
     nregion = size(regions, 2)
 
     # Write list of nodes in .node file
     open(filename * ".node", "w") do io
         write(io, "# Part 1 - node list\n")
-        write(io, "# node count, 3D, no attribute, no boundary marker\n")
-        write(io, "$npoint 3 0 0\n")
+        write(io, "# node count, dimension, no attribute, no boundary marker\n")
+        write(io, "$npoint $dim 0 0\n")
         write(io, "# Node index, node coordinates\n")
         for i = 1:npoint
-            write(io, @sprintf "%d %26.16f %26.16f %26.16f\n" i points[:, i]...)
+            if dim == 2
+                write(io, @sprintf("%d %26.16f %26.16f\n", i, points[:, i]...))
+            elseif dim == 3
+                write(io, @sprintf("%d %26.16f %26.16f %26.16f\n", i, points[:, i]...))
+            end
         end
     end
 
     # Write .poly file
     open(filename * ".poly", "w") do io
-
         # Write list of holes (refer to separate file)
         write(io, "# Part 1 - node list\n")
         write(io, "#  0 indicates the node list is stored in file .node\n")
@@ -41,7 +44,11 @@ function save_surfaces(filename, surfaces)
         write(io, "# Node index, node coordinates\n")
         for ifacet = 1:nfacet
             write(io, "1 0 $(facetmarkers[ifacet])\n")
-            write(io, @sprintf "%d %d %d %d \n" 3 facets[:, ifacet]...)
+            if dim == 2
+                write(io, @sprintf "%d %d %d \n" 2 facets[:, ifacet]...)
+            elseif dim == 3
+                write(io, @sprintf "%d %d %d %d \n" 3 facets[:, ifacet]...)
+            end
         end
 
         # Write list of holes (empty)
@@ -52,10 +59,29 @@ function save_surfaces(filename, surfaces)
         write(io, "# Part 4 - region list\n")
         write(io, "$nregion\n")
         for i = 1:nregion
-            write(
-                io,
-                @sprintf "%d %f %f %f %d %f\n" i regions[:, i]... i default_refinement
-            )
+            if dim == 2
+                write(
+                    io,
+                    @sprintf(
+                        "%d %f %f %d %f\n",
+                        i,
+                        regions[:, i]...,
+                        i,
+                        default_refinement
+                    )
+                )
+            elseif dim == 3
+                write(
+                    io,
+                    @sprintf(
+                        "%d %f %f %f %d %f\n",
+                        i,
+                        regions[:, i]...,
+                        i,
+                        default_refinement
+                    )
+                )
+            end
         end
 
     end

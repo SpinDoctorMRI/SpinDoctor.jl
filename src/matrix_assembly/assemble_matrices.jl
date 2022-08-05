@@ -3,7 +3,7 @@
 
 Assemble finite element matrices.
 """
-function assemble_matrices(model)
+function assemble_matrices(model::Model{T,dim}) where {T,dim}
     (; mesh, D, T₂, ρ) = model
 
     # Deduce sizes
@@ -22,7 +22,7 @@ function assemble_matrices(model)
     # Assemble finite element matrices compartment-wise
     M_cmpts = []
     S_cmpts = []
-    Mx_cmpts = [[] for _ = 1:3]
+    Mx_cmpts = [[] for _ = 1:dim]
     G = []
     for icmpt = 1:ncompartment
         # Finite elements
@@ -31,16 +31,16 @@ function assemble_matrices(model)
         fevolumes, = get_mesh_volumes(points, elements)
 
         # Assemble mass, stiffness and flux matrices
-        push!(M_cmpts, assemble_mass_matrix(elements', fevolumes))
-        push!(S_cmpts, assemble_stiffness_matrix(elements', points', D[icmpt]))
+        push!(M_cmpts, assemble_mass_matrix(elements, points))
+        push!(S_cmpts, assemble_stiffness_matrix(elements, points, D[icmpt]))
 
         # Assemble first order product moment matrices
-        for dim = 1:3
-            push!(Mx_cmpts[dim], assemble_mass_matrix(elements', fevolumes, points[dim, :]))
+        for d = 1:dim
+            push!(Mx_cmpts[d], assemble_mass_matrix(elements, points, points[d, :]))
         end
 
         # Compute surface integrals
-        push!(G, zeros(npoint_cmpts[icmpt], 3))
+        push!(G, zeros(npoint_cmpts[icmpt], dim))
         for iboundary = 1:nboundary
             facets = mesh.facets[icmpt, iboundary]
             if !isempty(facets)
@@ -48,9 +48,9 @@ function assemble_matrices(model)
                 _, _, normals = get_mesh_surfacenormals(points, elements, facets)
 
                 # Surface normal weighted flux matrix (in each canonical direction)
-                for dim = 1:3
-                    Q = assemble_flux_matrix(facets', points', normals[dim, :])
-                    G[icmpt][:, dim] += sum(Q, dims = 2)
+                for d = 1:dim
+                    Q = assemble_mass_matrix(facets, points, normals[d, :])
+                    G[icmpt][:, d] += sum(Q; dims = 2)
                 end
             end
         end
@@ -61,7 +61,7 @@ function assemble_matrices(model)
     M = blockdiag(M_cmpts...)
     S = blockdiag(S_cmpts...)
     R = blockdiag((M_cmpts ./ T₂)...)
-    Mx = [blockdiag(Mx_cmpts[dim]...) for dim = 1:3]
+    Mx = [blockdiag(Mx_cmpts[d]...) for d = 1:dim]
     Q_blocks = assemble_flux_matrices(mesh.points, mesh.facets)
     Q = couple_flux_matrix(model, Q_blocks, false)
 

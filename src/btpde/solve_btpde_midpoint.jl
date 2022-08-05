@@ -10,17 +10,18 @@ Solve the Bloch-Torrey partial differential equation using P1 finite elements in
 theta-rule in time.
 This time stepping scheme requires a degree of
 implicitness `θ` and a time step `Δt`:
-- `θ = 0.5`: Crank-Nicolson (second order)
-- `θ = 1.0`: Implicit Euler (first order)
+
+  - `θ = 0.5`: Crank-Nicolson (second order)
+  - `θ = 1.0`: Implicit Euler (first order)
 
 The function only works for interval-wise constant `ScalarGradient`s, and errors otherwise.
 """
 function solve(
-    problem::BTPDE{T},
+    problem::BTPDE{T,dim},
     gradient::ScalarGradient,
     odesolver::IntervalConstantSolver{T};
     callbacks = AbstractCallback[],
-) where {T}
+) where {T,dim}
     (; model, matrices) = problem
     (; θ, timestep) = odesolver
     (; γ) = model
@@ -31,8 +32,13 @@ function solve(
 
     ρ = initial_conditions(model)
 
-    Jac!(J, g⃗) =
-        @.(J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3])))
+    function Jac!(J, g⃗)
+        if dim == 2
+            @.(J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2])))
+        elseif dim == 3
+            @.(J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3])))
+        end
+    end
 
     t = 0.0
     ξ = copy(ρ)

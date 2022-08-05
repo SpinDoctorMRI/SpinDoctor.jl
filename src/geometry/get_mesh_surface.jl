@@ -1,32 +1,42 @@
 """
     get_mesh_surface(points, facets)
-    
+
 Compute surface areas, centers and normals for each facet.
 """
 function get_mesh_surface(points, facets)
-
-    # Number of facets
+    dim = size(points, 1)
     nfacet = size(facets, 2)
 
     # Facets
     x = points[:, facets]
 
     # Facet centers
-    centers = reshape(mean(x, dims = 2), 3, nfacet)
+    centers = reshape(mean(x; dims = 2), dim, nfacet)
 
     # Facet normals
-    normals = reshape(
-        mapslices(x -> (x[:, 1] - x[:, 2]) × (x[:, 3] - x[:, 2]), x, dims = [1, 2]),
-        3,
-        nfacet,
-    )
+    if dim == 2
+        normals = reshape(
+            mapslices(x; dims = [1, 2]) do x
+                v = x[:, 1] - x[:, 2]
+                [v[2], -v[1]]
+            end,
+            2,
+            nfacet,
+        )
+    elseif dim == 3
+        normals = reshape(
+            mapslices(x -> 1 / 2 * (x[:, 1] - x[:, 2]) × (x[:, 3] - x[:, 2]), x; dims = [1, 2]),
+            3,
+            nfacet,
+        )
+    end
 
     # Facet areas
-    areas = 1 / 2 * reshape(mapslices(norm, normals, dims = 1), nfacet)
+    areas = reshape(mapslices(norm, normals; dims = 1), :)
     total_area = sum(areas)
 
     # Normalize normals
-    normals = normals ./ 2areas'
+    normals = normals ./ sqrt.(sum(abs2, normals; dims = 1))
 
     total_area, areas, centers, normals
 end
