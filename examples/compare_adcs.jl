@@ -37,13 +37,11 @@ end
 # should allow for free diffusion in the horizontal direction, but a rather restricted
 # vertical diffusion with the permeable membranes.
 
+T = Float64
 ncell = 5
-groundsetup = PlateSetup(;
+setup = SlabSetup{T}(;
     depth = 50.0,
     widths = fill(5.0, ncell),
-)
-setup = ExtrusionSetup(;
-    groundsetup,
     height = 50.0,
     bend = 0.0,
     twist = 0.0,
@@ -62,7 +60,7 @@ coeffs = coefficients(
 
 # We then proceed to build the geometry and finite element mesh.
 
-mesh, = create_geometry(setup; recreate = true)
+mesh, = create_geometry(setup)
 plot_mesh(mesh)
 
 # The mesh looks good, so we may then proceed to assemble the biological model and the

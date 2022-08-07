@@ -42,7 +42,7 @@ coeffs = coefficients(
 
 # We then proceed to build the geometry and finite element mesh.
 
-mesh, = create_geometry(setup; recreate = true)
+mesh, = create_geometry(setup)
 plot_mesh(mesh)
 
 # The mesh looks good, so we may then proceed to assemble the biological model and the

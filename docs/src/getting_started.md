@@ -5,11 +5,8 @@
 To install SpinDoctor, run the following commands:
 
 ```
-git clone https://github.com/SpinDoctorMRI/SpinDoctor.jl
-cd SpinDoctor.jl
-julia --project
-]instantiate
+using Pkg
+Pkg.add("SpinDoctor")
 ```
 
-The last line takes you into the package mode (`]`). The `instantiate` command then installs all
-dependencies.
+Multiple examples are found in the `examples` directory.

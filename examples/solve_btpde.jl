@@ -27,11 +27,16 @@ T = Float64
 
 # The built in geometry recipes allow for making various cell configurations.
 # We here consider the case of three twisted axons immersed in an
-# extracellular space (ECS). The axons are extruded from a 2D `groundsetup`
+# extracellular space (ECS). The axons are extruded from a 2D ground setup
 # consisting of three random disks.
 
-groundsetup = DiskSetup{T}(; ncell = 3, ecs_shape = :convex_hull)
-setup = ExtrusionSetup(; groundsetup, height = 40.0, bend = 0.0, twist = π / 4)
+setup = CylinderSetup{T}(;
+    ncell = 3,
+    ecs_shape = :convex_hull,
+    height = 40.0,
+    bend = 0.0,
+    twist = π / 4,
+)
 
 # We also define parameters for the cell compartments and ECS. The required
 # parameters are:
@@ -52,12 +57,7 @@ coeffs = coefficients(
     D = (; cell = [0.002 * I(3)], ecs = 0.002 * I(3)),
     T₂ = (; cell = [Inf], out = Inf, ecs = Inf),
     ρ = (; cell = [1.0], out = 1.0, ecs = 1.0),
-    κ = (;
-        cell_interfaces = zeros(0),
-        cell_boundaries = [0.0],
-        cell_ecs = 1e-4,
-        ecs = 0.0,
-    ),
+    κ = (; cell_interfaces = zeros(0), cell_boundaries = [0.0], cell_ecs = 1e-4, ecs = 0.0),
     γ = 2.67513e-4,
 )
 
