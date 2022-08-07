@@ -1,9 +1,12 @@
 # Floating point type for simulations
 T = Float64
 
+# Name for saving meshfiles and data
+name = "disks"
+meshdir = joinpath("meshfiles", name)
+
 # Geometrical setup
 setup = DiskSetup{T}(;
-    name = "disks/somedisks",
     ncell = 3,
     nsidewall = 30,
     rmin = 2.0,

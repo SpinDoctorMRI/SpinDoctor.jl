@@ -88,14 +88,13 @@ name = "spindles/06b_spindle8aACC"
 
 ## Resulting neuron filename
 name = prefix * name * postfix
+meshdir = joinpath(neuron_dir, name)
 
 # Floating point type for simulations
 T = Float64
 
 # Geometrical setup
 setup = NeuronSetup{T}(;
-    name,
-    meshdir = neuron_dir,
     ecs_shape = :no_ecs,
     ecs_ratio = 0.3,
     # refinement = 0.5,

@@ -92,7 +92,8 @@ cylinders, spheres, and neurons.
 
 ```@docs
 PlateSetup
-CylinderSetup
+DiskSetup
+ExtrusionSetup
 SphereSetup
 NeuronSetup
 coefficients

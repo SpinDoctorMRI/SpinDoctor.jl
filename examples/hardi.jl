@@ -28,7 +28,7 @@ end
 # vertical diffusion with the permeable membranes.
 
 ncell = 5
-groundsetup = PlateSetup{T}(;
+groundsetup = PlateSetup(;
     depth = 50.0,
     widths = fill(5.0, ncell),
 )

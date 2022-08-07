@@ -21,7 +21,6 @@ else
 end
 
 setup = SphereSetup(;
-    name = "gaze-into-the-orb",
     ncell = 1,
     rmin = 2.0,
     rmax = 6.0,

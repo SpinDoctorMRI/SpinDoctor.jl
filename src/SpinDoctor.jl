@@ -67,7 +67,14 @@ export compute_signal
 export Printer, VTKWriter, Plotter
 
 # Recipes
-export AbstractSetup, PlateSetup, ExtrusionSetup, DiskSetup, SphereSetup, NeuronSetup
+export AbstractSetup,
+    PlateSetup,
+    ExtrusionSetup,
+    DiskSetup,
+    SphereSetup,
+    NeuronSetup,
+    CylinderSetup,
+    SlabSetup
 export coefficients, analytical_coefficients
 export create_geometry
 

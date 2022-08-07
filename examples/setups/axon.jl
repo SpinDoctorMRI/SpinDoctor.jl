@@ -1,19 +1,18 @@
 # Floating point type for simulations
 T = Float64
 
+# Name for saving meshfiles and data
+name = "axon"
+meshdir = joinpath("meshfiles", name)
+
 # Geometrical setup
-groundsetup = DiskSetup{T}(;
+setup = CylinderSetup{T}(;
     ncell = 1,
     nsidewall = 30,
     rmin = 5.0,
     rmax = 5.0,
     layersizes = [0.25, 0.5, 0.75, 1.0],
     ecs_shape = :no_ecs,
-    # refinement = 1.0,
-)
-setup = ExtrusionSetup(;
-    name = "cylinders/axon",
-    groundsetup,
     height = 50.0,
     bend = 0.0,
     twist = 0.0,
@@ -21,7 +20,7 @@ setup = ExtrusionSetup(;
 )
 
 # Get compartimentalized coefficient vectors
-nlayer = length(setup.groundsetup.layersizes)
+nlayer = length(groundsetup.layersizes)
 coeffs = coefficients(
     setup;
     D = (; cell = [0.002 * I(3) for _ = 1:nlayer], ecs = 0.002 * I(3)),

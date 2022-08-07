@@ -1,9 +1,12 @@
 # Floating point type for simulations
 T = Float64
 
+# Name for saving meshfiles and data
+name = "sphere"
+meshdir = joinpath("meshfiles", name)
+
 # Geometrical setup
 setup = SphereSetup{T}(;
-    name = "spheres/sphere",
     ncell = 1,
     rmin = 5.0,
     rmax = 5.0,

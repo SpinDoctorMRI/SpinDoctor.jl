@@ -1,9 +1,12 @@
 # Floating point type for simulations
 T = Float64
 
+# Name for saving meshfiles and data
+name = "plates"
+meshdir = joinpath("meshfiles", name)
+
 # Geometrical setup
 setup = PlateSetup{T}(;
-    name = "plates/someplates",
     depth = 20.0,
     widths = fill(5.0, 10),
     refinement = 1.0,

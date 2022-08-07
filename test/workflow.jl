@@ -1,6 +1,7 @@
 # TODO: Make tests pass for
 # - T ∈ [Float32, Float64]
-# - Setup ∈ [PlateSetup, CylinderSetup, SphereSetup, NeuronSetup]
+# - Setup ∈ [PlateSetup, DiskSetup, ExtrusionSetup, Setup, SphereSetup,
+#            NeuronSetup]
 # - Gradient ∈ [GeneralGradient, ScalarGradient] (all time profiles)
 
 # Floating point type for simulations
@@ -10,34 +11,48 @@ T = Float64
     @testset "PlateSetup" begin
         setup = get_setup(PlateSetup{T})
         coeffs = get_coeffs(setup)
-        mesh, = create_geometry(setup; recreate = true)
+        mesh, = create_geometry(setup)
+        model = Model(; mesh, coeffs...)
+    end
+
+    @testset "SlabSetup" begin
+        setup = get_setup(SlabSetup{T})
+        coeffs = get_coeffs(setup)
+        mesh, = create_geometry(setup)
+        model = Model(; mesh, coeffs...)
+    end
+
+    @testset "DiskSetup" begin
+        setup = get_setup(DiskSetup{T})
+        coeffs = get_coeffs(setup)
+        mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "CylinderSetup" begin
         setup = get_setup(CylinderSetup{T})
         coeffs = get_coeffs(setup)
-        mesh, = create_geometry(setup; recreate = true)
+        mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "SphereSetup" begin
         setup = get_setup(SphereSetup{T})
         coeffs = get_coeffs(setup)
-        mesh, = create_geometry(setup; recreate = true)
+        mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "NeuronSetup" begin
         setup = get_setup(NeuronSetup{T})
         coeffs = get_coeffs(setup)
-        mesh, = create_geometry(setup; recreate = true)
+        mesh, = create_geometry(setup; meshdir = "meshfiles/neuron")
         model = Model(; mesh, coeffs...)
     end
 end
 
 # Geometrical setup
-setup = get_setup(CylinderSetup{T})
+setup = get_setup(SlabSetup{T})
 coeffs = get_coeffs(setup)
 
 # Get compartimentalized coefficient vectors
@@ -64,8 +79,8 @@ ogse_gradient = ScalarGradient(dir, profile, g)
 TE = 5000
 φ = -π / 6
 R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
- g⃗(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
-  general_gradient = GeneralGradient{T,typeof(g⃗)}(; g⃗, TE)
+g⃗(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
+general_gradient = GeneralGradient{T,typeof(g⃗)}(; g⃗, TE)
 
 
 @testset "Signal" begin
@@ -90,10 +105,8 @@ end
 
 @testset "BTPDE" begin
     btpde = BTPDE(; model, matrices)
-
     @test solve(btpde, general_gradient) isa Vector{Complex{T}}
     @test solve(btpde, ogse_gradient) isa Vector{Complex{T}}
-
     solver = IntervalConstantSolver{T}(; θ = 0.5, timestep = 5)
     @test_throws MethodError solve(btpde, general_gradient, solver) isa Vector{Complex{T}}
     @test_throws ErrorException solve(btpde, ogse_gradient, solver) isa Vector{Complex{T}}
@@ -101,7 +114,6 @@ end
 end
 
 @testset "Karger" begin
-    # Compute HADC and fit difftensors
     directions = unitsphere(10)
     gradients = [
         ScalarGradient(collect(d), pgse_gradient.profile, pgse_gradient.amplitude) for
@@ -110,24 +122,18 @@ end
     hadc = HADC(; model, matrices)
     adcs, = solve_multigrad(hadc, gradients)
     difftensors = fit_tensors(directions, adcs)
-
-    # Solve Karger
     karger = Karger(; model, difftensors)
     signal = solve(karger, pgse_gradient; timestep = 5.0)
 end
 
 @testset "Matrix formalism" begin
-    # Perform Laplace eigendecomposition
-    laplace = Laplace{T}(; model, matrices, neig_max = 400)
+    laplace = Laplace(; model, matrices, neig_max = 400)
     lap_eig = solve(laplace)
     length_scales = eig2length.(lap_eig.values, D_avg)
-
-    # Truncate basis at minimum length scale
     length_scale = 3
     λ_max = length2eig(length_scale, D_avg)
     lap_eig = limit_lengthscale(lap_eig, λ_max)
     @test all(λ -> eig2length(λ, D_avg) ≥ length_scale, lap_eig.values)
-
     mf = MatrixFormalism(; model, matrices, lap_eig)
     @test solve(mf, general_gradient) isa Vector{Complex{T}}
     @test solve(mf, pgse_gradient) isa Vector{Complex{T}}

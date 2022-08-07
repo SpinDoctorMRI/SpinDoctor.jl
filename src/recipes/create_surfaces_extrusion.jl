@@ -7,7 +7,7 @@ The ground surface is triangulated first, before the walls are "extruded" and
 the top surface is copied from the ground surface.
 """
 function create_surfaces(setup::ExtrusionSetup, cells)
-    (; name, groundsetup, height, refinement) = setup
+    (; groundsetup, height, refinement) = setup
 
     # using SpinDoctor: create_surfaces, create_mesh
 

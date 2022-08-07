@@ -22,7 +22,7 @@ include("setups/plates.jl")
 # include("setups/sphere.jl")
 # include("setups/spheres.jl")
 
-mesh, surfaces, cells = @time create_geometry(setup; recreate = true);
+mesh, surfaces, cells = @time create_geometry(setup; meshdir, recreate = true);
 model = Model(; mesh, coeffs...);
 dim = size(surfaces.points, 1)
 volumes = get_cmpt_volumes(model.mesh)
@@ -55,7 +55,7 @@ gradient = ScalarGradient(dir, profile, g)
 
 # Callbacks for time stepping (plot solution, save time series)
 printer = Printer(; nupdate = 1, verbosity = 2)
-writer = VTKWriter(; nupdate = 5)
+writer = VTKWriter(; dir = joinpath("output", name), nupdate = 5)
 plotter = Plotter{T,dim}(; nupdate = 5)
 callbacks = [printer, plotter]
 # callbacks = [printer, plotter, writer]
@@ -77,7 +77,7 @@ compute_signal(matrices.M, ξ)
 compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
 
 ## Save magnetization
-savefield(model.mesh, ξ, "output/magnetization")
+savefield(model.mesh, ξ, joinpath("output", name, "magnetization"))
 
 
 ## Matrix Formalism

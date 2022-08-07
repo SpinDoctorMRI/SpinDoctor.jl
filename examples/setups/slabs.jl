@@ -1,22 +1,20 @@
 # Floating point type for simulations
 T = Float64
 
-groundsetup = PlateSetup{T}(;
-    depth = 50.0,
-    widths = fill(5.0, 5),
-)
+# Name for saving meshfiles and data
+name = "slabs"
+meshdir = joinpath("meshfiles", name)
 
 # Geometrical setup
-setup = ExtrusionSetup(;
-    name = "slabs/someslabs",
-    groundsetup,
+ncell = 5
+setup = SlabSetup{T}(;
+    depth = 50.0,
+    widths = fill(5.0, ncell),
     height = 50.0,
-    bend = 0.0,
-    twist = 0.0,
+    bend = 0.03,
+    twist = π / 6,
     refinement = 10.0,
 )
-
-ncell = length(groundsetup.widths)
 
 # Get compartimentalized coefficient vectors
 coeffs = coefficients(
