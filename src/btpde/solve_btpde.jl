@@ -78,6 +78,7 @@ function solve(
         abstol,
         callback,
         save_everystep = false,
+        tstops = intervals(gradient)[2:end],
     )
 
     finalize!.(callbacks)
