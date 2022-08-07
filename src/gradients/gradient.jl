@@ -26,12 +26,12 @@ The direction is constant, while the amplitude is controlled by the time profile
 
 The direction is normalized upon construction.
 """
-struct ScalarGradient{T}
+struct ScalarGradient{T,P<:AbstractTimeProfile{T}}
     dir::Vector{T}
-    profile::TimeProfile{T}
+    profile::P
     amplitude::T
     ScalarGradient(dir, profile, amplitude) =
-        new{typeof(amplitude)}(dir / norm(dir), profile, amplitude)
+        new{typeof(amplitude),typeof(profile)}(dir / norm(dir), profile, amplitude)
 end
 
 (g::GeneralGradient)(t) = g.g⃗(t)
