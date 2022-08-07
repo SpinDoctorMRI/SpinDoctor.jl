@@ -4,57 +4,51 @@
 Create surface triangulation of a collection of stacked plates.
 """
 function create_surfaces(setup::PlateSetup{T}, _) where {T}
-    (; width, depth, heights) = setup
+    (; widths, depth) = setup
 
-    n = length(heights)
-    h = sum(heights) / 2
-    z = cumsum([-h; heights])
-    x = width / 2
+    n = length(widths)
+    w = sum(widths) / 2
+    x = cumsum([-w; widths])
     y = depth / 2
 
-    points = zeros(T, 3, 4(n + 1))
-    for i = 1:(n+1)
-        points[:, (1+4(i-1)):(4i)] = [
-            -x x x -x
-            -y -y y y
-            z[i] z[i] z[i] z[i]
+    points = zeros(T, 2, 2(n + 1))
+    for i = 1:n+1
+        points[:, 1+2(i-1):2i] = [
+            x[i] x[i]
+            -y y
         ]
     end
 
-    facets = fill(0, 3, 2 + 10n)
-    facets[:, 1:2] = [
-        1 1
-        2 3
-        3 4
-    ]
+    edges = fill(0, 2, 1 + 3n)
+    edges[:, 1] = [1, 2]
     for i = 1:n
-        inds = 2 + 10(i - 1) .+ (1:10)
-        facets[:, inds] .=
-            4(i - 1) .+ [
-                1 1 2 2 3 3 4 4 6 6
-                2 6 3 7 4 8 1 5 7 8
-                6 5 7 6 8 7 5 8 8 5
+        inds = 1 + 3(i - 1) .+ (1:3)
+        edges[:, inds] .=
+            2(i - 1) .+ [
+                1 4 3
+                3 2 4
             ]
     end
 
-    facetmarkers = fill(0, 2 + 10n)
+    ninterface = (n - 1) * n ÷ 2
+    edgemarkers = fill(0, 1 + 3n)
 
-    # Bottom and first side walls
-    facetmarkers[1:10] .= n
+    # Left and first side walls
+    edgemarkers[1:3] .= ninterface + 1
 
     # Interfaces and side walls after interface
     for i = 1:(n-1)
-        facetmarkers[10i+1] = i
-        facetmarkers[10i+2] = i
-        facetmarkers[(10i+3):(10(i+1))] .= n + i
+        edgemarkers[3i+1] = (i - 1) * (2 * n - i) ÷ 2 + 1
+        edgemarkers[3i+2] = ninterface + 1 + i
+        edgemarkers[3i+3] = ninterface + 1 + i
     end
 
-    # Top
-    facetmarkers[(end-1):end] .= 2n - 1
+    # Right
+    edgemarkers[end] = ninterface + n
 
-    regions = zeros(T, 3, n)
-    regions[3, :] .= (z[1:(end-1)] .+ z[2:end]) ./ 2
+    regions = zeros(T, 2, n)
+    regions[1, :] .= (x[1:(end-1)] .+ x[2:end]) ./ 2
 
 
-    (; points, facets, facetmarkers, regions)
+    (; points, facets = edges, facetmarkers = edgemarkers, regions)
 end

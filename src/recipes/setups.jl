@@ -7,43 +7,54 @@ abstract type AbstractSetup{T} end
 Setup recipe for a set of stacked plates.
 """
 Base.@kwdef struct PlateSetup{T} <: AbstractSetup{T}
-    name::String
+    name::String = "plates"
     meshdir = "meshfiles"
-    width::T
     depth::T
-    heights::Vector{T}
-    bend::T = 0
-    twist::T = 0
+    widths::Vector{T} = [1, 1, 1, 1, 1]
     refinement::T = Inf
 end
 
 """
-Setup recipe for a set of cylinders immersed in a ECS.
+    DiskSetup
+
+Setup recipe for a set of 2D disks immersed in a ECS.
 """
-Base.@kwdef struct CylinderSetup{T} <: AbstractSetup{T}
-    name::String
+Base.@kwdef struct DiskSetup{T} <: AbstractSetup{T}
+    name::String = "disks"
     meshdir = "meshfiles"
     ncell::Int
-    nsidewall::Int # Average number of edges of circle defining the cylinder
-    rmin::T
-    rmax::T
-    dmin::T
-    dmax::T
-    height::T
+    nlayer::Int = 1
+    layersizes::Vector{T} = [1]
+    rmin::T = 2
+    rmax::T = 6
+    dmin::T = 2//5
+    dmax::T = 3//5
+    nsidewall::Int = 12 # Average number of edges of circle defining the cylinder
+    ecs_shape::Symbol = :no_ecs
+    ecs_ratio::T = 1//2
+    refinement::T = Inf
+end
+
+"""
+    ExtrusionSetup
+
+Setup recipe for an "extruded" 2D geometry, based on a 2D setup `groundsetup`.
+"""
+Base.@kwdef struct ExtrusionSetup{T,S} <: AbstractSetup{T}
+    name::String = "extrusion"
+    meshdir::String = "meshfiles"
+    groundsetup::S
+    refinement::T = Inf
+    height::T = 1
     bend::T = 0
     twist::T = 0
-    include_in::Bool = false
-    in_ratio::T = 0.5
-    ecs_shape::Symbol = :no_ecs
-    ecs_ratio::T = 0.5
-    refinement::T = Inf
 end
 
 """
 Setup recipe for a set of spheres immersed in a ECS.
 """
 Base.@kwdef struct SphereSetup{T} <: AbstractSetup{T}
-    name::String
+    name::String = "spheres"
     meshdir = "meshfiles"
     ncell::Int
     rmin::T
@@ -61,7 +72,7 @@ end
 Setup recipe for a neuron, possibly wrapped in a ECS.
 """
 Base.@kwdef struct NeuronSetup{T} <: AbstractSetup{T}
-    name::String
+    name::String = "neuron"
     meshdir = "meshfiles"
     ecs_shape::Symbol = :no_ecs
     ecs_ratio::T = 0.5

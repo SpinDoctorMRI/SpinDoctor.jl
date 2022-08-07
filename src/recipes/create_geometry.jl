@@ -29,17 +29,13 @@ function create_geometry(setup; recreate = true)
             error("Invalid ECS shape")
     end
 
-    if setup isa Union{CylinderSetup,SphereSetup}
-        # Check if cell description file is already available
-        cellfilename = filename * "_cells"
-        if isfile(cellfilename) && !recreate
-            cells = read_cells(cellfilename)
-        else
-            cells = create_cells(setup)
-            save_cells(cells, cellfilename)
-        end
+    # Check if cell description file is already available
+    cellfilename = filename * "_cells"
+    if isfile(cellfilename) && !recreate
+        cells = read_cells(cellfilename)
     else
-        cells = nothing
+        cells = create_cells(setup)
+        isnothing(cells) || save_cells(cells, cellfilename)
     end
 
     # Make directory for storing finite elements mesh
@@ -84,13 +80,24 @@ function create_geometry(setup; recreate = true)
     end
 
     # Deform domain
-    if isa(setup, CylinderSetup) && (setup.bend > 1e-16 || setup.twist > 1e-16)
+    if isa(setup, ExtrusionSetup) && (setup.bend > 1e-16 || setup.twist > 1e-16)
         @debug "Deforming domain with bend $(setup.bend) and twist $(setup.twist)"
         deform_domain!(mesh_all.points, setup.bend, setup.twist)
     end
 
     # Split mesh into compartments
     mesh = split_mesh(mesh_all)
+
+    ncompartment = length(mesh.points) 
+    for i = 1:ncompartment, j = [1:i-1; i+1:ncompartment]
+        isempty(mesh.facets[i, end-ncompartment+j]) || @warn(
+            """
+            Outer boundary of compartment $i is registered as
+            an interface to compartment $j, this is not intended.
+            Consider rerunning `create_geometry`.
+            """,
+        )
+    end
 
     mesh, surfaces, cells
 end

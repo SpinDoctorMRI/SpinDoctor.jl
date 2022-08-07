@@ -67,7 +67,7 @@ export compute_signal
 export Printer, VTKWriter, Plotter
 
 # Recipes
-export AbstractSetup, PlateSetup, CylinderSetup, SphereSetup, NeuronSetup
+export AbstractSetup, PlateSetup, ExtrusionSetup, DiskSetup, SphereSetup, NeuronSetup
 export coefficients, analytical_coefficients
 export create_geometry
 
@@ -102,7 +102,6 @@ include("problems/solve_multigrad.jl")
 # Geometry
 include("geometry/create_mesh.jl")
 include("geometry/convexhull.jl")
-include("geometry/create_cells.jl")
 include("geometry/create_fibonacci_sphere.jl")
 include("geometry/deform_domain.jl")
 include("geometry/get_volumes.jl")
@@ -179,9 +178,11 @@ include("callbacks/finalize.jl")
 # Recipes
 include("recipes/setups.jl")
 include("recipes/coefficients.jl")
+include("recipes/create_cells.jl")
 include("recipes/create_surfaces.jl")
+include("recipes/create_surfaces_disks.jl")
 include("recipes/create_surfaces_plates.jl")
-include("recipes/create_surfaces_cylinder.jl")
+include("recipes/create_surfaces_extrusion.jl")
 include("recipes/create_surfaces_sphere.jl")
 include("recipes/create_surfaces_neuron.jl")
 include("recipes/create_geometry.jl")

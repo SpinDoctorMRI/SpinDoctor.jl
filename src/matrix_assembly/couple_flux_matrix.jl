@@ -14,17 +14,16 @@ function couple_flux_matrix(model, Q_blocks, symmetrical = false)
     npoint = inds_cmpts[end]
     get_inds(icmpt) = inds_cmpts[icmpt]+1:inds_cmpts[icmpt+1]
 
-
     # Assemble sparse block diagonal flux matrix
     Q = spzeros(npoint, npoint)
 
     # Couple flux matrix at boundaries
     for iboundary = 1:nboundary
-
         # Check if boundary is an interface between two compartments
         cmpts_touch = findall(.!isempty.(facets[:, iboundary]))
         ntouch = length(cmpts_touch)
-        if ntouch == 1
+        if ntouch == 0
+        elseif ntouch == 1
             # Only one compartment touches boundary. It is thus an outer boundary,
             # and may possibly have a boundary relaxation coefficient
             cmpt = cmpts_touch[1]
@@ -33,7 +32,7 @@ function couple_flux_matrix(model, Q_blocks, symmetrical = false)
             inds = get_inds(cmpt)
 
             # Add boundary contribution to global flux matrix for compartment
-            Q[inds, inds] += κ[iboundary] * Q_blocks[cmpt, iboundary]
+            κ[iboundary] ≈ 0 || (Q[inds, inds] += κ[iboundary] * Q_blocks[cmpt, iboundary])
         elseif ntouch == 2
             # Extract flux matrices from corresponding compartments
             cmpt₁, cmpt₂ = cmpts_touch[1], cmpts_touch[2]

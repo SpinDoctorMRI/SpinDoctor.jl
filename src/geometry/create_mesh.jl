@@ -10,7 +10,22 @@ function create_mesh(surfaces, refinement)
     dim = size(points, 1)
     nregion = size(regions, 2)
 
-    if dim == 3
+    if dim == 2
+        regionlist = [regions; (1:nregion)'; fill(refinement, 1, nregion)]
+
+        triin = TriangulateIO()
+        triin.pointlist = points
+        triin.segmentlist = facets
+        triin.segmentmarkerlist = facetmarkers
+        triin.regionlist = regionlist
+        triout = first(triangulate("pcaAQ", triin))
+
+        points = triout.pointlist
+        facets = Int.(triout.segmentlist)
+        facetmarkers = Int.(triout.segmentmarkerlist)
+        elements = Int.(triout.trianglelist)
+        elementmarkers = round.(Int, triout.triangleattributelist[:])
+    elseif dim == 3
         input = RawTetGenIO{Cdouble}()
         input.pointlist = points
 
@@ -35,21 +50,6 @@ function create_mesh(surfaces, refinement)
         facetmarkers = Int.(tetgen.trifacemarkerlist)
         elements = Int.(tetgen.tetrahedronlist)
         elementmarkers = Int.(tetgen.tetrahedronattributelist[:])
-    else
-        regionlist = [regions; (1:nregion)'; fill(refinement, 1, nregion)]
-
-        triin = TriangulateIO()
-        triin.pointlist = points
-        triin.segmentlist = facets
-        triin.segmentmarkerlist = facetmarkers
-        triin.regionlist = regionlist
-        triout = first(triangulate("pcaAQ", triin))
-
-        points = triout.pointlist
-        facets = Int.(triout.segmentlist)
-        facetmarkers = Int.(triout.segmentmarkerlist)
-        elements = Int.(triout.trianglelist)
-        elementmarkers = round.(Int, triout.triangleattributelist[:])
     end
 
     (; points, facets, facetmarkers, elements, elementmarkers)

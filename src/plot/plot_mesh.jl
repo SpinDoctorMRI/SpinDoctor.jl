@@ -16,11 +16,14 @@ function plot_mesh(femesh::FEMesh{T,2}, compartments = 1:length(femesh.points)) 
     fig
 end
 
-function plot_mesh(femesh::FEMesh{T,3}, compartments = 1:length(femesh.points)) where {T}
-    nboundary = size(femesh.facets, 2)
-    scene = nothing
+function plot_mesh(
+    femesh::FEMesh{T,3},
+    compartments = 1:length(femesh.points),
+    boundaries = 1:size(femesh.facets, 2),
+) where {T}
+    scene = Figure()
     first = true
-    for icmpt ∈ compartments, iboundary = 1:nboundary
+    for icmpt ∈ compartments, iboundary ∈ boundaries
         facets = femesh.facets[icmpt, iboundary]
         if !isempty(facets)
             points = femesh.points[icmpt]

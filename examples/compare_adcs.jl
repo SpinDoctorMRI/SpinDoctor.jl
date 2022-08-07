@@ -38,18 +38,22 @@ end
 # vertical diffusion with the permeable membranes.
 
 ncell = 5
-setup = PlateSetup(;
-    name = "Plates",
-    width = 50.0,
+groundsetup = PlateSetup(;
     depth = 50.0,
-    heights = fill(5.0, ncell),
+    widths = fill(5.0, ncell),
+)
+setup = ExtrusionSetup(;
+    groundsetup,
+    height = 50.0,
     bend = 0.0,
     twist = 0.0,
     refinement = 10.0,
 )
+d = fill(0.002, ncell)
+d[2] = 0.005
 coeffs = coefficients(
     setup;
-    D = [0.002 * I(3) for _ = 1:ncell],
+    D = [d * I(3) for d ∈ d],
     T₂ = fill(Inf, ncell),
     ρ = fill(1.0, ncell),
     κ = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
@@ -74,9 +78,10 @@ volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
 ncompartment = length(model.mesh.points)
 
-# The gradient pulse sequence will be a PGSE with both vertical and horizontal components.
-# This allows for both restricted vertical diffusion and almost unrestricted horizontal
-# diffusion. The different approaches should hopefully confirm this behaviour.
+# The gradient pulse sequence will be a PGSE with both x and z components.
+# This allows for both restricted horizontal diffusion and almost unrestricted
+# vertical diffusion. The different approaches should hopefully confirm this
+# behaviour.
 
 dir = [1.0, 0.0, 1.0]
 profile = PGSE(2500.0, 4000.0)

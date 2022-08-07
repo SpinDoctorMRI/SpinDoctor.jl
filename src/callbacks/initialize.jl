@@ -104,21 +104,21 @@ function initialize!(p::Plotter{T,dim}, problem, gradient, ξ, t) where {T,dim}
     gm = p.fig[2, 2] = GridLayout()
     # colormap = :cyclic_wrwbw_40_90_c42_n256
     colormap = :cyclic_mrybm_35_75_c68_n256
+    # colorrange = (-0.99π, 0.99π)
+    colorrange = (-π, π)
     if dim == 2
         gm = p.fig[2, 2] = GridLayout()
         ax = Axis(gm[1, 1]; title = "Magnetization (phase-shift)")
-        colorrange = (-π, π)
         for icmpt = 1:ncompartment
             elements = femesh.elements[icmpt]
             points = femesh.points[icmpt]
             color = p.phase[icmpt]
             color[] = angle.(ξ_cmpts[icmpt])
-            mesh!(ax, points', elements'; color, shading = false, colorrange, colormap)
+            mesh!(ax, points', elements'; color, shading = false, colorrange)
         end
     elseif dim == 3
         ax = Axis3(gm[1, 1]; title = "Magnetization (phase-shift)")
         ax.aspect = :data
-        colorrange = (-π, π)
         for icmpt = 1:ncompartment, iboundary = 1:nboundary
             facets = femesh.facets[icmpt, iboundary]
             if !isempty(facets)

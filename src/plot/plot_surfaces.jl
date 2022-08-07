@@ -5,18 +5,22 @@ Plot surfaces.
 """
 function plot_surfaces(surfaces, boundaries = 1:maximum(surfaces.facetmarkers))
     (; points, facets, facetmarkers) = surfaces
-    dim = size(points, 1)
+    dim, npoint = size(points)
     if dim == 2
         fig = Figure()
         ax = Axis(fig[1, 1])
-        for (i, b) ∈ enumerate(boundaries)
+        i = 1
+        for b ∈ boundaries
             f = facets[:, facetmarkers .== b]
-            segs = [(Point2f(points[:, f[1]]), Point2f(points[:, f[2]])) for f ∈ eachcol(f)]
-            linesegments!(ax, segs, color = Cycled(i))
+            if !isempty(f)
+                segs = [(Point2f(points[:, f[1]]), Point2f(points[:, f[2]])) for f ∈ eachcol(f)]
+                linesegments!(ax, segs, color = Cycled(i))
+                i += 1
+            end
         end
         scene = fig
     elseif dim == 3
-        scene = nothing
+        scene = Figure()
         first = true
         for b ∈ boundaries
             f = facets[:, facetmarkers .== b]

@@ -15,8 +15,10 @@ using GLMakie
 ## Create model from setup recipe
 # include("setups/axon.jl")
 # include("setups/cylinders.jl")
+# include("setups/disks.jl")
 # include("setups/neuron.jl")
 include("setups/plates.jl")
+# include("setups/slabs.jl")
 # include("setups/sphere.jl")
 # include("setups/spheres.jl")
 
@@ -24,19 +26,24 @@ mesh, surfaces, cells = @time create_geometry(setup; recreate = true);
 model = Model(; mesh, coeffs...);
 dim = size(surfaces.points, 1)
 volumes = get_cmpt_volumes(model.mesh)
-D_avg = 1 / 2 * tr.(model.D)' * volumes / sum(volumes)
+D_avg = 1 / dim * tr.(model.D)' * volumes / sum(volumes)
 @info "Number of nodes per compartment:" length.(model.mesh.points)
 
 ## Plot mesh
-plot_surfaces(surfaces, 1:4)
-plot_mesh(model.mesh, 1:2)
-plot_mesh(model.mesh)
+plot_surfaces(surfaces)
+plot_surfaces(surfaces, 1:10)
+plot_mesh(mesh, 1:4, 10:10)
+plot_mesh(mesh)
 
 ## Assemble finite element matrices
 matrices = @time assemble_matrices(model);
 
 ## Magnetic field gradient
-dir = [1.0, 0.0, 0.0]
+if dim == 2
+    dir = [1.0, 0.0]
+elseif dim == 3
+    dir = [1.0, 0.0, 0.0]
+end
 profile = PGSE(2000.0, 6000.0)
 # profile = CosOGSE(5000.0, 5000.0, 2)
 b = 1000
@@ -50,12 +57,12 @@ gradient = ScalarGradient(dir, profile, g)
 printer = Printer(; nupdate = 1, verbosity = 2)
 writer = VTKWriter(; nupdate = 5)
 plotter = Plotter{T,dim}(; nupdate = 5)
-# callbacks = [printer, plotter]
-callbacks = [printer, plotter, writer]
+callbacks = [printer, plotter]
+# callbacks = [printer, plotter, writer]
 
 # Choose BTDPE solver (specialized solver only for PGSE)
 solver = IntervalConstantSolver{T}(; θ = 0.5, timestep = 5.0)
-solver = QNDF(autodiff = false)
+solver = QNDF(; autodiff = false)
 
 # Solve BTPDE
 btpde = BTPDE(; model, matrices)
