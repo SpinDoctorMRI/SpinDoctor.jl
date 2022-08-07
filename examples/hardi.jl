@@ -28,14 +28,18 @@ end
 # vertical diffusion with the permeable membranes.
 
 ncell = 5
-setup = PlateSetup(;
-    name = "Plates",
-    width = 50.0,
+groundsetup = PlateSetup{T}(;
     depth = 50.0,
-    heights = fill(5.0, ncell),
-    bend = 0.0,
-    twist = 0.0,
+    widths = fill(5.0, ncell),
 )
+setup = ExtrusionSetup(;
+    groundsetup,
+    height = 50.0,
+    bend = 0.0,
+    twist = π / 6,
+    refinement = 50.0,
+)
+ncell = length(groundsetup.widths)
 coeffs = coefficients(
     setup;
     D = [0.002 * I(3) for _ = 1:ncell],
@@ -67,7 +71,7 @@ ncompartment = length(model.mesh.points)
 # This allows for both restricted vertical diffusion and almost unrestricted horizontal
 # diffusion. The different approaches should hopefully confirm this behaviour.
 
-directions = unitsphere(200)
+directions = unitsphere(100)
 profile = PGSE(2500.0, 4000.0)
 b = 1000
 g = √(b / int_F²(profile)) / model.γ
