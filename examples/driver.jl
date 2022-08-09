@@ -5,9 +5,6 @@ if isdefined(@__MODULE__, :LanguageServer)
     using .SpinDoctor
 end
 
-using GLMakie
-
-
 using SpinDoctor
 using LinearAlgebra
 using GLMakie
