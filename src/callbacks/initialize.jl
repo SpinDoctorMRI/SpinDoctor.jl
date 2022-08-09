@@ -114,7 +114,7 @@ function initialize!(p::Plotter{T,dim}, problem, gradient, ξ, t) where {T,dim}
             points = femesh.points[icmpt]
             color = p.phase[icmpt]
             color[] = angle.(ξ_cmpts[icmpt])
-            mesh!(ax, points', elements'; color, shading = false, colorrange)
+            mesh!(ax, points', elements'; color, shading = false, colorrange, colormap)
         end
     elseif dim == 3
         ax = Axis3(gm[1, 1]; title = "Magnetization (phase-shift)")
