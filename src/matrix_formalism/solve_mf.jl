@@ -24,11 +24,11 @@ function solve(problem::MatrixFormalism{TT,dim}, gradient; ninterval = 500) wher
     L = diagm(λ)
 
     # Bloch-Torrey operator in Laplace eigenfunction basis for given gradient
-     function K!(K, g⃗)
+     function K!(K, g)
         if dim == 2
-            @. K = L + T + im * γ * (g⃗[1] * Ax[1] + g⃗[2] * Ax[2])
+            @. K = L + T + im * γ * (g[1] * Ax[1] + g[2] * Ax[2])
         elseif dim == 3
-            @. K = L + T + im * γ * (g⃗[1] * Ax[1] + g⃗[2] * Ax[2] + g⃗[3] * Ax[3])
+            @. K = L + T + im * γ * (g[1] * Ax[1] + g[2] * Ax[2] + g[3] * Ax[3])
         end
     end
 
@@ -47,8 +47,8 @@ function solve(problem::MatrixFormalism{TT,dim}, gradient; ninterval = 500) wher
         t = LinRange(0, echotime(gradient), ninterval + 1)
         for i = 1:ninterval
             δᵢ = t[i+1] - t[i]
-            g⃗ᵢ = (gradient(t[i+1]) + gradient(t[i])) / 2
-            K!(K, g⃗ᵢ)
+            gᵢ = (gradient(t[i+1]) + gradient(t[i])) / 2
+            K!(K, gᵢ)
             expmv!(-δᵢ, K, ν)
         end
     end

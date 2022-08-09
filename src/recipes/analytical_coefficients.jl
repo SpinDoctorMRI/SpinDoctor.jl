@@ -27,7 +27,7 @@ function analytical_coefficients(setup::Union{DiskSetup,SphereSetup}, coeffs)
     n = length(layersizes)
 
     r_mean = (setup.rmin + setup.rmax) / 2
-    r = layersizes * rmean
+    r = layersizes * r_mean
 
     ρ = coeffs.ρ
     r = r * 1e-6

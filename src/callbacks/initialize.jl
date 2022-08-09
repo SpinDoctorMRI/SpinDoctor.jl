@@ -47,23 +47,23 @@ function initialize!(p::Plotter{T,dim}, problem, gradient, ξ, t) where {T,dim}
         pmin[inds] .-= gmax / 2
         pmax[inds] .+= gmax / 2
         grad = Vec{dim,Float32}(gradient(t))
-         p.g⃗ = Observable([grad])
-         p.g⃗_hist = Observable([grad])
+         p.gvec = Observable([grad])
+         p.gvec_hist = Observable([grad])
         if dim == 2
             ax = Axis(p.fig[1, 1]; title = "Gradient [T/m]")
             ax.aspect = :data
             xlims!(ax, pmin[1], pmax[1])
             ylims!(ax, pmin[2], pmax[2])
-             lines!(ax, p.g⃗_hist)
-             arrows!(ax, [Point2f(0, 0)], p.g⃗)
+             lines!(ax, p.gvec_hist)
+             arrows!(ax, [Point2f(0, 0)], p.gvec)
         elseif dim == 3
             ax = Axis3(p.fig[1, 1]; title = "Gradient [T/m]")
             ax.aspect = :data
             xlims!(ax, pmin[1], pmax[1])
             ylims!(ax, pmin[2], pmax[2])
             zlims!(ax, pmin[3], pmax[3])
-             lines!(ax, p.g⃗_hist)
-             arrows!(ax, [Point3f(0, 0, 0)], p.g⃗)
+             lines!(ax, p.gvec_hist)
+             arrows!(ax, [Point3f(0, 0, 0)], p.gvec)
         end
     end
 

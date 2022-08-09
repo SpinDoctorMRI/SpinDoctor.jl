@@ -26,19 +26,20 @@ function solve(
     ρ = initial_conditions(model)
 
     # Time dependent Jacobian of ODE function with respect to the state `ξ`
-    function Jac!(J, ξ, p, t)
+    function jac!(J, ξ, p, t)
         (; S, Q, R, gradient) = p
-         g⃗ = gradient(t)
+        # println(t)
+        g = gradient(t)
         if dim == 2
-            @. J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2]))
+            @. J = -(S + Q + R + im * γ * (g[1] * Mx[1] + g[2] * Mx[2]))
         elseif dim == 3
-            @. J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3]))
+            @. J = -(S + Q + R + im * γ * (g[1] * Mx[1] + g[2] * Mx[2] + g[3] * Mx[3]))
         end
     end
 
     # Time dependent ODE function
     function Mdξ!(dξ, ξ, p, t)
-        Jac!(p.J, ξ, p, t)
+        jac!(p.J, ξ, p, t)
         mul!(dξ, p.J, ξ)
     end
 
@@ -60,13 +61,8 @@ function solve(
         initialize!(cb, problem, gradient, ρ, 0)
     end
 
-    function jac(J, ξ, p, t)
-        println("Jac $t")
-        Jac!(J, ξ, p, t)
-    end
-
-    odefunction = ODEFunction(Mdξ!; mass_matrix = M, jac, jac_prototype)
-    odeproblem = ODEProblem(odefunction, ρ, (0, TE), p; progress = false)
+    odefunction = ODEFunction(Mdξ!; jac = jac!, mass_matrix = M, jac_prototype)
+    odeproblem = ODEProblem(odefunction, ρ, (0, TE), p)
 
     callback = FunctionCallingCallback(func; func_start = false)
 

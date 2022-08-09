@@ -32,11 +32,11 @@ function solve(
 
     ρ = initial_conditions(model)
 
-    function Jac!(J, g⃗)
+    function jac!(J, g)
         if dim == 2
-            @.(J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2])))
+            @.(J = -(S + Q + R + im * γ * (g[1] * Mx[1] + g[2] * Mx[2])))
         elseif dim == 3
-            @.(J = -(S + Q + R + im * γ * (g⃗[1] * Mx[1] + g⃗[2] * Mx[2] + g⃗[3] * Mx[3])))
+            @.(J = -(S + Q + R + im * γ * (g[1] * Mx[1] + g[2] * Mx[2] + g[3] * Mx[3])))
         end
     end
 
@@ -60,10 +60,10 @@ function solve(
 
         # Compute gradient at midpoint of interval
         tmid = (ivals[i] + ivals[i+1]) / 2
-        g⃗ = gradient(tmid)
+        g = gradient(tmid)
 
         # Build matrices for interval
-        Jac!(J, g⃗)
+        jac!(J, g)
         F = lu(M .- Δt .* θ .* J)
         # F = factorize(M .- Δt .* θ .* J)
         E = @. complex(M) + Δt * (1 - θ) * J

@@ -8,6 +8,7 @@
 T = Float64
 
 @testset "Setup recipes" begin
+
     @testset "PlateSetup" begin
         setup = get_setup(PlateSetup{T})
         coeffs = get_coeffs(setup)
@@ -80,8 +81,8 @@ ogse_gradient = ScalarGradient(dir, profile, g)
 TE = 5000
 φ = -π / 6
 R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
-g⃗(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
-general_gradient = GeneralGradient{T,typeof(g⃗)}(; g⃗, TE)
+gvec(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
+general_gradient = GeneralGradient{T,typeof(gvec)}(; gvec, TE)
 
 
 @testset "Signal" begin

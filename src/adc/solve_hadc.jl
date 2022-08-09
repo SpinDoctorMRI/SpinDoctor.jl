@@ -33,14 +33,13 @@ function solve(
 
     # Time dependent ODE function
     function Mdω!(dω, ω, p, t)
-        # @show t
         (; mS, f, surfint) = p
         mul!(dω, mS, ω)
         dω .+= integral(f, t) .* surfint
     end
 
     # Create ODE function and Jacobian from matrices
-    Jac!(J, _, p, t) = (J .= p.mS)
+    jac!(J, ω, p, t) = (J .= p.mS)
 
     # Allocate output array
     adc = zeros(ncompartment)
@@ -57,11 +56,11 @@ function solve(
 
         odefunction = ODEFunction(
             Mdω!;
-            jac = Jac!,
+            jac = jac!,
             jac_prototype = p.mS,
             mass_matrix = M_cmpts[icmpt],
         )
-        odeproblem = ODEProblem(odefunction, ω₀[icmpt], (0, TE), p; progress = false)
+        odeproblem = ODEProblem(odefunction, ω₀[icmpt], (0, TE), p)
 
         # Solve ODE, keep all time steps (for integral)
         sol = OrdinaryDiffEq.solve(

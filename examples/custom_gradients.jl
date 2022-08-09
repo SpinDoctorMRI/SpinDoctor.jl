@@ -55,8 +55,8 @@ matrices = assemble_matrices(model)
 TE = 5000.0
 φ = -π / 6
 R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
- g⃗(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
- gradient = GeneralGradient(; g⃗, TE)
+gvec(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
+gradient = GeneralGradient(; gvec, TE)
 
 # In order to follow the evolution of the solution during time stepping, we add a
 # [`Plotter`](@ref) to a list of callbacks. Other available callbacks are [`Printer`](@ref)

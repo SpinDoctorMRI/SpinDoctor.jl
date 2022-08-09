@@ -68,7 +68,6 @@ solver = QNDF(; autodiff = false)
 btpde = BTPDE(; model, matrices)
 ξ = @time solve(btpde, gradient, solver; callbacks)
 
-
 ## Plot magnetization
 plot_field(model.mesh, ξ)
 

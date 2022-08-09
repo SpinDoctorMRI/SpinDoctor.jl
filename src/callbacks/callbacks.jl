@@ -47,8 +47,8 @@ Base.@kwdef mutable struct Plotter{T,dim} <: AbstractCallback
     n::Int = 1
     t::Observable{Vector{T}} = Observable(T[])
     f::Observable{Vector{T}} = Observable(T[])
-    g⃗::Observable{Vector{Vec{dim,Float32}}} = Observable([Vec{dim,Float32}(zeros(dim)...)])
-    g⃗_hist::Observable{Vector{Vec{dim,Float32}}} = Observable([Vec{dim,Float32}(zeros(dim)...)])
+    gvec::Observable{Vector{Vec{dim,Float32}}} = Observable([Vec{dim,Float32}(zeros(dim)...)])
+    gvec_hist::Observable{Vector{Vec{dim,Float32}}} = Observable([Vec{dim,Float32}(zeros(dim)...)])
     ξ::Observable{Vector{Complex{T}}} = Observable(Complex{T}[])
     magnitude::Matrix{Observable{Vector{T}}} = [Observable(Vector{T}());;]
     phase::Matrix{Observable{Vector{T}}} = [Observable(Vector{T}());;]

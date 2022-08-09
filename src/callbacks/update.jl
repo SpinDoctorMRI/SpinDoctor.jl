@@ -43,8 +43,8 @@ function update!(p::Plotter{T,dim}, problem, gradient, ξ, t) where {T,dim}
             p.f[] = push!(p.f[], gradient.profile(t))
         else
             grad = Vec{dim,Float32}(gradient(t))
-            p.g⃗[] = [grad]
-            p.g⃗_hist[] = push!(p.g⃗_hist[], grad)
+            p.gvec[] = [grad]
+            p.gvec_hist[] = push!(p.gvec_hist[], grad)
         end
         p.attenuation[] = push!(p.attenuation[], sum(abs, M * ξ) / p.S₀)
         p.ξ[] = ξ

@@ -6,13 +6,13 @@ Magnetic field gradient ``\\vec{g}(t) \\in \\mathbb{R}^3``.
 abstract type AbstractGradient{T} end
 
 """
-    GeneralGradient(g⃗, TE)
+    GeneralGradient(gvec, TE)
 
 General gradient sequence ``\\vec{g}(t) \\in \\mathbb{R}^3``. The direction and amplitude may
 vary in time.
 """
 Base.@kwdef struct GeneralGradient{T,F}
-    g⃗::F
+    gvec::F
     TE::T
 end
 
@@ -34,5 +34,5 @@ struct ScalarGradient{T,P<:AbstractTimeProfile{T}}
         new{typeof(amplitude),typeof(profile)}(dir / norm(dir), profile, amplitude)
 end
 
-(g::GeneralGradient)(t) = g.g⃗(t)
+(g::GeneralGradient)(t) = g.gvec(t)
 (g::ScalarGradient)(t) = g.amplitude * g.profile(t) * g.dir

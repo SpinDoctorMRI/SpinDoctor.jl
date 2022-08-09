@@ -29,7 +29,7 @@ get_setup(S::Type{SlabSetup{T}}) where {T} = S(;
     height = 20.0,
     bend = 0.0,
     twist = 0.0,
-    # refinement = 0.5,
+    refinement = 10.0,
 )
 
 get_setup(S::Type{CylinderSetup{T}}) where {T} = S(;
