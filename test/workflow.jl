@@ -49,6 +49,7 @@ T = Float64
         mesh, = create_geometry(setup; meshdir = "meshfiles/neuron")
         model = Model(; mesh, coeffs...)
     end
+
 end
 
 # Geometrical setup

@@ -35,12 +35,12 @@ Setup recipe for a set of spheres immersed in a ECS.
 """
 Base.@kwdef struct SphereSetup{T} <: AbstractSetup{T}
     ncell::Int
+    layersizes::Vector{T} = [1]
     rmin::T
     rmax::T
     dmin::T
     dmax::T
-    include_in::Bool = false
-    in_ratio::T = 0.5
+    nsidewall::Int = 200
     ecs_shape::Symbol = :no_ecs
     ecs_ratio::T = 0.5
     refinement::T = Inf

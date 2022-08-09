@@ -29,9 +29,11 @@ function solve(laplace::AnalyticalLaplace)
         end
     end
 
-    if dim == 2
+    if dim == 1
+        coeff = √2
+    elseif dim == 2
         coeff = 2
-    else
+    elseif dim == 3
         coeff = √6
     end
     U = coeff * J .* β
@@ -39,11 +41,15 @@ function solve(laplace::AnalyticalLaplace)
     B = zeros(N, N)
     for m1 = 1:N
         for m2 = m1:N
-            if abs(n[m1] - n[m2]) == 1
+            if dim == 1
+                K = compute_int_K(laplace, α[m1], n[m1], α[m2], n[m2])
+                B[m1, m2] = 2 * β[m1] * β[m2] * K
+                B[m2, m1] = B[m1, m2]
+            elseif abs(n[m1] - n[m2]) == 1
                 K = compute_int_K(laplace, α[m1], n[m1], α[m2], n[m2])
                 if dim == 2
                     ε = √(1 + (n[m1] == 0) + (n[m2] == 0))
-                else
+                elseif dim == 3
                     ε = (n[m1] + n[m2] + 1) / √((2 * n[m1] + 1) * (2 * n[m2] + 1))
                 end
                 B[m1, m2] = ε * β[m1] * β[m2] * K
@@ -55,7 +61,11 @@ function solve(laplace::AnalyticalLaplace)
     Bri = zeros(N, N, L)
     for m1 = 1:N
         for m2 = m1:N
-            if n[m1] == n[m2]
+            if dim == 1
+                int_I = compute_int_I(laplace, α[m1], α[m2], 0)
+                Bri[m1, m2, :] = 2 * β[m1] * β[m2] * int_I
+                Bri[m2, m1, :] = Bri[m1, m2, :]
+            elseif n[m1] == n[m2]
                 int_I = compute_int_I(laplace, α[m1], α[m2], n[m1])
                 Bri[m1, m2, :] = 2 * β[m1] * β[m2] * int_I
                 Bri[m2, m1, :] = Bri[m1, m2, :]
@@ -68,5 +78,5 @@ function solve(laplace::AnalyticalLaplace)
         Br .+= Bri[:, :, i] / T₂[i]
     end
 
-    (; Λ, β, U, B, Bri, Br)
+    (; Λ, β, U, B, Bri, Br, α, n)
 end

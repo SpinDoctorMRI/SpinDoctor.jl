@@ -14,8 +14,6 @@ function create_geometry(setup; meshdir = nothing, recreate = true)
         meshdir = ""
     else
         do_save = true
-
-        # Make sure that folder exists
         isdir(meshdir) || mkpath(meshdir)
     end
 
@@ -24,17 +22,13 @@ function create_geometry(setup; meshdir = nothing, recreate = true)
             error("Invalid ECS shape")
     end
 
-    if setup isa Union{CylinderSetup,SphereSetup}
-        # Check if cell description file is already available
-        cellfilename = joinpath(meshdir, "cells")
-        if do_save && isfile(cellfilename) && !recreate
-            cells = read_cells(cellfilename)
-        else
-            cells = create_cells(setup)
-            do_save && save_cells(cells, cellfilename)
-        end
+    # Check if cell description file is already available
+    cellfilename = joinpath(meshdir, "cells")
+    if do_save && isfile(cellfilename) && !recreate
+        cells = read_cells(cellfilename)
     else
-        cells = nothing
+        cells = create_cells(setup)
+        !isnothing(cells) && do_save && save_cells(cells, cellfilename)
     end
 
     stl_file = joinpath(meshdir, "mesh.stl")
@@ -86,6 +80,7 @@ function create_geometry(setup; meshdir = nothing, recreate = true)
     # Split mesh into compartments
     mesh = split_mesh(mesh_all)
 
+    # Check that boundaries are correctly assigned
     ncompartment = length(mesh.points)
     for i = 1:ncompartment, j in [1:i-1; i+1:ncompartment]
         isempty(mesh.facets[i, end-ncompartment+j]) || @warn("""

@@ -1,10 +1,15 @@
 function compute_JY(z, n, dim)
-    if dim == 2
+    if dim == 1
+        J = cos.(z)
+        Y = sin.(z)
+        dJ = -sin.(z)
+        dY = cos.(z)
+    elseif dim == 2
         J = besselj.(n, z)
         Y = bessely.(n, z)
         dJ = (besselj.(n - 1, z) - besselj.(n + 1, z)) / 2
         dY = (bessely.(n - 1, z) - bessely.(n + 1, z)) / 2
-    else
+    elseif dim == 3
         J = sphericalbesselj.(n, z)
         Y = sphericalbessely.(n, z)
 
@@ -13,15 +18,15 @@ function compute_JY(z, n, dim)
         ind = z .> 0
         zz = z[ind]
         ind = [ind;]
-        dJ[ind] .=
+        @. dJ[ind] =
             (
-                sphericalbesselj.(n - 1, zz) - sphericalbesselj.(n + 1, zz) -
-                sphericalbesselj.(n, zz) ./ zz
+                sphericalbesselj(n - 1, zz) - sphericalbesselj(n + 1, zz) -
+                sphericalbesselj(n, zz) / zz
             ) / 2
-        dY[ind] .=
+        @. dY[ind] =
             (
-                sphericalbessely.(n - 1, zz) - sphericalbessely.(n + 1, zz) -
-                sphericalbessely.(n, zz) ./ zz
+                sphericalbessely(n - 1, zz) - sphericalbessely(n + 1, zz) -
+                sphericalbessely(n, zz) / zz
             ) / 2
 
         ind = [z .== 0;]

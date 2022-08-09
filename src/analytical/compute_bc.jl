@@ -9,8 +9,12 @@ function compute_bc(params, α, n)
         return bc
     end
 
-    ρ = r[1:m-1] ./ .√D[1:m-1]
-    ρt = r[1:m-1] ./ .√D[2:m]
+    ρ = r[1:m-1] ./ sqrt.(D[1:m-1])
+    ρt = r[1:m-1] ./ sqrt.(D[2:m])
+
+    if dim == 1
+        bc[1, 1] = sqrt(D[1]) * α
+    end
 
     for i = 1:m-1
         J, Y, dJ, dY = compute_JY(α * ρ[i], n, dim)
@@ -22,9 +26,11 @@ function compute_bc(params, α, n)
         A22 = √(D[i] / D[i+1]) * dY * J1 - Y * dJ1 - √D[i] / W[i] * α * dY * dJ1
 
         z = α * ρt[i]
-        if dim == 2
+        if dim == 1
+            Q = 1
+        elseif dim == 2
             Q = z * π / 2
-        else
+        elseif dim == 3
             Q = z^2
         end
         A = Q * [A11 A12; A21 A22]

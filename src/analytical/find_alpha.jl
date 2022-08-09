@@ -1,28 +1,34 @@
 function find_α(params, α_min, α_max, dα)
-    α = Float64[]
-    n = Int[]
+    (; dim) = params
 
-    α₀ = [0.0]
-    j = 0
-    # pl = nothing
-    # αα = LinRange(α_min, α_max, 1000)
-    while !isempty(α₀) && α₀[1] < α_max
-        @info "Computing zeros of Fₙ(α) for n = $j"
-        α₀ = find_zeros(α -> α_func(params, α, j), α_min, α_max)
-        append!(α, α₀)
-        append!(n, fill(j, size(α₀)))
-        # if j == 0
-        #     pl = lines(αα,  α -> α_func(params, α, j))
-        #     display(pl)
-        # else
-        #     lines!(αα, α -> α_func(params, α, j))
-        # end
-        j = j + 1
+    if dim == 1
+        α = find_zeros(α -> α_func(params, α, 0), α_min, α_max)
+        n = zeros(Int, size(α))
+    else
+        α = Float64[]
+        n = Int[]
+        α₀ = [0.0]
+        j = 0
+        # pl = nothing
+        # αα = LinRange(α_min, α_max, 1000)
+        while !isempty(α₀) && α₀[1] < α_max
+            @info "Computing zeros of Fₙ(α) for n = $j"
+            α₀ = find_zeros(α -> α_func(params, α, j), α_min, α_max)
+            append!(α, α₀)
+            append!(n, fill(j, size(α₀)))
+            # if j == 0
+            #     pl = lines(αα,  α -> α_func(params, α, j))
+            #     display(pl)
+            # else
+            #     lines!(αα, α -> α_func(params, α, j))
+            # end
+            j = j + 1
+        end
+
+        inds = sortperm(α)
+        α = α[inds]
+        n = n[inds]
     end
-
-    inds = sortperm(α)
-    α = α[inds]
-    n = n[inds]
 
     # Number of layers
     L = length(params.D)
