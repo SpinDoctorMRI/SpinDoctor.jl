@@ -92,7 +92,7 @@ lap_eig = limit_lengthscale(lap_eig, λ_max)
 ncompartment = length(mesh.points)
 fig = Figure()
 for i = 1:3, j = 1:4
-    ieig = 6(i - 1) + j
+    ieig = 1 + 6(i - 1) + j
     ϕ_cmpts = split_field(mesh, lap_eig.funcs[:, ieig])
     ax = Axis(fig[i, j]; title = @sprintf("n = %d, ℓ = %.1f", ieig, length_scales[ieig]))
     for icmpt ∈ 1:ncompartment
