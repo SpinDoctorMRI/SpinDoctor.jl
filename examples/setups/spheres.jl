@@ -14,12 +14,12 @@ setup = SphereSetup{T}(
     dmin = 0.2,
     dmax = 0.3,
     nsidewall = 200,
-    ecs_shape = :convex_hull,
-    ecs_ratio = 0.3,
+    ecs = ConvexHullECS{T}(; margin = 1.0)
     # refinement = 0.5,
 )
 
 # Get compartimentalized coefficient vectors
+nlayer = length(setup.layersizes)
 coeffs = coefficients(
     setup;
     D = (; cell = [0.002 * I(3) for _ = 1:nlayer], ecs = 0.002 * I(3)),

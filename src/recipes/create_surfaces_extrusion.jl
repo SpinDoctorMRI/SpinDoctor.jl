@@ -1,15 +1,5 @@
-"""
-    create_surfaces(setup::ExtrusionSetup, cells)
-
-Create surface triangulation of extruded setup.
-
-The ground surface is triangulated first, before the walls are "extruded" and
-the top surface is copied from the ground surface.
-"""
 function create_surfaces(setup::ExtrusionSetup, cells)
     (; groundsetup, height, refinement) = setup
-
-    # using SpinDoctor: create_surfaces, create_mesh
 
     # Create ground surface triangulation using 2D disk setup
     groundfacets = create_surfaces(groundsetup, cells)

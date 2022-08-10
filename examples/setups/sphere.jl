@@ -14,8 +14,7 @@ setup = SphereSetup{T}(;
     dmin = 0.2,
     dmax = 0.3,
     nsidewall = 200,
-    ecs_shape = :no_ecs,
-    ecs_ratio = 0.5,
+    ecs = NoECS(),
     refinement = 0.5,
 )
 

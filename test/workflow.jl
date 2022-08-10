@@ -1,7 +1,7 @@
 # TODO: Make tests pass for
 # - T ∈ [Float32, Float64]
-# - Setup ∈ [PlateSetup, DiskSetup, ExtrusionSetup, Setup, SphereSetup,
-#            NeuronSetup]
+# - Setup ∈ [PlateSetup, DiskSetup, ExtrusionSetup, SlabSetup, CylinderSetup,
+#       SphereSetup, NeuronSetup]
 # - Gradient ∈ [GeneralGradient, ScalarGradient] (all time profiles)
 
 # Floating point type for simulations
@@ -10,42 +10,42 @@ T = Float64
 @testset "Setup recipes" begin
 
     @testset "PlateSetup" begin
-        setup = get_setup(PlateSetup{T})
+        setup = PlateSetup{T}()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "SlabSetup" begin
-        setup = get_setup(SlabSetup{T})
+        setup = SlabSetup{T}()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "DiskSetup" begin
-        setup = get_setup(DiskSetup{T})
+        setup = DiskSetup{T}()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "CylinderSetup" begin
-        setup = get_setup(CylinderSetup{T})
+        setup = CylinderSetup{T}(; ecs = ConvexHullECS{T}(; margin = 0.5))
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "SphereSetup" begin
-        setup = get_setup(SphereSetup{T})
+        setup = SphereSetup{T}()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "NeuronSetup" begin
-        setup = get_setup(NeuronSetup{T})
+        setup = NeuronSetup{T}()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup; meshdir = "meshfiles/neuron")
         model = Model(; mesh, coeffs...)
@@ -54,11 +54,16 @@ T = Float64
 end
 
 # Geometrical setup
-setup = get_setup(SlabSetup{T})
+setup = SlabSetup{T}(;
+    depth = 20.0,
+    widths = fill(5.0, 4),
+    height = 20.0,
+    refinement = 10.0,
+)
 coeffs = get_coeffs(setup)
 
 # Get compartimentalized coefficient vectors
-mesh, = create_geometry(setup; recreate = true)
+mesh, surfaces, cells = create_geometry(setup)
 model = Model(; mesh, coeffs...)
 volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)

@@ -33,10 +33,9 @@ function get_mesh_surface(points, facets)
 
     # Facet areas
     areas = reshape(mapslices(norm, normals; dims = 1), :)
-    total_area = sum(areas)
 
     # Normalize normals
     normals = normals ./ sqrt.(sum(abs2, normals; dims = 1))
 
-    total_area, areas, centers, normals
+    areas, centers, normals
 end

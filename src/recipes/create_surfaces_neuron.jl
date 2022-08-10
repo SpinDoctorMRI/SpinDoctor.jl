@@ -1,12 +1,5 @@
-"""
-    create_surfaces(setup::NeuronSetup, filename)
-
-Create neuron surface mesh.
-A neuron surface mesh is loaded or create and loaded. An ECS can be added.
-"""
 function create_surfaces(setup::NeuronSetup{T}, filename) where {T}
-    ecs_shape = setup.ecs_shape
-    ecs_ratio = setup.ecs_ratio
+    (; ecs) = setup
 
     if !isfile(filename * "_elements.txt") || !isfile(filename * "_nodes.txt")
         gmesh2fem(filename)
@@ -53,42 +46,14 @@ function create_surfaces(setup::NeuronSetup{T}, filename) where {T}
     facetmarkers = ones(Int, size(facets, 2))
     regions = centermass
 
-    pmin = minimum(points, dims = 2)
-    pmax = maximum(points, dims = 2)
+    # Create ECS around points
+    ecs_surface = create_surfaces(ecs, points)
 
-    if ecs_shape != :no_ecs
-
-        # ecs_gap = ecs_ratio * min(pmax - pmin)
-        ecs_gap = ecs_ratio * 10
-
-        if ecs_shape == :box
-            points_ecs = [
-                pmin(1) pmax(1) pmax(1) pmin(1) pmin(1) pmax(1) pmax(1) pmin(1)
-                pmin(2) pmin(2) pmax(2) pmax(2) pmin(2) pmin(2) pmax(2) pmax(2)
-                pmin(3) pmin(3) pmin(3) pmin(3) pmax(3) pmax(3) pmax(3) pmax(3)
-            ]
-            facets_ecs = [
-                1 1 1 1 2 2 3 3 4 4 5 5
-                2 3 2 6 3 7 4 8 1 5 6 7
-                3 4 6 5 7 6 8 7 5 8 7 8
-            ]
-        elseif ecs_shape == :convex_hull
-            error("Not implemented")
-        elseif ecs_shape == :tight_wrap
-            error("Not implemented")
-        end
-
-        facetmarkers_ecs = 2 * ones(Int, size(facets_ecs, 2))
-        _, ind = sort(points[1, :])
-        ind = ind[1]
-        regions_ecs = points[:, ind] - ecs_gap / 10 * [1; 0; 0]
-
-        npoint_out = size(points, 2)
-        points = [points points_ecs]
-        facets = [facets facets_ecs + npoint_out]
-        append!(facetmarkers, facetmarkers_ecs)
-        append!(regions, regions_ecs)
-    end
+    npoint = size(points, 2)
+    points = [points ecs_surface.points]
+    facets = [facets ecs_surface.facets .+ npoint]
+    append!(facetmarkers, fill(2, size(ecs_surface.facets, 2)))
+    regions = [regions ecs_surface.region]
 
     (; points, facets, facetmarkers, regions)
 end

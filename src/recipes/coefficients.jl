@@ -27,9 +27,9 @@ function coefficients(setup::PlateSetup{T}; D, T₂, ρ, κ, γ) where {T}
 end
 
 function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where {T}
-    (; ecs_shape) = setup
+    (; ecs) = setup
 
-    include_ecs = ecs_shape != :no_ecs
+    include_ecs = !(ecs isa NoECS)
 
     # Determine number of compartments and boundaries
     ncompartment = 1 + include_ecs
@@ -71,10 +71,10 @@ function coefficients(setup::ExtrusionSetup; D, T₂, ρ, κ, γ)
 end
 
 function coefficients(setup::Union{DiskSetup{T},SphereSetup{T}}; D, T₂, ρ, κ, γ) where {T}
-    (; ncell, layersizes, ecs_shape) = setup
+    (; ncell, layersizes, ecs) = setup
 
     # Each disk cell may have multiple layers
-    include_ecs = ecs_shape != :no_ecs
+    include_ecs = !(ecs isa NoECS)
     nlayer = length(layersizes)
     ncompartment = nlayer * ncell + include_ecs
 

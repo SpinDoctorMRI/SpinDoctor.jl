@@ -11,7 +11,7 @@ function unitcircle(n; half = false, normal = [0, 0, 1])
     directions = [
         cos.(θ)
         sin.(θ)
-        zeros(1, ndirection)
+        zeros(1, n)
     ]
 
     # Create rotation matrix to transform normal to e_z

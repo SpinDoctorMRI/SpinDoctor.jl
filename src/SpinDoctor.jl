@@ -20,6 +20,7 @@ using OrdinaryDiffEq:
     OrdinaryDiffEqAlgorithm,
     QNDF,
     MagnusGL6
+using Parameters
 using Polynomials: fit
 using Printf
 using QuadGK
@@ -67,6 +68,7 @@ export compute_signal
 export Printer, VTKWriter, Plotter
 
 # Recipes
+export NoECS, BoxECS, ConvexHullECS, TightWrapECS
 export AbstractSetup,
     PlateSetup,
     ExtrusionSetup,
@@ -183,15 +185,11 @@ include("callbacks/update.jl")
 include("callbacks/finalize.jl")
 
 # Recipes
+include("recipes/ecs.jl")
 include("recipes/setups.jl")
 include("recipes/coefficients.jl")
 include("recipes/create_cells.jl")
 include("recipes/create_surfaces.jl")
-include("recipes/create_surfaces_disks.jl")
-include("recipes/create_surfaces_plates.jl")
-include("recipes/create_surfaces_extrusion.jl")
-include("recipes/create_surfaces_sphere.jl")
-include("recipes/create_surfaces_neuron.jl")
 include("recipes/create_geometry.jl")
 include("recipes/radial_dimension.jl")
 include("recipes/analytical_coefficients.jl")

@@ -12,7 +12,7 @@ setup = CylinderSetup{T}(;
     rmin = 5.0,
     rmax = 5.0,
     layersizes = [0.25, 0.5, 0.75, 1.0],
-    ecs_shape = :no_ecs,
+    ecs = NoECS(),
     height = 50.0,
     bend = 0.0,
     twist = 0.0,
@@ -20,7 +20,7 @@ setup = CylinderSetup{T}(;
 )
 
 # Get compartimentalized coefficient vectors
-nlayer = length(groundsetup.layersizes)
+nlayer = length(setup.groundsetup.layersizes)
 coeffs = coefficients(
     setup;
     D = (; cell = [0.002 * I(3) for _ = 1:nlayer], ecs = 0.002 * I(3)),

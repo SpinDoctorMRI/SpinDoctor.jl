@@ -13,9 +13,9 @@ setup = DiskSetup{T}(;
     rmax = 6.0,
     dmin = 0.2,
     dmax = 0.3,
-    layersizes = [0.6, 1.0],
-    ecs_shape = :convex_hull,
-    ecs_ratio = 0.5,
+    # layersizes = [0.6, 1.0],
+    ecs = ConvexHullECS{T}(; margin = 2.0),
+    # ecs = BoxECS{T}(0.5),
     refinement = 0.1,
 )
 

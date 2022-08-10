@@ -14,7 +14,7 @@ function compute_adc_sta(model::Model{T}, gradient::ScalarGradient) where {T}
 
         volumes, = get_mesh_volumes(points, elements)
         v = sum(volumes)
-        _, areas, _, normals = get_mesh_surface(points, facets)
+        areas, _, normals = get_mesh_surface(points, facets)
         d = gradient.dir
         D₀ = d' * model.D[icmpt] * d
 

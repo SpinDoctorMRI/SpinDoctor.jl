@@ -27,9 +27,8 @@ setup = DiskSetup(;
     dmin = 0.2,
     dmax = 0.3,
     layersizes = [0.3, 0.6, 1.0],
-    ecs_shape = :convex_hull,
-    ecs_ratio = 0.5,
-    refinement = 0.5,
+    ecs = ConvexHullECS(; margin = 2.0),
+    refinement = 0.2,
 )
 
 # We also define coefficients for the three cell compartments and the ECS.
@@ -51,7 +50,7 @@ coeffs = coefficients(
 
 # We then proceed to build the geometry and finite element mesh.
 
-mesh, = create_geometry(setup; recreate = true)
+mesh, surfaces, cells = create_geometry(setup; recreate = true)
 plot_mesh(mesh, 1:3)
 plot_mesh(mesh)
 
@@ -65,7 +64,7 @@ matrices = assemble_matrices(model);
 # coefficient from the diffusion tensors.
 
 volumes = get_cmpt_volumes(model.mesh)
-D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
+D_avg = 1 / 2 * tr.(model.D)' * volumes / sum(volumes)
 
 # The eigenfunctions of the diffusive part of the Bloch-Torrey operator forms
 # a good basis for the finite element function space. The basis may be

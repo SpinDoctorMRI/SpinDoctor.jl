@@ -44,7 +44,7 @@ setup = SlabSetup{T}(;
     widths = fill(5.0, ncell),
     height = 50.0,
     bend = 0.0,
-    twist = 0.0,
+    twist = π / 6,
     refinement = 10.0,
 )
 d = fill(0.002, ncell)

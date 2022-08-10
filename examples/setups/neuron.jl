@@ -95,8 +95,7 @@ T = Float64
 
 # Geometrical setup
 setup = NeuronSetup{T}(;
-    ecs_shape = :no_ecs,
-    ecs_ratio = 0.3,
+    ecs = NoECS(),
     # refinement = 0.5,
 )
 

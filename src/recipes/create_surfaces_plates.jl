@@ -1,8 +1,3 @@
-"""
-    create_surfaces(setup::PlateSetup, cells)
-
-Create surface triangulation of a collection of stacked plates.
-"""
 function create_surfaces(setup::PlateSetup{T}, _) where {T}
     (; widths, depth) = setup
 
@@ -48,7 +43,6 @@ function create_surfaces(setup::PlateSetup{T}, _) where {T}
 
     regions = zeros(T, 2, n)
     regions[1, :] .= (x[1:(end-1)] .+ x[2:end]) ./ 2
-
 
     (; points, facets = edges, facetmarkers = edgemarkers, regions)
 end

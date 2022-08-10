@@ -32,7 +32,7 @@ T = Float64
 
 setup = CylinderSetup{T}(;
     ncell = 3,
-    ecs_shape = :convex_hull,
+    ecs = ConvexHullECS(; margin = 2.0),
     height = 40.0,
     bend = 0.0,
     twist = π / 4,
@@ -66,7 +66,7 @@ coeffs = coefficients(
 # tetrahedral finite element mesh. The compartments and boundaries will be
 # ordered in the same way as `coeffs`.
 
-mesh, surfaces, cells = create_geometry(setup);
+mesh, surfaces, cells = create_geometry(setup)
 
 # The resulting mesh can be plotted in 3D provided a Makie backend is loaded.
 

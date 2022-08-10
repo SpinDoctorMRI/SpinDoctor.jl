@@ -8,7 +8,7 @@ function get_mesh_surfacenormals(points, elements, facets)
     nfacet = size(facets, 2)
     nelement = size(elements, 2)
 
-    _, areas, facet_centers, normals = get_mesh_surface(points, facets)
+    areas, facet_centers, normals = get_mesh_surface(points, facets)
 
     # Find elements to which the facets belong
     if dim == 2

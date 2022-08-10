@@ -30,8 +30,8 @@ function solve(problem::Karger, gradient::ScalarGradient, odesolver = MagnusGL6(
         # Surface area
         for iboundary = 1:nboundary
             if !isempty(facets[iboundary])
-                surface_areas[icmpt, iboundary], =
-                    get_mesh_surface(points, facets[iboundary])
+                areas = first(get_mesh_surface(points, facets[iboundary]))
+                surface_areas[icmpt, iboundary] = sum(areas)
             end
         end
     end
