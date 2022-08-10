@@ -105,17 +105,19 @@ bvalues = 0:400:4000
 gvalues = map(b -> √(b / int_F²(profile)) / coeffs.γ, bvalues)
 gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues]
 
-# The [`solve_multigrad`](@ref) function computes the magnetization for each gradient. Since
-# the gradients are interval-wise constant, we can use a specialized solver.
+# We compute the magnetization for each gradient. Since the gradients are
+# interval-wise constant, we can use a specialized solver.
 
 btpde = BTPDE(; model, matrices)
 solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
-ξ, = solve_multigrad(btpde, gradients, solver)
-
-# The signals can be computed from the magnetization fields.
-
-signals = [compute_signal(matrices.M, ξ) for ξ ∈ ξ]
-signals_cmpts = [compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ)) for ξ ∈ ξ]
+signals = Complex{T}[]
+signals_cmpts = Vector{Complex{T}}[]
+for grad ∈ gradients
+    @show grad
+    ξ = solve(btpde, grad, solver)
+    push!(signals, compute_signal(matrices.M, ξ))
+    push!(signals_cmpts, compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ)))
+end
 
 # Fitting the ADC is straightforward.
 
@@ -161,7 +163,8 @@ adc_mf = dir'D_mf * dir / dir'dir
 
 n = ncompartment
 fig = Figure()
-ax = Axis(fig[1, 1];
+ax = Axis(
+    fig[1, 1];
     xticks = (1:4, ["STA", "Fit BTPDE", "HADC", "MF"]),
     ylabel = "ADC / D",
     title = "Compartment ADCs",
@@ -182,12 +185,42 @@ fig
 # We may also inspect the resulting signal attenuations.
 
 fig = Figure()
-ax = Axis(fig[1,1]; xlabel = "b", yscale = log10, title = "Signal attenuation")
-lines!(ax, [0, bvalues[end]], [1, exp(-adc_sta * bvalues[end])]; linestyle = :dash, label = "ADC STA")
-lines!(ax, [0, bvalues[end]], [1, exp(-adc_fit * bvalues[end])]; linestyle = :dash, label = "ADC Fit")
-lines!(ax, [0, bvalues[end]], [1, exp(-adc_homogenized * bvalues[end])]; linestyle = :dash, label = "HADC")
-lines!(ax, [0, bvalues[end]], [1, exp(-adc_mf * bvalues[end])]; linestyle = :dash, label = "ADC MF")
-lines!(ax, [0, bvalues[end]], [1, exp(-D_avg * bvalues[end])]; linestyle = :dash, label = "Free diffusion")
+ax = Axis(fig[1, 1]; xlabel = "b", yscale = log10, title = "Signal attenuation")
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-adc_sta * bvalues[end])];
+    linestyle = :dash,
+    label = "ADC STA",
+)
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-adc_fit * bvalues[end])];
+    linestyle = :dash,
+    label = "ADC Fit",
+)
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-adc_homogenized * bvalues[end])];
+    linestyle = :dash,
+    label = "HADC",
+)
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-adc_mf * bvalues[end])];
+    linestyle = :dash,
+    label = "ADC MF",
+)
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-D_avg * bvalues[end])];
+    linestyle = :dash,
+    label = "Free diffusion",
+)
 scatterlines!(ax, bvalues, abs.(signals) ./ abs(signals[1]); label = "BTPDE Signal")
 axislegend(ax)
 fig

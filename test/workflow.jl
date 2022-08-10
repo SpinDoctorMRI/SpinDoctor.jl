@@ -127,7 +127,7 @@ end
         d ∈ eachcol(directions)
     ]
     hadc = HADC(; model, matrices)
-    adcs, = solve_multigrad(hadc, gradients)
+    adcs = [solve(hadc, grad) for grad ∈ gradients]
     difftensors = fit_tensors(directions, adcs)
     karger = Karger(; model, difftensors)
     signal = solve(karger, pgse_gradient; timestep = 5.0)

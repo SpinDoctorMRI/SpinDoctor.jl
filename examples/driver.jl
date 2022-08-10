@@ -107,7 +107,11 @@ gradients = [
     d ∈ eachcol(directions)
 ]
 hadc = HADC(; model, matrices)
-adcs, = @time solve_multigrad(hadc, gradients)
+adcs = Vector{T}[]
+@time for grad ∈ gradients
+    @show grad
+    push!(adcs, solve(hadc, grad))
+end
 difftensors = fit_tensors(directions, adcs)
 
 # Solve Karger

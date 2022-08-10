@@ -55,7 +55,7 @@ export plot_surfaces, plot_mesh, plot_field, plot_hardi
 export BTPDE, HADC, Karger
 export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
 export QNDF, IntervalConstantSolver
-export solve, solve_multigrad
+export solve
 
 # Matrix formalism
 export length2eig, eig2length, limit_lengthscale, compute_mf_diffusion_tensor
@@ -104,9 +104,7 @@ include("datatypes/model.jl")
 
 # Problems
 include("problems/problems.jl")
-include("problems/output_type.jl")
 include("problems/solve.jl")
-include("problems/solve_multigrad.jl")
 
 # Geometry
 include("geometry/create_mesh.jl")

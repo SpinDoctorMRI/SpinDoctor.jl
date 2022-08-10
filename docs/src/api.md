@@ -55,7 +55,6 @@ AnalyticalLaplace
 AnalyticalMatrixFormalism
 IntervalConstantSolver
 solve
-solve_multigrad
 ```
 
 ## Matrix formalism

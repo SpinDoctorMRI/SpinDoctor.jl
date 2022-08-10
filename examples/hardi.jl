@@ -71,22 +71,26 @@ b = 1000
 g = √(b / int_F²(profile)) / model.γ
 gradients = [ScalarGradient(d, profile, g) for d ∈ eachcol(directions)]
 
-# We may solve the BTPDE for each gradient. The `solve_multigrad` function also returns the
-# computational times for each iteration.
+# The signals are computed from the magnetization field through quadrature.
+ρ = initial_conditions(model)
+S₀ = abs(compute_signal(matrices.M, ρ))
+
+# We may solve the BTPDE for each gradient.
 
 btpde = BTPDE(; model, matrices)
 solver = IntervalConstantSolver(; timestep = 10.0)
-ξ, itertimes = solve_multigrad(btpde, gradients, solver)
+signals = T[]
+for (i, grad) ∈ enumerate(gradients)
+    @show grad
+    ξ = solve(btpde, grad, solver)
+    s = abs(compute_signal(matrices.M, ξ))
+    push!(signals, s)
+end
 
-# The signals are computed from the magnetization field through quadrature.
-
-ρ = initial_conditions(model)
-S₀ = abs(compute_signal(matrices.M, ρ))
-signals = [abs(compute_signal(matrices.M, ξ)) for ξ ∈ ξ]
-attenuations = signals ./ S₀
 
 # We may plot the directionalized signal attenuations.
 
+attenuations = signals ./ S₀
 plot_hardi(directions, attenuations)
 
 # The signal attenuates the most in the vertical direction, as that is where
