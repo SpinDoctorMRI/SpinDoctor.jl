@@ -18,7 +18,7 @@ end
 Setup recipe for a set of 2D disks immersed in a ECS.
 """
 Base.@kwdef struct DiskSetup{T} <: AbstractSetup{T}
-    ncell::Int
+    ncell::Int = 3
     layersizes::Vector{T} = [1]
     rmin::T = 2
     rmax::T = 6
@@ -34,15 +34,15 @@ end
 Setup recipe for a set of spheres immersed in a ECS.
 """
 Base.@kwdef struct SphereSetup{T} <: AbstractSetup{T}
-    ncell::Int
+    ncell::Int = 3
     layersizes::Vector{T} = [1]
-    rmin::T
-    rmax::T
-    dmin::T
-    dmax::T
+    rmin::T = 2
+    rmax::T = 6
+    dmin::T = 2 // 5
+    dmax::T = 3 // 5
     nsidewall::Int = 200
     ecs_shape::Symbol = :no_ecs
-    ecs_ratio::T = 0.5
+    ecs_ratio::T = 1 // 2
     refinement::T = Inf
 end
 
@@ -51,7 +51,7 @@ Setup recipe for a neuron, possibly wrapped in a ECS.
 """
 Base.@kwdef struct NeuronSetup{T} <: AbstractSetup{T}
     ecs_shape::Symbol = :no_ecs
-    ecs_ratio::T = 0.5
+    ecs_ratio::T = 1 // 2
     refinement::T = Inf
 end
 
