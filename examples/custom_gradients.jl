@@ -20,7 +20,8 @@ else
     using GLMakie
 end
 
-setup = SphereSetup(; ncell = 1, layersizes = [0.6, 1.0], rmin = 5.0, rmax = 5.0)
+T = Float64
+setup = SphereSetup{T}(; ncell = 1, layersizes = [0.6, 1.0], rmin = 5.0, rmax = 5.0)
 nlayer = length(setup.layersizes)
 coeffs = coefficients(
     setup;
@@ -63,7 +64,7 @@ gradient = GeneralGradient(; gvec, TE)
 # for showing time stepping information, and [`VTKWriter`](@ref) for saving the solution time
 # series for visualization in ParaView.
 
-plotter = Plotter{Float64}()
+plotter = Plotter{Float64,3}()
 
 # We may then define the problem and solve for our gradient (with the callback).
 
