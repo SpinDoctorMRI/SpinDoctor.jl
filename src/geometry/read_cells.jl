@@ -12,14 +12,14 @@ function read_cells(cellfilename)
         readline(io)
         ncell = parse(Int, readline(io))
         readline(io)
-        d = parse(Int, readline(io))
-        centers = zeros(d, ncell)
+        dim = parse(Int, readline(io))
+        centers = zeros(dim, ncell)
         radii = zeros(1, ncell)
         readline(io)
         for icell = 1:ncell
             tmp = parse.(Float64, split(readline(io)))
-            centers[:, icell] = tmp[2:1+d]
-            radii[icell] = tmp[2+d]
+            centers[:, icell] = tmp[2:1+dim]
+            radii[icell] = tmp[2+dim]
         end
         (; centers, radii)
     end
