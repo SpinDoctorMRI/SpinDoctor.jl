@@ -1,6 +1,6 @@
 # Name for saving meshfiles and data
 name = "disks"
-savedir = joinpath("data/name")
+savedir = joinpath("data", name)
 
 # Geometrical setup
 setup = DiskSetup(;
