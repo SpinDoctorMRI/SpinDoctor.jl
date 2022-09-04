@@ -4,7 +4,7 @@
 
 | Documentation | Workflows | Code coverage | Quality assurance |
 | :-----------: | :-------: | :-----------: | :---------------: |
-| [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/stable) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/dev) | [![Build Status](https://github.com/agdestein/SpinDoctor.jl/workflows/CI/badge.svg)](https://github.com/agdestein/SpinDoctor.jl/actions) | [![Coverage](https://codecov.io/gh/agdestein/SpinDoctor.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/agdestein/SpinDoctor.jl) | [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl) |
+| [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/stable) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/dev) | [![Build Status](https://github.com/spindoctormri/SpinDoctor.jl/workflows/CI/badge.svg)](https://github.com/spindoctormri/SpinDoctor.jl/actions) | [![Coverage](https://codecov.io/gh/spindoctormri/SpinDoctor.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/spindoctormri/SpinDoctor.jl) | [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl) |
 
 This is a Julia implementation of the SpinDoctor toolbox. The original MATLAB toolbox can be
 found at <https://github.com/SpinDoctorMRI/SpinDoctor>.
