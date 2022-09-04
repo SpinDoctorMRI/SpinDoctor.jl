@@ -1,24 +1,24 @@
 """
-    create_geometry(setup; meshdir = nothing, recreate = true)
+    create_geometry(setup; savedir = nothing, recreate = true)
 
-Create cells, surfaces and finite element mesh. If `meshdir` is a path,
-geometry files are saved. If additionally `recreate = false`, previous
-geometry files will be reused instead of generating new ones.
+Create cells, surfaces and finite element mesh. If `savedir` is a path,
+geometry files are saved. If additionally `recreate = false`, previous geometry
+files will be reused instead of generating new ones.
 """
-function create_geometry(setup; meshdir = nothing, recreate = true)
+function create_geometry(setup; savedir = nothing, recreate = true)
     (; refinement) = setup
 
     # File name for saving or loading geometry
-    if isnothing(meshdir)
+    if isnothing(savedir)
         do_save = false
-        meshdir = ""
+        savedir = ""
     else
         do_save = true
-        isdir(meshdir) || mkpath(meshdir)
+        isdir(savedir) || mkpath(savedir)
     end
 
     # Check if cell description file is already available
-    cellfilename = joinpath(meshdir, "cells")
+    cellfilename = joinpath(savedir, "cells")
     if do_save && isfile(cellfilename) && !recreate
         cells = read_cells(cellfilename)
     else
@@ -26,7 +26,7 @@ function create_geometry(setup; meshdir = nothing, recreate = true)
         !isnothing(cells) && do_save && save_cells(cells, cellfilename)
     end
 
-    stl_file = joinpath(meshdir, "mesh.stl")
+    stl_file = joinpath(savedir, "mesh.stl")
     is_stl = do_save && isfile(stl_file)
     if is_stl
         setup.ecs isa NoECS || error("ECS is only available for surface meshes")
@@ -34,7 +34,7 @@ function create_geometry(setup; meshdir = nothing, recreate = true)
 
     # Use an existing finite elements mesh or create a new finite elements mesh. The name of
     # the finite elements mesh is stored in the string `fname_tetgen_femesh`
-    fname_tetgen = "$meshdir/mesh"
+    fname_tetgen = "$savedir/mesh"
 
     # Read or create surface triangulation
     if is_stl

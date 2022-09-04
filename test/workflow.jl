@@ -47,7 +47,7 @@ T = Float64
     @testset "NeuronSetup" begin
         setup = NeuronSetup{T}()
         coeffs = get_coeffs(setup)
-        mesh, = create_geometry(setup; meshdir = "meshfiles/neuron")
+        mesh, = create_geometry(setup; savedir = "meshfiles/neuron")
         model = Model(; mesh, coeffs...)
     end
 

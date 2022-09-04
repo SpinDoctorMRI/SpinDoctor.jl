@@ -19,11 +19,9 @@ include("setups/plates.jl")
 # include("setups/sphere.jl")
 # include("setups/spheres.jl")
 
-mesh, surfaces, cells = @time create_geometry(setup; meshdir, recreate = true);
+mesh, surfaces, cells = create_geometry(setup; savedir, recreate = true);
 model = Model(; mesh, coeffs...);
 dim = size(surfaces.points, 1)
-volumes = get_cmpt_volumes(model.mesh)
-D_avg = 1 / dim * tr.(model.D)' * volumes / sum(volumes)
 @info "Number of nodes per compartment:" length.(model.mesh.points)
 
 ## Plot mesh
@@ -33,7 +31,7 @@ plot_mesh(mesh, 1:4, 10:10)
 plot_mesh(mesh)
 
 ## Assemble finite element matrices
-matrices = @time assemble_matrices(model);
+matrices = assemble_matrices(model);
 
 ## Magnetic field gradient
 if dim == 2
@@ -77,6 +75,9 @@ savefield(model.mesh, ξ, joinpath("output", name, "magnetization"))
 
 
 ## Matrix Formalism
+
+volumes = get_cmpt_volumes(model.mesh)
+D_avg = 1 / dim * tr.(model.D)' * volumes / sum(volumes)
 
 # Perform Laplace eigendecomposition
 laplace = Laplace(; model, matrices, neig_max = 400)
@@ -129,5 +130,6 @@ analytical_laplace = AnalyticalLaplace(; analytical_coeffs..., eiglim, eigstep)
 lap_mat = @time solve(analytical_laplace)
 
 # Compute analytical matrix formalism signal truncation
+volumes = get_cmpt_volumes(model.mesh)
 analytical_mf = AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
 signal = solve(analytical_mf, gradient)

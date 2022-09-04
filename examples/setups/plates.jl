@@ -3,7 +3,7 @@ T = Float64
 
 # Name for saving meshfiles and data
 name = "plates"
-meshdir = joinpath("meshfiles", name)
+savedir = joinpath("data", name)
 
 # Geometrical setup
 setup = PlateSetup(;

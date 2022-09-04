@@ -1,6 +1,6 @@
 # Name for saving meshfiles and data
 name = "spheres"
-meshdir = joinpath("meshfiles", name)
+savedir = joinpath("data", name)
 
 # Geometrical setup
 setup = SphereSetup(

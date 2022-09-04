@@ -25,10 +25,10 @@ docs/src/generated/
 Manifest.toml
 
 # Input and output configurations
-meshfiles
-RealNeuronMeshes
-output
-test.jl
+*meshfiles/
+*RealNeuronMeshes/
+*output/
+*data/
 
 # Local configurations
 .DS_STORE

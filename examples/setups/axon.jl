@@ -1,6 +1,6 @@
 # Name for saving meshfiles and data
 name = "axon"
-meshdir = joinpath("meshfiles", name)
+savedir = joinpath("data", name)
 
 # Geometrical setup
 setup = CylinderSetup(;
