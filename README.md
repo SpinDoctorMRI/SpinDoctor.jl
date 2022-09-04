@@ -60,7 +60,7 @@ an extracellular space as described above.
 
 ### Spinning spindle spins in SpinDoctor
 
-![Spindle](misc/spindle.gif)
+![Spindle](assets/spindle.gif)
 
 The above graphic visualizes the real part of the magnetization as a z-displacement for the
 spindle neuron geometry `03b_spindle4aACC` (extracted from
@@ -68,7 +68,7 @@ spindle neuron geometry `03b_spindle4aACC` (extracted from
 The magnetization was saved for 200 time steps, and the exported VTK sequence was visualized
 using [ParaView](https://www.paraview.org).
 
-![Gradient](misc/gradient.gif)
+![Gradient](assets/gradient.gif)
 
 Here the magnetization is shown in a dendrite branch during a three-dimensional gradient
 sequence.
