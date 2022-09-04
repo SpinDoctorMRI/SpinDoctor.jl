@@ -7,7 +7,8 @@ function plot_mesh end
 
 function plot_mesh(femesh::FEMesh{T,2}, compartments = 1:length(femesh.points)) where {T}
     fig = Figure()
-    ax = Axis(fig[1, 1])
+    ax = Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
+    ax.aspect = DataAspect()
     for (i, icmpt) ∈ enumerate(compartments)
         points = femesh.points[icmpt]
         elements = femesh.elements[icmpt]
