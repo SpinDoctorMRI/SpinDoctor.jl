@@ -121,7 +121,7 @@ CylinderSetup(;
     dmax = 0.6,
     nsidewall = 12,
     ecs = NoECS(),
-    height = 1,
+    height = 1.0,
     bend = 0.0,
     twist = 0.0,
     refinement = Inf,

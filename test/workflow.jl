@@ -4,48 +4,47 @@
 #       SphereSetup, NeuronSetup]
 # - Gradient ∈ [GeneralGradient, ScalarGradient] (all time profiles)
 
-# Floating point type for simulations
 T = Float64
 
 @testset "Setup recipes" begin
 
     @testset "PlateSetup" begin
-        setup = PlateSetup{T}()
+        setup = PlateSetup()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "SlabSetup" begin
-        setup = SlabSetup{T}()
+        setup = SlabSetup()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "DiskSetup" begin
-        setup = DiskSetup{T}()
+        setup = DiskSetup()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "CylinderSetup" begin
-        setup = CylinderSetup{T}(; ecs = ConvexHullECS{T}(; margin = 0.5))
+        setup = CylinderSetup(; ecs = ConvexHullECS(; margin = 0.5))
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "SphereSetup" begin
-        setup = SphereSetup{T}()
+        setup = SphereSetup()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
     end
 
     @testset "NeuronSetup" begin
-        setup = NeuronSetup{T}()
+        setup = NeuronSetup()
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup; savedir = "meshfiles/neuron")
         model = Model(; mesh, coeffs...)
@@ -54,7 +53,7 @@ T = Float64
 end
 
 # Geometrical setup
-setup = SlabSetup{T}(;
+setup = SlabSetup(;
     depth = 20.0,
     widths = fill(5.0, 4),
     height = 20.0,
@@ -87,7 +86,7 @@ TE = 5000
 φ = -π / 6
 R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
 gvec(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
-general_gradient = GeneralGradient{T,typeof(gvec)}(; gvec, TE)
+general_gradient = GeneralGradient(; gvec, TE)
 
 
 @testset "Signal" begin
@@ -114,7 +113,7 @@ end
     btpde = BTPDE(; model, matrices)
     @test solve(btpde, general_gradient) isa Vector{Complex{T}}
     @test solve(btpde, ogse_gradient) isa Vector{Complex{T}}
-    solver = IntervalConstantSolver{T}(; θ = 0.5, timestep = 5)
+    solver = IntervalConstantSolver(; θ = 0.5, timestep = 5)
     @test_throws MethodError solve(btpde, general_gradient, solver) isa Vector{Complex{T}}
     @test_throws ErrorException solve(btpde, ogse_gradient, solver) isa Vector{Complex{T}}
     @test solve(btpde, pgse_gradient, solver) isa Vector{Complex{T}}
