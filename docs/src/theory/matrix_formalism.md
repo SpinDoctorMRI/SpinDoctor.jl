@@ -1,5 +1,17 @@
 # Matrix formalism
 
+The Matrix Formalism [Callaghan1997](@cite), [Barzykin1999](@cite)
+representation of the solution to the Bloch-Torrey PDE is based on the
+generalized Laplace eigenfunctions of the given geometrical configuration. These
+are the eigenfunctions of the generalized Laplace operator $-\nabla \cdot
+\mat{D} \nabla$ subject to the same boundary and interface conditions as the
+BTPDE. It which does not depend on the gradient sequence. The Matrix Formalism
+truncates the number of Laplace eigenmodes at an acceptable level, by setting a
+minimum length scale for the eigenfunctions. The gradient sequence dependent
+Bloch-Torrey operator can then be expressed in the truncated Laplace
+eigenfunction basis. This allows for a simple analytical expression which
+approximates the solution to the BTPDE down to an arbitrary length scale.
+
 # Eigenvalue decomposition of the generalized Laplace operator
 
 Let ``\{(\phi, \lambda)\}`` be the ``L^2``-normalized eigenfunctions and eigenvalues of the
@@ -137,7 +149,8 @@ The initial coefficients are given by
 \vec{\nu}(0) = \int_\Omega \rho(\vec{x}) \vec{\phi}(\vec{x}) \, \mathrm{d} \Omega(\vec{x}).
 ```
 
-By using a piece-wise constant approximation of the gradient ``\vec{g}``, we obtain
+By using a piece-wise constant approximation of the gradient ``\vec{g}``
+[Barzykin1999](@cite), we obtain
 
 ```math
 \vec{\nu}(T_\text{echo}) \approx \left(\prod_{i = 1}^{N_\text{int}} \mathrm{e}^{-\delta_i

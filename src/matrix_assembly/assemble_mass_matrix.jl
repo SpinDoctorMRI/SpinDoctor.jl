@@ -6,10 +6,9 @@ Assemble 3D mass matrix using P1 finite elements.
 This function is based on the Matlab function `mass_matrixP1_3D.m` from the Matlab
 nodal matrix assembly toolbox by Jan Valdman and Talal Rahmnan:
 
-https://uk.mathworks.com/matlabcentral/fileexchange/27826-fast-fem-assembly-nodal-elements
+<https://uk.mathworks.com/matlabcentral/fileexchange/27826-fast-fem-assembly-nodal-elements>
 
-Talal Rahman and Jan Valdman: Fast MATLAB assembly of FEM matrices in 2D and 3D: nodal
-elements, Applied Mathematics and Computation 219, 7151–7158 (2013).
+[Rahman2013](@cite)
 """
 function assemble_mass_matrix(elements, nodes, weights = 1)
     nnode = size(nodes, 2)

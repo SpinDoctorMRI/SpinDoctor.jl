@@ -9,8 +9,7 @@ nodal matrix assembly toolbox by Jan Valdman and Talal Rahman.
 
 <https://uk.mathworks.com/matlabcentral/fileexchange/27826-fast-fem-assembly-nodal-elements>
 
-Talal Rahman and Jan Valdman: Fast MATLAB assembly of FEM matrices in 2D and 3D: nodal
-elements, Applied Mathematics and Computation 219, 7151–7158 (2013).
+[Rahman2013](@cite)
 """
 function assemble_stiffness_matrix(elements, nodes, D = I(3))
     dim, nnode = size(nodes)
