@@ -6,6 +6,9 @@
 # in order to run SpinDoctor simulations on real neuron geometries. Since the
 # files take up a lot of space, this script automatically downloads the chosen
 # file only, and unzips it.
+#
+# See [Fang2020](@cite) for information about working with neurons in
+# SpinDoctor.
 
 using Downloads
 using ZipFile

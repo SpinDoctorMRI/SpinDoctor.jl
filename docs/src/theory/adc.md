@@ -6,7 +6,7 @@ amplitude ``g > 0``, time profile ``f : [0, T_\text{echo}] \to [-1, 1]`` and dir
 
 Some commonly used time profiles (diffusion-encoding sequences) are:
 
-- The pulsed-gradient spin echo (PGSE) sequence:
+- The pulsed-gradient spin echo (PGSE) sequence [Stejskal1965](@cite):
   ```math
   f(t) =
   \begin{cases}
@@ -21,7 +21,7 @@ Some commonly used time profiles (diffusion-encoding sequences) are:
   t_\text{pause}) \right),
   ```
   where ``f_{\delta, \Delta}`` is a normal PGSE sequence;
-- The oscillating gradient spin echo (OGSE) sequence (here, cos-OGSE):
+- The oscillating gradient spin echo (OGSE) sequence (here, cos-OGSE) [Callaghan1995](@cite), [Does2003](@cite):
   ```math
   f(t) =
   \begin{cases}
@@ -46,14 +46,14 @@ b(g, f) = \gamma^2 g^2 \int_0^{T_\text{echo}} \left( \int_0^t f(s) \, \mathrm{d}
 \, \mathrm{d}t.
 ```
 
-For PGSE, the b-value is:
+For PGSE, the b-value is [Stejskal1965](@cite):
 
 ```math
 b(g, \delta, \Delta) = \gamma^2 g^2 \delta^2 \left( \Delta - \delta / 3 \right).
 ```
 
 For the cosine OGSE with _integer_ number of periods ``n`` in each of the two
-durations ``\delta``, the corresponding ``b``-value is:
+durations ``\delta``, the corresponding ``b``-value is [Xu2007](@cite):
 
 ```math
 b(g, \delta) = \gamma^2 g^2 \frac{\delta^3}{4 n^2 \pi^2} = \gamma^2 g^2
@@ -113,7 +113,7 @@ D_\text{ADC}(\vec{d}) = \vec{d}^\mathsf{T} \mathbf{D}_\text{eff} \vec{d}.
 
 ## [HADC](@id HADC)
 
-In a previous work, a PDE model for the time-dependent ADC was obtained
+In a previous work [Schiavi2016](@cite), a PDE model for the time-dependent ADC was obtained
 starting from the Bloch-Torrey equation, using homogenization techniques. In the case of
 negligible water exchange between compartments (low permeability), there is no coupling
 between the compartments, at least to the quadratic order in ``g``, which is the ADC term.
@@ -155,7 +155,7 @@ model that we call the HADC model.
 ## [Short diffusion time approximation](@id STA)
 
 A well-known formula for the ADC in the short diffusion time regime is the following short
-time approximation (STA):
+time approximation (STA) [Mitra1992](@cite), [Mitra1993](@cite):
 
 ```math
 D_\text{STA} = \left(1 - \frac{4\sqrt{D_0}}{3 \sqrt{\pi}}\sqrt{\Delta} \frac{{A}}{d\; V}
@@ -164,9 +164,9 @@ D_\text{STA} = \left(1 - \frac{4\sqrt{D_0}}{3 \sqrt{\pi}}\sqrt{\Delta} \frac{{A}
 where ``\dfrac{A}{V}`` is the surface to volume ratio, ``d`` is the spatial dimension and
 ``D_0 = \vec{d}^\mathsf{T} \mathbf{D} \vec{d}`` is the intrinsic diffusion
 coefficient in the gradient direction. In the above formula, the pulse duration ``\delta``
-is assumed to be very small compared to ``\Delta``. A recent correction to the above formula
-, taking into account the finite pulse duration ``\delta`` and the
-gradient direction ``\vec{d}``, is the following:
+is assumed to be very small compared to ``\Delta``. A recent correction to the
+above formula [Schiavi2016](@cite), taking into account the finite pulse
+duration ``\delta`` and the gradient direction ``\vec{d}``, is the following:
 
 ```math
 D_\text{STA} = \left(1 - \frac{4 \sqrt{D_0}}{3 \sqrt{\pi}} C_{\delta,\Delta}

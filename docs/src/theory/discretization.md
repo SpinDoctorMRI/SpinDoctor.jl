@@ -1,7 +1,8 @@
 # Finite element discretization
 
 In SpinDoctor, the finite element mesh generation is performed using an external package
-called Tetgen. Each finite element mesh consists of
+called Tetgen in 3D [Si2015](@cite), and Triangle in 2D [Shewchuk1996b](@cite).
+Each finite element mesh consists of
 
 - a list of ``N_\text{node}`` nodes in three dimensions: ``(\mathbf{q}_1, \dots,
   \mathbf{q}_{N_\text{node}}) = (\mathbf{q}^x, \mathbf{q}^y, \mathbf{q}^z)^\mathsf{T} \in
@@ -134,7 +135,7 @@ R_{kl} = \int_\Omega \frac{1}{T_2(\vec{x})} \, \varphi_k(\vec{x}) \varphi_l(\vec
 ```
 
 In SpinDoctor, these matrices are assembled from local element matrices and the assembly
-process is based on vectorized routines of, which replace expensive
+process is based on vectorized routines from [Rahman2013](@cite), which replace expensive
 loops over elements by operations with 3-dimensional arrays. All local element matrices in
 the assembly of ``\mathbf{S}``, ``\mathbf{M}``, and ``\mathbf{Q}`` are evaluated at the same time and
 stored in a full matrix of size ``4 \times 4 \times N_\text{element}``, where

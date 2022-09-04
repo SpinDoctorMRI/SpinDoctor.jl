@@ -2,6 +2,8 @@
     solve(problem::MatrixFormalism, gradient; ninterval = 500)
 
 Solve for magnetization using Matrix Formalism.
+
+See [Li2020](@cite), [Agdestein2021](@cite).
 """
 function solve(problem::MatrixFormalism{TT,dim}, gradient; ninterval = 500) where {TT,dim}
     (; model, matrices, lap_eig) = problem
