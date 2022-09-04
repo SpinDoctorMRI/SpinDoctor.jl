@@ -42,7 +42,6 @@ Setup recipe for a set of 2D disks immersed in a ECS.
     refinement::T = Inf
     @assert refinement > 0
 end
-DiskSetup{T}(; ecs = NoECS(), kwargs...) where {T} = DiskSetup{T,typeof(ecs)}(; ecs, kwargs...)
 
 """
     SphereSetup
@@ -67,7 +66,6 @@ Setup recipe for a set of spheres immersed in a ECS.
     refinement::T = Inf
     @assert refinement > 0
 end
-SphereSetup{T}(; ecs = NoECS(), kwargs...) where {T} = SphereSetup{T,typeof(ecs)}(; ecs, kwargs...)
 
 """
     NeuronSetup
@@ -79,7 +77,6 @@ Setup recipe for a neuron, possibly wrapped in a ECS.
     refinement::T = Inf
     @assert refinement > 0
 end
-NeuronSetup{T}(; ecs = NoECS(), kwargs...) where {T} = NeuronSetup{T,typeof(ecs)}(; ecs, kwargs...)
 
 """
     ExtrusionSetup
@@ -97,12 +94,25 @@ Setup recipe for an "extruded" 2D geometry, based on a 2D setup `groundsetup`.
 end
 
 """
-    CylinderSetup
+    CylinderSetup(;
+        ncell = 1,
+        layersizes = [1.0],
+        rmin = 2.0,
+        rmax = 6.0,
+        dmin = 0.2,
+        dmax = 0.6,
+        nsidewall = 12,
+        ecs = NoECS(),
+        height = 1,
+        bend = 0.0,
+        twist = 0.0,
+        refinement = Inf,
+    )
 
 Cylinder setup.
 """
 CylinderSetup{T,E} = ExtrusionSetup{T,DiskSetup{T,E}}
-CylinderSetup{T}(;
+CylinderSetup(;
     ncell = 1,
     layersizes = [1.0],
     rmin = 2.0,
@@ -115,21 +125,12 @@ CylinderSetup{T}(;
     bend = 0.0,
     twist = 0.0,
     refinement = Inf,
-) where {T} = ExtrusionSetup(;
-    groundsetup = DiskSetup{T,typeof(ecs)}(;
-        ncell,
-        layersizes,
-        rmin,
-        rmax,
-        dmin,
-        dmax,
-        nsidewall,
-        ecs,
-    ),
-    height = T(height),
-    bend = T(bend),
-    twist = T(twist),
-    refinement = T(refinement),
+) = ExtrusionSetup(;
+    groundsetup = DiskSetup(; ncell, layersizes, rmin, rmax, dmin, dmax, nsidewall, ecs),
+    height,
+    bend,
+    twist,
+    refinement,
 )
 
 """
@@ -138,17 +139,17 @@ CylinderSetup{T}(;
 Slab setup.
 """
 SlabSetup{T} = ExtrusionSetup{T,PlateSetup{T}}
-SlabSetup{T}(;
+SlabSetup(;
     widths = [1.0, 1.0, 1.0, 1.0, 1.0],
     depth = 5.0,
     height = 1.0,
     bend = 0.0,
     twist = 0.0,
     refinement = Inf,
-) where {T} = ExtrusionSetup(;
-    groundsetup = PlateSetup{T}(; widths, depth),
-    height = T(height),
-    bend = T(bend),
-    twist = T(twist),
-    refinement = T(refinement),
+) = ExtrusionSetup(;
+    groundsetup = PlateSetup(; widths, depth),
+    height,
+    bend,
+    twist,
+    refinement,
 )

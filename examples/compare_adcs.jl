@@ -37,9 +37,8 @@ end
 # should allow for free diffusion in the horizontal direction, but a rather restricted
 # vertical diffusion with the permeable membranes.
 
-T = Float64
 ncell = 5
-setup = SlabSetup{T}(;
+setup = SlabSetup(;
     depth = 50.0,
     widths = fill(5.0, ncell),
     height = 50.0,
@@ -110,14 +109,12 @@ gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues
 
 btpde = BTPDE(; model, matrices)
 solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
-signals = Complex{T}[]
-signals_cmpts = Vector{Complex{T}}[]
-for grad ∈ gradients
-    @show grad
+signals_cmpts = map(gradients) do grad
+    @show grad.g
     ξ = solve(btpde, grad, solver)
-    push!(signals, compute_signal(matrices.M, ξ))
-    push!(signals_cmpts, compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ)))
+    compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
 end
+signals = sum(signals_cmpts)
 
 # Fitting the ADC is straightforward.
 

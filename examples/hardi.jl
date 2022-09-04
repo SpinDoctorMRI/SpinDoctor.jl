@@ -27,9 +27,8 @@ end
 # should allow for free diffusion in the vertical direction, but a rather restricted
 # vertical diffusion with the permeable membranes.
 
-T = Float64
 ncell = 5
-setup = PlateSetup{T}(;
+setup = PlateSetup(;
     depth = 50.0,
     widths = fill(5.0, ncell),
     refinement = 1.0,
@@ -79,12 +78,10 @@ S₀ = abs(compute_signal(matrices.M, ρ))
 
 btpde = BTPDE(; model, matrices)
 solver = IntervalConstantSolver(; timestep = 10.0)
-signals = T[]
-for (i, grad) ∈ enumerate(gradients)
-    @show grad
+signals = map(gradients) do grad
+    @show grad.dir
     ξ = solve(btpde, grad, solver)
-    s = abs(compute_signal(matrices.M, ξ))
-    push!(signals, s)
+    abs(compute_signal(matrices.M, ξ))
 end
 
 

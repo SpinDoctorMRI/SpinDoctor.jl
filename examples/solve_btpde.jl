@@ -22,15 +22,12 @@ end
 # Set random seed for reproducibility
 Random.seed!(123)
 
-# Floating point type
-T = Float64
-
 # The built in geometry recipes allow for making various cell configurations.
 # We here consider the case of three twisted axons immersed in an
 # extracellular space (ECS). The axons are extruded from a 2D ground setup
 # consisting of three random disks.
 
-setup = CylinderSetup{T}(;
+setup = CylinderSetup(;
     ncell = 3,
     ecs = ConvexHullECS(; margin = 2.0),
     height = 40.0,

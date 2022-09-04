@@ -1,13 +1,10 @@
-# Floating point type for simulations
-T = Float64
-
 # Name for saving meshfiles and data
 name = "slabs"
 meshdir = joinpath("meshfiles", name)
 
 # Geometrical setup
 ncell = 5
-setup = SlabSetup{T}(;
+setup = SlabSetup(;
     depth = 50.0,
     widths = fill(5.0, ncell),
     height = 50.0,

@@ -1,12 +1,9 @@
-# Floating point type for simulations
-T = Float64
-
 # Name for saving meshfiles and data
 name = "cylinders"
 meshdir = joinpath("meshfiles", name)
 
 # Geometrical setup
-setup = CylinderSetup{T}(;
+setup = CylinderSetup(;
     ncell = 3,
     nsidewall = 12,
     rmin = 2.0,
@@ -14,7 +11,7 @@ setup = CylinderSetup{T}(;
     dmin = 0.2,
     dmax = 0.3,
     layersizes = [1.0],
-    ecs = ConvexHullECS{T}(; margin = 2.0),
+    ecs = ConvexHullECS(; margin = 2.0),
     height = 5.0,
     bend = 0.0,
     twist = 0.0,

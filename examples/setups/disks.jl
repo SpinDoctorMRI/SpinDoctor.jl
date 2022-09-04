@@ -1,12 +1,9 @@
-# Floating point type for simulations
-T = Float64
-
 # Name for saving meshfiles and data
 name = "disks"
 meshdir = joinpath("meshfiles", name)
 
 # Geometrical setup
-setup = DiskSetup{T}(;
+setup = DiskSetup(;
     ncell = 3,
     nsidewall = 30,
     rmin = 2.0,
@@ -14,8 +11,8 @@ setup = DiskSetup{T}(;
     dmin = 0.2,
     dmax = 0.3,
     # layersizes = [0.6, 1.0],
-    ecs = ConvexHullECS{T}(; margin = 2.0),
-    # ecs = BoxECS{T}(0.5),
+    ecs = ConvexHullECS(; margin = 2.0),
+    # ecs = BoxECS(0.5),
     refinement = 0.1,
 )
 

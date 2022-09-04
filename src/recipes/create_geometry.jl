@@ -17,11 +17,6 @@ function create_geometry(setup; meshdir = nothing, recreate = true)
         isdir(meshdir) || mkpath(meshdir)
     end
 
-    if hasfield(typeof(setup), :ecs_shape)
-        setup.ecs_shape ∈ [:no_ecs, :box, :convex_hull, :tight_wrap] ||
-            error("Invalid ECS shape")
-    end
-
     # Check if cell description file is already available
     cellfilename = joinpath(meshdir, "cells")
     if do_save && isfile(cellfilename) && !recreate
@@ -34,7 +29,7 @@ function create_geometry(setup; meshdir = nothing, recreate = true)
     stl_file = joinpath(meshdir, "mesh.stl")
     is_stl = do_save && isfile(stl_file)
     if is_stl
-        setup.ecs_shape == :no_ecs || error("ECS is only available for surface meshes")
+        setup.ecs isa NoECS || error("ECS is only available for surface meshes")
     end
 
     # Use an existing finite elements mesh or create a new finite elements mesh. The name of

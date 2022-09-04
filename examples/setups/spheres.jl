@@ -1,12 +1,9 @@
-# Floating point type for simulations
-T = Float64
-
 # Name for saving meshfiles and data
 name = "spheres"
 meshdir = joinpath("meshfiles", name)
 
 # Geometrical setup
-setup = SphereSetup{T}(
+setup = SphereSetup(
     ncell = 4,
     layersizes = [1.0],
     rmin = 3.0,
@@ -14,7 +11,7 @@ setup = SphereSetup{T}(
     dmin = 0.2,
     dmax = 0.3,
     nsidewall = 200,
-    ecs = ConvexHullECS{T}(; margin = 1.0)
+    ecs = ConvexHullECS(; margin = 1.0)
     # refinement = 0.5,
 )
 

@@ -1,12 +1,9 @@
-# Floating point type for simulations
-T = Float64
-
 # Name for saving meshfiles and data
 name = "axon"
 meshdir = joinpath("meshfiles", name)
 
 # Geometrical setup
-setup = CylinderSetup{T}(;
+setup = CylinderSetup(;
     ncell = 1,
     nsidewall = 30,
     rmin = 5.0,

@@ -20,8 +20,7 @@ else
     using GLMakie
 end
 
-T = Float64
-setup = SphereSetup{T}(; ncell = 1, layersizes = [0.6, 1.0], rmin = 5.0, rmax = 5.0)
+setup = SphereSetup(; ncell = 1, layersizes = [0.6, 1.0], rmin = 5.0, rmax = 5.0)
 nlayer = length(setup.layersizes)
 coeffs = coefficients(
     setup;

@@ -58,8 +58,8 @@ callbacks = [printer, plotter]
 # callbacks = [printer, plotter, writer]
 
 # Choose BTDPE solver (specialized solver only for PGSE)
-solver = IntervalConstantSolver{T}(; θ = 0.5, timestep = 5.0)
-solver = QNDF(; autodiff = false)
+solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
+solver = QNDF()
 
 # Solve BTPDE
 btpde = BTPDE(; model, matrices)
@@ -107,9 +107,9 @@ gradients = [
     d ∈ eachcol(directions)
 ]
 hadc = HADC(; model, matrices)
-adcs = Vector{T}[]
+adcs = Vector{eltype(directions)}[]
 @time for grad ∈ gradients
-    @show grad
+    @show grad.dir
     push!(adcs, solve(hadc, grad))
 end
 difftensors = fit_tensors(directions, adcs)

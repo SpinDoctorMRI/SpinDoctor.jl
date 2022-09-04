@@ -6,7 +6,7 @@ name = "plates"
 meshdir = joinpath("meshfiles", name)
 
 # Geometrical setup
-setup = PlateSetup{T}(;
+setup = PlateSetup(;
     depth = 20.0,
     widths = fill(5.0, 10),
     refinement = 1.0,
