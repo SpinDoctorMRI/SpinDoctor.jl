@@ -1,6 +1,7 @@
-using SpinDoctor
-using Literate
 using Documenter
+using DocumenterCitations
+using Literate
+using SpinDoctor
 
 DocMeta.setdocmeta!(SpinDoctor, :DocTestSetup, :(using SpinDoctor); recursive = true)
 
@@ -21,7 +22,10 @@ for e ∈ examples
     # Literate.script(e, o)
 end
 
-makedocs(;
+bib = CitationBibliography(joinpath(@__DIR__, "references.bib"))
+
+makedocs(
+    bib;
     modules = [SpinDoctor],
     authors = "Syver Døving Agdestein and contributors",
     repo = "https://github.com/SpinDoctorMRI/SpinDoctor.jl/blob/{commit}{path}#{line}",
@@ -44,6 +48,7 @@ makedocs(;
         ],
         "Neurons" => "neurons.md",
         "API Reference" => "api.md",
+        "References" => "references.md",
     ],
 )
 
