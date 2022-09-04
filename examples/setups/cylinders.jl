@@ -12,10 +12,10 @@ setup = CylinderSetup(;
     dmax = 0.3,
     layersizes = [1.0],
     ecs = ConvexHullECS(; margin = 2.0),
-    height = 5.0,
-    bend = 0.0,
-    twist = 0.0,
-    # refinement = 0.5,
+    height = 40.0,
+    bend = 0.02,
+    twist = π / 4,
+    refinement = 1.0,
 )
 
 # Get compartimentalized coefficient vectors

@@ -82,19 +82,22 @@ length_scales = eig2length.(lap_eig.values, D_avg)
 # We may also further truncate the eigenfunction basis, if we are satisfied
 # skipping features below a threshold length scale of 3 micrometers.
 
-length_scale = 3
+length_scale = 1.0
 λ_max = length2eig(length_scale, D_avg)
 lap_eig = limit_lengthscale(lap_eig, λ_max)
 
 # Each of the resulting eigenfunctions is represented in the same way as the initial
 # magnetization field `ρ`.
 
+## eiginds = [2, 3, 5, 10, 15, 20, 30, 40, 50, 100, 150, 200]
 ncompartment = length(mesh.points)
 fig = Figure()
 for i = 1:3, j = 1:4
-    ieig = 1 + 6(i - 1) + j
+    ieig = 1 + 4(i - 1) + j
+    ## ieig = eiginds[4(i - 1) + j]
     ϕ_cmpts = split_field(mesh, lap_eig.funcs[:, ieig])
     ax = Axis(fig[i, j]; title = @sprintf("n = %d, ℓ = %.1f", ieig, length_scales[ieig]))
+    ax.aspect = DataAspect()
     for icmpt ∈ 1:ncompartment
         f = mesh.elements[icmpt]
         p = mesh.points[icmpt]

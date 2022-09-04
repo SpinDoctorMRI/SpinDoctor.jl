@@ -37,6 +37,7 @@ function create_surfaces(setup::NeuronSetup{T}, filename) where {T}
     ]]
     sort!(facets, dims = 1)
     facets_unq = unique(facets, dims = 2)
+    # FIXME: The below statement is slow
     ikeep = [count(f -> f == fu, eachcol(facets)) == 1 for fu ∈ eachcol(facets_unq)]
     facets = facets_unq[:, ikeep]
 
