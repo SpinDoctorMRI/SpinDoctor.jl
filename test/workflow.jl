@@ -7,7 +7,6 @@
 T = Float64
 
 @testset "Setup recipes" begin
-
     @testset "PlateSetup" begin
         setup = PlateSetup()
         coeffs = get_coeffs(setup)
@@ -49,16 +48,10 @@ T = Float64
         mesh, = create_geometry(setup; savedir = "meshfiles/neuron")
         model = Model(; mesh, coeffs...)
     end
-
 end
 
 # Geometrical setup
-setup = SlabSetup(;
-    depth = 20.0,
-    widths = fill(5.0, 4),
-    height = 20.0,
-    refinement = 10.0,
-)
+setup = SlabSetup(; depth = 20.0, widths = fill(5.0, 4), height = 20.0, refinement = 10.0)
 coeffs = get_coeffs(setup)
 
 # Get compartimentalized coefficient vectors
@@ -87,7 +80,6 @@ TE = 5000
 R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
 gvec(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
 general_gradient = GeneralGradient(; gvec, TE)
-
 
 @testset "Signal" begin
     ρ = initial_conditions(model)

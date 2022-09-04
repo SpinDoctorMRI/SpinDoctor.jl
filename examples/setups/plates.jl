@@ -6,11 +6,7 @@ name = "plates"
 savedir = joinpath("data", name)
 
 # Geometrical setup
-setup = PlateSetup(;
-    depth = 20.0,
-    widths = fill(5.0, 10),
-    refinement = 1.0,
-)
+setup = PlateSetup(; depth = 20.0, widths = fill(5.0, 10), refinement = 1.0)
 
 ncell = length(setup.widths)
 
