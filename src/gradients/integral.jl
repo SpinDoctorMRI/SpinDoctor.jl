@@ -7,7 +7,7 @@ is used as the upper integral limit.
 For the `PGSE`, `SinOGSE`, `CosOGSE` and `DoublePGSE` sequences, analytical
 expressions are available. Otherwise a numerical integral is computed.
 """
-function integral(f::TimeProfile, t = echotime(f))
+function integral(f::AbstractTimeProfile, t = echotime(f))
     quadgk(f, zero(t), t)
 end
 

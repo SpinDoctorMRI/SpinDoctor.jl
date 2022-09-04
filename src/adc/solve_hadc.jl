@@ -1,16 +1,19 @@
 """
-    solve(problem::HADC, gradient::ScalarGradient, odesolver = QNDF();
+    solve(
+        problem::HADC,
+        gradient::ScalarGradient,
+        odesolver = QNDF();
         abstol = 1e-6,
         reltol = 1e-4,
     )
 
-Compute the ADC using a homogenized ADC model (HADC). This is currently only implemented for
-scalar gradients.
+Compute the ADC using a homogenized ADC model (HADC). This is currently only
+implemented for scalar gradients.
 """
 function solve(
     problem::HADC,
     gradient::ScalarGradient,
-    odesolver = QNDF(autodiff = false);
+    odesolver = QNDF(; autodiff = false);
     abstol = 1e-6,
     reltol = 1e-4,
 )
@@ -30,14 +33,13 @@ function solve(
 
     # Time dependent ODE function
     function Mdω!(dω, ω, p, t)
-        # @show t
         (; mS, f, surfint) = p
         mul!(dω, mS, ω)
         dω .+= integral(f, t) .* surfint
     end
 
     # Create ODE function and Jacobian from matrices
-    Jac!(J, _, p, t) = (J .= p.mS)
+    jac!(J, ω, p, t) = (J .= p.mS)
 
     # Allocate output array
     adc = zeros(ncompartment)
@@ -53,15 +55,21 @@ function solve(
         p = (; mS = -S_cmpts[icmpt], f, surfint)
 
         odefunction = ODEFunction(
-            Mdω!,
-            jac = Jac!,
+            Mdω!;
+            jac = jac!,
             jac_prototype = p.mS,
             mass_matrix = M_cmpts[icmpt],
         )
-        odeproblem = ODEProblem(odefunction, ω₀[icmpt], (0, TE), p, progress = false)
+        odeproblem = ODEProblem(odefunction, ω₀[icmpt], (0, TE), p)
 
         # Solve ODE, keep all time steps (for integral)
-        sol = OrdinaryDiffEq.solve(odeproblem, odesolver, reltol = reltol, abstol = abstol)
+        sol = OrdinaryDiffEq.solve(
+            odeproblem,
+            odesolver;
+            reltol = reltol,
+            abstol = abstol,
+            tstops = intervals(gradient)[2:end],
+        )
 
         # Integral over compartment boundary
         a, = quadgk(t -> integral(f, t) * (surfint' * sol(t)), 0, TE)

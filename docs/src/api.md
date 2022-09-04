@@ -55,7 +55,6 @@ AnalyticalLaplace
 AnalyticalMatrixFormalism
 IntervalConstantSolver
 solve
-solve_multigrad
 ```
 
 ## Matrix formalism
@@ -92,7 +91,8 @@ cylinders, spheres, and neurons.
 
 ```@docs
 PlateSetup
-CylinderSetup
+DiskSetup
+ExtrusionSetup
 SphereSetup
 NeuronSetup
 coefficients

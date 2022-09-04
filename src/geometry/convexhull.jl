@@ -5,6 +5,8 @@ Convex hull of 2D points (gift wrapping).
 https://en.wikipedia.org/wiki/Gift_wrapping_algorithm
 """
 function convexhull2(p)
+    p = copy(p)
+
     function swap!(points, i, j)
         tmp = points[:, i]
         points[:, i] = points[:, j]

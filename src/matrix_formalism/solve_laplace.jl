@@ -3,9 +3,8 @@
 
 Compute the Laplace eigenvalues, eigenfunctions and first order moments of products of pairs of eigenfunctions.
 """
-function solve(laplace::Laplace)
-    (; model, matrices, neig_max) = laplace
-    (; mesh) = model
+function solve(laplace::Laplace{T,dim}) where {T,dim}
+    (; matrices, neig_max) = laplace
     (; M, S, R, Mx, Q) = matrices
 
     # Compute at most all eigenvalues in the given domain
@@ -33,10 +32,10 @@ function solve(laplace::Laplace)
         @warn "Obtained negative eigenvalues for Laplace operator." findall(λ .< 0) λ[λ.<0]
 
     # Normalize eigenfunctions with mass weighting
-    ϕ ./= .√sum(ϕ .* (M * ϕ), dims = 1)
+    ϕ ./= sqrt.(sum(ϕ .* (M * ϕ), dims = 1))
 
     # Compute first order moments of product of pairs of eigenfunctions
-    moments = [ϕ' * Mx[dim] * ϕ for dim = 1:3]
+    moments = [ϕ' * Mx[d] * ϕ for d = 1:dim]
 
     # Compute Laplace relaxation matrix
     massrelax = ϕ' * R * ϕ

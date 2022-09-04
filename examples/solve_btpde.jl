@@ -11,6 +11,7 @@ end                                                                             
 
 using SpinDoctor
 using LinearAlgebra
+using Random
 
 if haskey(ENV, "GITHUB_ACTIONS")
     using CairoMakie
@@ -18,49 +19,58 @@ else
     using GLMakie
 end
 
-# The built in geometry recipes allow for making various cell configuration. We here consider
-# the case of three twisted axons immersed in an extracellular space (ECS).
+# Set random seed for reproducibility
+Random.seed!(123)
+
+# The built in geometry recipes allow for making various cell configurations.
+# We here consider the case of three twisted axons immersed in an
+# extracellular space (ECS). The axons are extruded from a 2D ground setup
+# consisting of three random disks.
 
 setup = CylinderSetup(;
-    name = "some-very-real-axons",
     ncell = 3,
-    rmin = 2.0,
-    rmax = 6.0,
-    dmin = 0.2,
-    dmax = 0.3,
+    ecs = ConvexHullECS(; margin = 2.0),
     height = 40.0,
     bend = 0.0,
     twist = π / 4,
-    include_in = false,
-    in_ratio = 0.6,
-    ecs_shape = :convex_hull,
-    ecs_ratio = 0.5,
 )
 
-# We also define coefficients for the different cell compartments `:in` (axon), `:out`
-# (myelin), and `:ecs` (ECS).
+# We also define parameters for the cell compartments and ECS. The required
+# parameters are:
+#
+# - 3D Diffusion tensors `D` (we here use an isotropic coefficient)
+# - T2-relaxation times `T₂`
+# - Initial spin densities `ρ`
+# - Permeabilities `κ`
+#
+# The parameters `D`, `T₂`, and `ρ` are defined for each compartment, while
+# `κ` is defined for each interface and outer boundary. The `DiskSetup` allows
+# for multiple layers in each cell (here `nlayer = 1`), so `cell` and
+# `cell_boundaries` are arrays of length `nlayer = 1`, while `cell_interfaces`
+# is of length `nlayer - 1 = 0`.
 
 coeffs = coefficients(
     setup;
-    D = (; in = 0.002 * I(3), out = 0.002 * I(3), ecs = 0.002 * I(3)),
-    T₂ = (; in = Inf, out = Inf, ecs = Inf),
-    ρ = (; in = 1.0, out = 1.0, ecs = 1.0),
-    κ = (; in_out = 1e-4, out_ecs = 1e-4, in = 0.0, out = 0.0, ecs = 0.0),
+    D = (; cell = [0.002 * I(3)], ecs = 0.002 * I(3)),
+    T₂ = (; cell = [Inf], out = Inf, ecs = Inf),
+    ρ = (; cell = [1.0], out = 1.0, ecs = 1.0),
+    κ = (; cell_interfaces = zeros(0), cell_boundaries = [0.0], cell_ecs = 1e-4, ecs = 0.0),
     γ = 2.67513e-4,
 )
 
-# The following line creates a random cell configuration for our cylinder setup, generates a
-# surface triangulation and calls TetGen to create a tetrahedral finite element mesh. The
-# compartments and boundaries will be ordered in the same way as `coeffs`.
+# The following line creates a random cell configuration for our cylinder
+# setup, generates a surface triangulation and calls TetGen to create a
+# tetrahedral finite element mesh. The compartments and boundaries will be
+# ordered in the same way as `coeffs`.
 
-mesh, = create_geometry(setup)
+mesh, surfaces, cells = create_geometry(setup)
 
 # The resulting mesh can be plotted in 3D provided a Makie backend is loaded.
 
 plot_mesh(mesh)
 
-# The mesh looks good, so we can proceed with the assembly our biological model and the
-# associated finite element matrices.
+# The mesh looks good, so we can proceed with the assembly our biological
+# model and the associated finite element matrices.
 
 model = Model(; mesh, coeffs...)
 matrices = assemble_matrices(model)

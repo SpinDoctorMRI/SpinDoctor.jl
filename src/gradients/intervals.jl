@@ -1,5 +1,9 @@
 """
-    intervals(f)
+    intervals(f::AbstractTimeProfile)
+
+Get characteristic intervals of the time profile `f`.
+
+    intervals(g::AbstractGradient)
 
 Get characteristic intervals of the time profile `f`.
 """
@@ -29,3 +33,6 @@ function intervals(f::DoublePGSE)
         [i; i[2:end] .+ p .+ Δ .+ δ]
     end
 end
+
+intervals(g::ScalarGradient) = intervals(g.profile)
+intervals(g::GeneralGradient) = [0, g.TE]

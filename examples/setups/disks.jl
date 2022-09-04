@@ -1,26 +1,26 @@
 # Name for saving meshfiles and data
-name = "axon"
-savedir = joinpath("data", name)
+name = "disks"
+savedir = joinpath("data/name")
 
 # Geometrical setup
-setup = CylinderSetup(;
-    ncell = 1,
+setup = DiskSetup(;
+    ncell = 3,
     nsidewall = 30,
-    rmin = 5.0,
-    rmax = 5.0,
-    layersizes = [0.25, 0.5, 0.75, 1.0],
-    ecs = NoECS(),
-    height = 50.0,
-    bend = 0.0,
-    twist = 0.0,
-    refinement = 1.0,
+    rmin = 2.0,
+    rmax = 6.0,
+    dmin = 0.2,
+    dmax = 0.3,
+    # layersizes = [0.6, 1.0],
+    ecs = ConvexHullECS(; margin = 2.0),
+    # ecs = BoxECS(0.5),
+    refinement = 0.1,
 )
 
 # Get compartimentalized coefficient vectors
-nlayer = length(setup.groundsetup.layersizes)
+nlayer = length(setup.layersizes)
 coeffs = coefficients(
     setup;
-    D = (; cell = [0.002 * I(3) for _ = 1:nlayer], ecs = 0.002 * I(3)),
+    D = (; cell = [0.002 * I(2) for _ = 1:nlayer], ecs = 0.002 * I(2)),
     T₂ = (; cell = fill(Inf, nlayer), ecs = Inf),
     ρ = (; cell = fill(1.0, nlayer), ecs = 1.0),
     κ = (;

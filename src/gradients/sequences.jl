@@ -1,14 +1,14 @@
 """
-    TimeProfile
+    AbstractTimeProfile
 
 General time profile type (gradient sequence).
 
-A `TimeProfile` should implement a calling method returning the value of the time profile at
+A `AbstractTimeProfile` should implement a calling method returning the value of the time profile at
 time `t`. It can optionally overwrite the [`echotime`](@ref), [`integral`](@ref), and
 [`int_F²`](@ref) methods, the first providing a default value and the latter two computing
 numerical approximation to the integral quantities if not overwritten.
 """
-abstract type TimeProfile{T} <: Function end
+abstract type AbstractTimeProfile{T} <: Function end
 
 """
     f = PGSE(δ, Δ)
@@ -16,7 +16,7 @@ abstract type TimeProfile{T} <: Function end
 Pulsed Gradient Spin Echo sequence with pulse duration `δ` and time between
 pulses `Δ-δ`.
 """
-struct PGSE{T} <: TimeProfile{T}
+struct PGSE{T} <: AbstractTimeProfile{T}
     δ::T
     Δ::T
     function PGSE(δ::T, Δ::T) where {T}
@@ -31,7 +31,7 @@ end
 Double Pulsed Gradient Spin Echo sequence with four pulses of duration `δ`,
 separated by pauses of duration `Δ-δ`, `0`, and `Δ-δ` repsectively.
 """
-struct DoublePGSE{T} <: TimeProfile{T}
+struct DoublePGSE{T} <: AbstractTimeProfile{T}
     δ::T
     Δ::T
     tpause::T
@@ -48,7 +48,7 @@ end
 Oscillating Gradient Spin Echo sequence with two cos-pulses of duration `δ`
 separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
 """
-struct CosOGSE{T} <: TimeProfile{T}
+struct CosOGSE{T} <: AbstractTimeProfile{T}
     δ::T
     Δ::T
     nperiod::Int
@@ -65,7 +65,7 @@ end
 Oscillating Gradient Spin Echo sequence with two sin-pulses of duration `δ`
 separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
 """
-struct SinOGSE{T} <: TimeProfile{T}
+struct SinOGSE{T} <: AbstractTimeProfile{T}
     δ::T
     Δ::T
     nperiod::Int
@@ -82,7 +82,7 @@ end
 
 Return the time profile value at time `t`.
 """
-(f::TimeProfile)(t) = error("Not implemented")
+(f::AbstractTimeProfile)(t) = error("Not implemented")
 
 function (f::PGSE)(t)
     if 0 ≤ t < f.δ

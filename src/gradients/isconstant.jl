@@ -1,8 +1,10 @@
 """
     isconstant(profile)
 
-Return `true` if the time profile `profile` is intervalwise constant.
+Return `true` if the time profile `profile` is interval-wise constant.
 """
-isconstant(::TimeProfile) = false
+function isconstant end
+
+isconstant(::AbstractTimeProfile) = false
 isconstant(::PGSE) = true
 isconstant(::DoublePGSE) = true

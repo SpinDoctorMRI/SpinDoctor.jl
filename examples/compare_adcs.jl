@@ -38,18 +38,19 @@ end
 # vertical diffusion with the permeable membranes.
 
 ncell = 5
-setup = PlateSetup(;
-    name = "Plates",
-    width = 50.0,
+setup = SlabSetup(;
     depth = 50.0,
-    heights = fill(5.0, ncell),
+    widths = fill(5.0, ncell),
+    height = 50.0,
     bend = 0.0,
-    twist = 0.0,
+    twist = π / 6,
     refinement = 10.0,
 )
+d = fill(0.002, ncell)
+d[2] = 0.005
 coeffs = coefficients(
     setup;
-    D = [0.002 * I(3) for _ = 1:ncell],
+    D = [d * I(3) for d ∈ d],
     T₂ = fill(Inf, ncell),
     ρ = fill(1.0, ncell),
     κ = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
@@ -58,7 +59,7 @@ coeffs = coefficients(
 
 # We then proceed to build the geometry and finite element mesh.
 
-mesh, = create_geometry(setup; recreate = true)
+mesh, = create_geometry(setup)
 plot_mesh(mesh)
 
 # The mesh looks good, so we may then proceed to assemble the biological model and the
@@ -74,9 +75,10 @@ volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
 ncompartment = length(model.mesh.points)
 
-# The gradient pulse sequence will be a PGSE with both vertical and horizontal components.
-# This allows for both restricted vertical diffusion and almost unrestricted horizontal
-# diffusion. The different approaches should hopefully confirm this behaviour.
+# The gradient pulse sequence will be a PGSE with both x and z components.
+# This allows for both restricted horizontal diffusion and almost unrestricted
+# vertical diffusion. The different approaches should hopefully confirm this
+# behaviour.
 
 dir = [1.0, 0.0, 1.0]
 profile = PGSE(2500.0, 4000.0)
@@ -102,17 +104,17 @@ bvalues = 0:400:4000
 gvalues = map(b -> √(b / int_F²(profile)) / coeffs.γ, bvalues)
 gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues]
 
-# The [`solve_multigrad`](@ref) function computes the magnetization for each gradient. Since
-# the gradients are interval-wise constant, we can use a specialized solver.
+# We compute the magnetization for each gradient. Since the gradients are
+# interval-wise constant, we can use a specialized solver.
 
 btpde = BTPDE(; model, matrices)
 solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
-ξ, = solve_multigrad(btpde, gradients, solver)
-
-# The signals can be computed from the magnetization fields.
-
-signals = [compute_signal(matrices.M, ξ) for ξ ∈ ξ]
-signals_cmpts = [compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ)) for ξ ∈ ξ]
+signals_cmpts = map(gradients) do grad
+    @show grad.g
+    ξ = solve(btpde, grad, solver)
+    compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
+end
+signals = sum(signals_cmpts)
 
 # Fitting the ADC is straightforward.
 
@@ -158,7 +160,8 @@ adc_mf = dir'D_mf * dir / dir'dir
 
 n = ncompartment
 fig = Figure()
-ax = Axis(fig[1, 1];
+ax = Axis(
+    fig[1, 1];
     xticks = (1:4, ["STA", "Fit BTPDE", "HADC", "MF"]),
     ylabel = "ADC / D",
     title = "Compartment ADCs",
@@ -179,12 +182,42 @@ fig
 # We may also inspect the resulting signal attenuations.
 
 fig = Figure()
-ax = Axis(fig[1,1]; xlabel = "b", yscale = log10, title = "Signal attenuation")
-lines!(ax, [0, bvalues[end]], [1, exp(-adc_sta * bvalues[end])]; linestyle = :dash, label = "ADC STA")
-lines!(ax, [0, bvalues[end]], [1, exp(-adc_fit * bvalues[end])]; linestyle = :dash, label = "ADC Fit")
-lines!(ax, [0, bvalues[end]], [1, exp(-adc_homogenized * bvalues[end])]; linestyle = :dash, label = "HADC")
-lines!(ax, [0, bvalues[end]], [1, exp(-adc_mf * bvalues[end])]; linestyle = :dash, label = "ADC MF")
-lines!(ax, [0, bvalues[end]], [1, exp(-D_avg * bvalues[end])]; linestyle = :dash, label = "Free diffusion")
+ax = Axis(fig[1, 1]; xlabel = "b", yscale = log10, title = "Signal attenuation")
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-adc_sta * bvalues[end])];
+    linestyle = :dash,
+    label = "ADC STA",
+)
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-adc_fit * bvalues[end])];
+    linestyle = :dash,
+    label = "ADC Fit",
+)
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-adc_homogenized * bvalues[end])];
+    linestyle = :dash,
+    label = "HADC",
+)
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-adc_mf * bvalues[end])];
+    linestyle = :dash,
+    label = "ADC MF",
+)
+lines!(
+    ax,
+    [0, bvalues[end]],
+    [1, exp(-D_avg * bvalues[end])];
+    linestyle = :dash,
+    label = "Free diffusion",
+)
 scatterlines!(ax, bvalues, abs.(signals) ./ abs(signals[1]); label = "BTPDE Signal")
 axislegend(ax)
 fig

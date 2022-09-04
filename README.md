@@ -9,7 +9,7 @@
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 This is a Julia implementation of the SpinDoctor toolbox. The original MATLAB toolbox can be
-found at https://github.com/jingrebeccali/SpinDoctor.
+found at <https://github.com/SpinDoctorMRI/SpinDoctor>.
 
 SpinDoctor is a software package that performs numerical simulations of diffusion magnetic
 resonance imaging (dMRI) for prototyping purposes.

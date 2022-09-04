@@ -1,96 +1,89 @@
 """
-    create_geometry(setup; recreate = true)
+    create_geometry(setup; savedir = nothing, recreate = true)
 
-Create cells, surfaces and finite element mesh. If `recreate = false`, previous geometry
-will be reused.
-
-This function does the following:
-- Check geometry setup consistency
-- Create or load cell configuration
-- Create or load surface triangulation
-- Call TetGen
-- Deform domain
-- Split mesh into compartments
-For custom geometries with more than one compartment, call `split_mesh`
-directly instead. This requires facet and element labels.
+Create cells, surfaces and finite element mesh. If `savedir` is a path,
+geometry files are saved. If additionally `recreate = false`, previous geometry
+files will be reused instead of generating new ones.
 """
-function create_geometry(setup; recreate = true)
+function create_geometry(setup; savedir = nothing, recreate = true)
     (; refinement) = setup
 
     # File name for saving or loading geometry
-    filename = joinpath(setup.meshdir, setup.name)
-
-    # Make sure that folder exists
-    dir = dirname(filename)
-    isdir(dir) || mkpath(dir)
-
-    if hasfield(typeof(setup), :ecs_shape)
-        setup.ecs_shape ∈ [:no_ecs, :box, :convex_hull, :tight_wrap] ||
-            error("Invalid ECS shape")
-    end
-
-    if setup isa Union{CylinderSetup,SphereSetup}
-        # Check if cell description file is already available
-        cellfilename = filename * "_cells"
-        if isfile(cellfilename) && !recreate
-            cells = read_cells(cellfilename)
-        else
-            cells = create_cells(setup)
-            save_cells(cells, cellfilename)
-        end
+    if isnothing(savedir)
+        do_save = false
+        savedir = ""
     else
-        cells = nothing
+        do_save = true
+        isdir(savedir) || mkpath(savedir)
     end
 
-    # Make directory for storing finite elements mesh
-    is_stl = endswith(filename, ".stl")
-    if is_stl
-        setup.ecs_shape == :no_ecs || error("ECS is only available for surface meshes")
-        filename = filename[1:end-4]
+    # Check if cell description file is already available
+    cellfilename = joinpath(savedir, "cells")
+    if do_save && isfile(cellfilename) && !recreate
+        cells = read_cells(cellfilename)
+    else
+        cells = create_cells(setup)
+        !isnothing(cells) && do_save && save_cells(cells, cellfilename)
     end
-    save_meshdir_path = filename * "_dir"
-    isdir(save_meshdir_path) || mkpath(save_meshdir_path)
+
+    stl_file = joinpath(savedir, "mesh.stl")
+    is_stl = do_save && isfile(stl_file)
+    if is_stl
+        setup.ecs isa NoECS || error("ECS is only available for surface meshes")
+    end
 
     # Use an existing finite elements mesh or create a new finite elements mesh. The name of
     # the finite elements mesh is stored in the string `fname_tetgen_femesh`
-    refinement_str = isinf(refinement) ? "" : "_refinement$refinement"
-    fname_tetgen = "$save_meshdir_path/$(split(filename, "/")[end])$(refinement_str)_mesh"
+    fname_tetgen = "$savedir/mesh"
 
     # Read or create surface triangulation
     if is_stl
         surfaces = nothing
-    elseif isfile(fname_tetgen * ".node") && isfile(fname_tetgen * ".poly") && !recreate
+    elseif do_save &&
+           isfile(fname_tetgen * ".node") &&
+           isfile(fname_tetgen * ".poly") &&
+           !recreate
         surfaces = read_surfaces(fname_tetgen)
     else
         if isa(setup, NeuronSetup)
-            surfaces = create_surfaces(setup, filename)
+            surfaces = create_surfaces(setup, fname_tetgen)
         else
             surfaces = create_surfaces(setup, cells)
         end
-        save_surfaces(fname_tetgen, surfaces)
+        do_save && save_surfaces(fname_tetgen, surfaces)
     end
 
     # Add ".1" suffix to output file name, since this is what Tetgen does
     fname_tetgen_femesh = fname_tetgen * ".1"
 
-    if isfile(fname_tetgen_femesh * ".node") && !recreate
+    if do_save && isfile(fname_tetgen_femesh * ".node") && !recreate
         # Read global mesh from Tetgen output
-        mesh_all = read_tetgen(fname_tetgen_femesh)
-    elseif is_stl
+        mesh_all = read_mesh(fname_tetgen_femesh)
+    elseif do_save && is_stl
         error("Not implemented")
     else
-        mesh_all = call_tetgen(surfaces, refinement)
-        save_tetgen(mesh_all, fname_tetgen_femesh)
+        mesh_all = create_mesh(surfaces, refinement)
+        do_save && save_mesh(mesh_all, fname_tetgen_femesh)
     end
 
     # Deform domain
-    if isa(setup, CylinderSetup) && (setup.bend > 1e-16 || setup.twist > 1e-16)
+    if isa(setup, ExtrusionSetup) && !(setup.bend ≈ 0 && setup.twist ≈ 0)
         @debug "Deforming domain with bend $(setup.bend) and twist $(setup.twist)"
         deform_domain!(mesh_all.points, setup.bend, setup.twist)
     end
 
     # Split mesh into compartments
     mesh = split_mesh(mesh_all)
+
+    # Check that boundaries are correctly assigned
+    ncompartment = length(mesh.points)
+    for i = 1:ncompartment, j in [1:i-1; i+1:ncompartment]
+        isempty(mesh.facets[i, end-ncompartment+j]) || @warn("""
+             Outer boundary of compartment $i is registered as
+             an interface to compartment $j, this is not intended.
+             Consider rerunning `create_geometry`.
+        """)
+    end
 
     mesh, surfaces, cells
 end

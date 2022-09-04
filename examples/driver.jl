@@ -9,36 +9,36 @@ using SpinDoctor
 using LinearAlgebra
 using GLMakie
 
-## Chose a plotting theme
-set_theme!(theme_light())
-set_theme!(theme_dark())
-set_theme!(theme_black())
-
-
 ## Create model from setup recipe
 # include("setups/axon.jl")
-# include("setups/sphere.jl")
-include("setups/plates.jl")
 # include("setups/cylinders.jl")
-# include("setups/spheres.jl")
+# include("setups/disks.jl")
 # include("setups/neuron.jl")
+include("setups/plates.jl")
+# include("setups/slabs.jl")
+# include("setups/sphere.jl")
+# include("setups/spheres.jl")
 
-mesh, surfaces, cells = @time create_geometry(setup; recreate = true);
+mesh, surfaces, cells = create_geometry(setup; savedir, recreate = true);
 model = Model(; mesh, coeffs...);
-volumes = get_cmpt_volumes(model.mesh)
-D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
+dim = size(surfaces.points, 1)
 @info "Number of nodes per compartment:" length.(model.mesh.points)
 
 ## Plot mesh
-plot_surfaces(surfaces, 1:3)
-plot_mesh(model.mesh, 1:1)
+plot_surfaces(surfaces)
+plot_surfaces(surfaces, 1:10)
+plot_mesh(mesh, 1:4, 10:10)
+plot_mesh(mesh)
 
 ## Assemble finite element matrices
-matrices = @time assemble_matrices(model);
-
+matrices = assemble_matrices(model);
 
 ## Magnetic field gradient
-dir = [1.0, 0.0, 0.0]
+if dim == 2
+    dir = [1.0, 0.0]
+elseif dim == 3
+    dir = [1.0, 0.0, 0.0]
+end
 profile = PGSE(2000.0, 6000.0)
 # profile = CosOGSE(5000.0, 5000.0, 2)
 b = 1000
@@ -50,19 +50,18 @@ gradient = ScalarGradient(dir, profile, g)
 
 # Callbacks for time stepping (plot solution, save time series)
 printer = Printer(; nupdate = 1, verbosity = 2)
-writer = VTKWriter(; nupdate = 5)
-plotter = Plotter{T}(; nupdate = 5)
-# callbacks = [printer, plotter]
-callbacks = [printer, plotter, writer]
+writer = VTKWriter(; dir = joinpath("output", name), nupdate = 5)
+plotter = Plotter(; nupdate = 5)
+callbacks = [printer, plotter]
+# callbacks = [printer, plotter, writer]
 
 # Choose BTDPE solver (specialized solver only for PGSE)
-solver = IntervalConstantSolver{T}(; θ = 0.5, timestep = 5.0)
-solver = QNDF(autodiff = false)
+solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
+solver = QNDF()
 
 # Solve BTPDE
 btpde = BTPDE(; model, matrices)
 ξ = @time solve(btpde, gradient, solver; callbacks)
-
 
 ## Plot magnetization
 plot_field(model.mesh, ξ)
@@ -72,13 +71,16 @@ compute_signal(matrices.M, ξ)
 compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
 
 ## Save magnetization
-savefield(model.mesh, ξ, "output/magnetization")
+savefield(model.mesh, ξ, joinpath("output", name, "magnetization"))
 
 
 ## Matrix Formalism
 
+volumes = get_cmpt_volumes(model.mesh)
+D_avg = 1 / dim * tr.(model.D)' * volumes / sum(volumes)
+
 # Perform Laplace eigendecomposition
-laplace = Laplace{T}(; model, matrices, neig_max = 400)
+laplace = Laplace(; model, matrices, neig_max = 400)
 lap_eig = @time solve(laplace)
 length_scales = eig2length.(lap_eig.values, D_avg)
 
@@ -106,7 +108,11 @@ gradients = [
     d ∈ eachcol(directions)
 ]
 hadc = HADC(; model, matrices)
-adcs, = @time solve_multigrad(hadc, gradients)
+adcs = Vector{eltype(directions)}[]
+@time for grad ∈ gradients
+    @show grad.dir
+    push!(adcs, solve(hadc, grad))
+end
 difftensors = fit_tensors(directions, adcs)
 
 # Solve Karger
@@ -124,5 +130,6 @@ analytical_laplace = AnalyticalLaplace(; analytical_coeffs..., eiglim, eigstep)
 lap_mat = @time solve(analytical_laplace)
 
 # Compute analytical matrix formalism signal truncation
+volumes = get_cmpt_volumes(model.mesh)
 analytical_mf = AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
 signal = solve(analytical_mf, gradient)

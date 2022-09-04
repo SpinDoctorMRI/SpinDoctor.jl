@@ -14,21 +14,24 @@ end
 Get total volume and volumes of each tetrahedron of mesh.
 """
 function get_mesh_volumes(points, elements)
-
     # Sizes
-    nelement = size(elements, 2)
+    dim = size(points, 1)
+    nbasis, nelement = size(elements)
 
     # Elements
-    x = reshape(points[:, elements], 3, 4, nelement)
+    x = reshape(points[:, elements], dim, nbasis, nelement)
 
     # Element centers
     centers = mean(x, dims = 2)[:, 1, :]
 
     # Element volumes
-    areavectors =
-        [cross(x[:, 2, i] - x[:, 4, i], x[:, 3, i] - x[:, 4, i]) for i = 1:nelement]
-
-    volumes = [1 / 6 * abs(dot(x[:, 1, i] - x[:, 4, i], areavectors[i])) for i = 1:nelement]
+    if dim == 2
+        volumes = compute_areas(elements, points)
+    elseif dim == 3
+        areavectors =
+            [cross(x[:, 2, i] - x[:, 4, i], x[:, 3, i] - x[:, 4, i]) for i = 1:nelement]
+        volumes = [1 / 6 * abs(dot(x[:, 1, i] - x[:, 4, i], areavectors[i])) for i = 1:nelement]
+    end
 
     volumes, centers
 end

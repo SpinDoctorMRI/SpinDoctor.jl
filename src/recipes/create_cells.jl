@@ -1,18 +1,22 @@
 """
     create_cells(setup)
 
-Create geometrical configuration of cells. Return mathematical description (radii, centers).
+Create geometrical configuration of cells. Return `nothing` or mathematical
+description (radii, centers).
 """
-function create_cells(setup)
+function create_cells end
+
+create_cells(::AbstractSetup) = nothing
+create_cells(setup::ExtrusionSetup) = create_cells(setup.groundsetup)
+
+function create_cells(setup::Union{DiskSetup,SphereSetup})
     (; ncell, rmin, rmax, dmin, dmax) = setup
 
     # Choose between spheres and cylinders
     if isa(setup, SphereSetup)
         ndim = 3
-    elseif isa(setup, CylinderSetup)
+    elseif isa(setup, DiskSetup)
         ndim = 2
-    else
-        return nothing
     end
 
     # Maximum number of points

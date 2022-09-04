@@ -3,37 +3,37 @@
 
 Get coefficients for the analytical module.
 """
-function analytical_coefficients(setup, coeffs)
-    rmean = (setup.rmin + setup.rmax) / 2
-    include_in = setup.include_in
-    include_ecs = setup.ecs_shape != :no_ecs
+analytical_coefficients(s::ExtrusionSetup, coeffs) =
+    analytical_coefficients(s.groundsetup, coeffs)
+
+function analytical_coefficients(setup::PlateSetup, coeffs)
+    widths = setup.widths
     dim = radial_dimension(setup)
-    n = unique([1:include_in+include_ecs; length(coeffs.κ)])
-
-    # Get OUT parameters
-    r_out = (setup.rmin + setup.rmax) / 2
-
-    # Get IN parameters
-    if setup.include_in
-        r_in = setup.in_ratio * r_out
-    else
-        r_in = []
-    end
-
-    # Get ECS parameters
-    if include_ecs
-        # Include ECS
-        r_ecs = r_out + setup.ecs_ratio * rmean
-    else
-        # Empty ECS
-        r_ecs = []
-    end
+    n = length(widths)
 
     ρ = coeffs.ρ
-    r = vcat(r_in, r_out, r_ecs) * 1e-6
-    D = tr.(coeffs.D) ./ 3 .* 1e-6
+    r = cumsum(widths) * 1e-6
+    D = tr.(coeffs.D) ./ size(coeffs.D[1], 1) .* 1e-6
     T₂ = coeffs.T₂ * 1e-6
-    W = coeffs.κ[n]
+    W = [[coeffs.κ[(i-1)*(2n-i)÷2+1] for i = 1:n-1]; coeffs.κ[end]]
+    γ = coeffs.γ
+
+    (; ρ, r, D, W, T₂, γ, dim)
+end
+
+function analytical_coefficients(setup::Union{DiskSetup,SphereSetup}, coeffs)
+    layersizes = setup.layersizes
+    dim = radial_dimension(setup)
+    n = length(layersizes)
+
+    r_mean = (setup.rmin + setup.rmax) / 2
+    r = layersizes * r_mean
+
+    ρ = coeffs.ρ
+    r = r * 1e-6
+    D = tr.(coeffs.D) ./ size(coeffs.D[1], 1) .* 1e-6
+    T₂ = coeffs.T₂ * 1e-6
+    W = [[coeffs.κ[(i-1)*(2n-i)÷2+1] for i = 1:n-1]; coeffs.κ[end]]
     γ = coeffs.γ
 
     (; ρ, r, D, W, T₂, γ, dim)

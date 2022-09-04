@@ -1,4 +1,8 @@
 [deps]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SpinDoctor = "56cc2822-f090-446c-a2af-a0f45c3009e4"
+ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"

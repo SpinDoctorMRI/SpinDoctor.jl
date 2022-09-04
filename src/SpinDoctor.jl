@@ -20,6 +20,7 @@ using OrdinaryDiffEq:
     OrdinaryDiffEqAlgorithm,
     QNDF,
     MagnusGL6
+using Parameters
 using Polynomials: fit
 using Printf
 using QuadGK
@@ -54,7 +55,7 @@ export plot_surfaces, plot_mesh, plot_field, plot_hardi
 export BTPDE, HADC, Karger
 export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
 export QNDF, IntervalConstantSolver
-export solve, solve_multigrad
+export solve
 
 # Matrix formalism
 export length2eig, eig2length, limit_lengthscale, compute_mf_diffusion_tensor
@@ -67,7 +68,15 @@ export compute_signal
 export Printer, VTKWriter, Plotter
 
 # Recipes
-export AbstractSetup, PlateSetup, CylinderSetup, SphereSetup, NeuronSetup
+export NoECS, BoxECS, ConvexHullECS, TightWrapECS
+export AbstractSetup,
+    PlateSetup,
+    ExtrusionSetup,
+    DiskSetup,
+    SphereSetup,
+    NeuronSetup,
+    CylinderSetup,
+    SlabSetup
 export coefficients, analytical_coefficients
 export create_geometry
 
@@ -95,14 +104,11 @@ include("datatypes/model.jl")
 
 # Problems
 include("problems/problems.jl")
-include("problems/output_type.jl")
 include("problems/solve.jl")
-include("problems/solve_multigrad.jl")
 
 # Geometry
-include("geometry/call_tetgen.jl")
+include("geometry/create_mesh.jl")
 include("geometry/convexhull.jl")
-include("geometry/create_cells.jl")
 include("geometry/create_fibonacci_sphere.jl")
 include("geometry/deform_domain.jl")
 include("geometry/get_volumes.jl")
@@ -111,10 +117,10 @@ include("geometry/get_mesh_surfacenormals.jl")
 include("geometry/gmesh2fem.jl")
 include("geometry/read_cells.jl")
 include("geometry/read_surfaces.jl")
-include("geometry/read_tetgen.jl")
+include("geometry/read_mesh.jl")
 include("geometry/save_cells.jl")
 include("geometry/save_surfaces.jl")
-include("geometry/save_tetgen.jl")
+include("geometry/save_mesh.jl")
 include("geometry/split_mesh.jl")
 include("geometry/split_field.jl")
 
@@ -122,7 +128,8 @@ include("geometry/split_field.jl")
 include("matrix_assembly/assemble_mass_matrix.jl")
 include("matrix_assembly/assemble_stiffness_matrix.jl")
 include("matrix_assembly/assemble_flux_matrices.jl")
-include("matrix_assembly/assemble_flux_matrix.jl")
+include("matrix_assembly/compute_areas.jl")
+include("matrix_assembly/compute_lengths.jl")
 include("matrix_assembly/couple_flux_matrix.jl")
 include("matrix_assembly/assemble_matrices.jl")
 
@@ -176,13 +183,11 @@ include("callbacks/update.jl")
 include("callbacks/finalize.jl")
 
 # Recipes
+include("recipes/ecs.jl")
 include("recipes/setups.jl")
 include("recipes/coefficients.jl")
+include("recipes/create_cells.jl")
 include("recipes/create_surfaces.jl")
-include("recipes/create_surfaces_plates.jl")
-include("recipes/create_surfaces_cylinder.jl")
-include("recipes/create_surfaces_sphere.jl")
-include("recipes/create_surfaces_neuron.jl")
 include("recipes/create_geometry.jl")
 include("recipes/radial_dimension.jl")
 include("recipes/analytical_coefficients.jl")

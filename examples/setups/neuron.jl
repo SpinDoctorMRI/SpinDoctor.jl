@@ -1,23 +1,26 @@
-# The neuron meshes are provided in a separate git repository. Make sure to clone
+# The neuron meshes are provided in a separate git repository. Make sure to
+# clone
 #
 #     https://github.com/SpinDoctorMRI/RealNeuronMeshes.git
 #
-# in order to run SpinDoctor simulations on real neuron geometries. You may need to manually
-# unzip the mesh files of interest, as they are stored in text format.
-#
-# The file name is given by `prefix * name * postfix` (uncomment the desired file parts).
+# in order to run SpinDoctor simulations on real neuron geometries. Since the
+# files take up a lot of space, this script automatically downloads the chosen
+# file only, and unzips it.
 
-neuron_dir = "RealNeuronMeshes/volume_meshes"
-isdir(neuron_dir) || error("""Cannot find neuron meshes.
-                           Run `git clone https://github.com/SpinDoctorMRI/RealNeuronMeshes.git`
-                           to download the mesh files.""")
+using Downloads
+using ZipFile
+
+# The file name is given by `prefix * name * postfix` (uncomment the desired
+# file parts).
+
+neuron_dir = "data/neurons"
 
 ## Choose whether to use whole neuron or certain parts
+# prefix, postfix = "", ""
 # prefix, postfix = "separated_", "_soma"
 # prefix, postfix = "separated_", "_dendrites"
 prefix, postfix = "separated_", "_dendrites_1"
 # prefix, postfix = "separated_", "_dendrites_2"
-# prefix, postfix = "", ""
 
 ## Neuron name
 # name = "spindles/03a_spindle2aFI"
@@ -88,16 +91,24 @@ name = "spindles/06b_spindle8aACC"
 
 ## Resulting neuron filename
 name = prefix * name * postfix
+savedir = joinpath(neuron_dir, name)
 
-# Floating point type for simulations
-T = Float64
+repository = "https://raw.githubusercontent.com/SpinDoctorMRI/RealNeuronMeshes/master"
+
+isdir(savedir) || mkpath(savedir)
+if !isfile(joinpath(savedir, "mesh.msh.zip"))
+    url = joinpath(repository, "volume_meshes", name * ".msh.zip")
+    @info "Retrieving neuron mesh file from \n" * url
+    savepath = Downloads.download(url, joinpath(savedir, "mesh.msh.zip"))
+    @info "Saved zip to\n" * savepath
+    zarchive = ZipFile.Reader(savepath)
+    write(joinpath(savedir, "mesh.msh"), zarchive.files[1])
+    close(zarchive)
+end
 
 # Geometrical setup
-setup = NeuronSetup{T}(;
-    name,
-    meshdir = neuron_dir,
-    ecs_shape = :no_ecs,
-    ecs_ratio = 0.3,
+setup = NeuronSetup(;
+    ecs = NoECS(),
     # refinement = 0.5,
 )
 

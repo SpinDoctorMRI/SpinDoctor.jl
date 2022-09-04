@@ -45,14 +45,7 @@ and magnetization field (complex magnitude and phase shift).
 Base.@kwdef mutable struct Plotter{T} <: AbstractCallback
     nupdate::Int = 1
     n::Int = 1
-    t::Observable{Vector{T}} = Observable(T[])
-    f::Observable{Vector{T}} = Observable(T[])
-    g⃗::Observable{Vector{Vec3f}} = Observable([Vec3f(0, 0, 0)])
-    g⃗_hist::Observable{Vector{Vec3f}} = Observable([Vec3f(0, 0, 0)])
-    ξ::Observable{Vector{Complex{T}}} = Observable(Complex{T}[])
-    magnitude::Matrix{Observable{Vector{T}}} = [Observable(Vector{T}());;]
-    phase::Matrix{Observable{Vector{T}}} = [Observable(Vector{T}());;]
-    attenuation::Observable{Vector{T}} = Observable(T[])
-    S₀::T = one(T)
+    t::Observable{T} = Observable(0.0)
+    ξ::Observable{Vector{Complex{T}}} = Observable(Complex{Float64}[])
     fig::Figure = Figure()
 end

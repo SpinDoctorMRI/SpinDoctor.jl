@@ -24,21 +24,18 @@ else
 end
 
 # Here we create a recipe for five stacked plates with isotropic diffusion tensors. They
-# should allow for free diffusion in the horizontal direction, but a rather restricted
+# should allow for free diffusion in the vertical direction, but a rather restricted
 # vertical diffusion with the permeable membranes.
 
 ncell = 5
 setup = PlateSetup(;
-    name = "Plates",
-    width = 50.0,
     depth = 50.0,
-    heights = fill(5.0, ncell),
-    bend = 0.0,
-    twist = 0.0,
+    widths = fill(5.0, ncell),
+    refinement = 1.0,
 )
 coeffs = coefficients(
     setup;
-    D = [0.002 * I(3) for _ = 1:ncell],
+    D = [0.002 * I(2) for d ∈ 1:ncell],
     T₂ = fill(Inf, ncell),
     ρ = fill(1.0, ncell),
     κ = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
@@ -47,7 +44,7 @@ coeffs = coefficients(
 
 # We then proceed to build the geometry and finite element mesh.
 
-mesh, = create_geometry(setup; recreate = true)
+mesh, surfaces, cells = create_geometry(setup; recreate = true)
 plot_mesh(mesh)
 
 # The mesh looks good, so we may then proceed to assemble the biological model and the
@@ -60,32 +57,38 @@ matrices = assemble_matrices(model);
 # the diffusion tensors.
 
 volumes = get_cmpt_volumes(model.mesh)
-D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
+D_avg = 1 / 2 * tr.(model.D)' * volumes / sum(volumes)
 ncompartment = length(model.mesh.points)
 
 # The gradient pulse sequence will be a PGSE with both vertical and horizontal components.
 # This allows for both restricted vertical diffusion and almost unrestricted horizontal
 # diffusion. The different approaches should hopefully confirm this behaviour.
 
-directions = unitsphere(200)
+directions = unitcircle(100)[1:2, :]
 profile = PGSE(2500.0, 4000.0)
 b = 1000
 g = √(b / int_F²(profile)) / model.γ
 gradients = [ScalarGradient(d, profile, g) for d ∈ eachcol(directions)]
 
+# The signals are computed from the magnetization field through quadrature.
+ρ = initial_conditions(model)
+S₀ = abs(compute_signal(matrices.M, ρ))
+
 # We may solve the BTPDE for each gradient.
 
 btpde = BTPDE(; model, matrices)
 solver = IntervalConstantSolver(; timestep = 10.0)
-ξ, = solve_multigrad(btpde, gradients, solver)
+signals = map(gradients) do grad
+    @show grad.dir
+    ξ = solve(btpde, grad, solver)
+    abs(compute_signal(matrices.M, ξ))
+end
 
-# The signals are computed from the magnetization field through quadrature.
 
-signal = [abs(compute_signal(matrices.M, ξ)) for ξ ∈ ξ] 
+# We may plot the directionalized signal attenuations.
 
-# We may plot the directionalized signal.
+attenuations = signals ./ S₀
+plot_hardi(directions, attenuations)
 
-plot_hardi(directions, signal)
-
-# The signal attenuates the most in the horizontal direction, as that is where diffusion is
-# restricted the least.
+# The signal attenuates the most in the vertical direction, as that is where
+# diffusion is restricted the least.

@@ -8,7 +8,8 @@ function compute_int_I(params, α₁, α₂, n)
     r₁ = [0; r[1:m-1]] .+ dr
 
     # Check if α₁ is not equal to α₂
-    if abs(α₁ - α₂) > 1e-8
+    # if abs(α₁ - α₂) > 1e-8
+    if !(abs(α₁ - α₂) ≈ 0)
         λ₁ = α₁^2
         λ₂ = α₂^2
 

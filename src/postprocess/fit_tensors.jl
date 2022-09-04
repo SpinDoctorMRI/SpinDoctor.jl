@@ -21,21 +21,18 @@ function fit_tensors(directions, adcs)
     G[:, 5] = 2 .* d[1, :] .* d[3, :]
     G[:, 6] = 2 .* d[2, :] .* d[3, :]
 
-    tensors = Vector{SMatrix{3,3,T,9}}(undef, ncompartment)
+    tensors = [zeros(T, 0, 0) for _ = 1:ncompartment]
     for icmpt = 1:ncompartment
         # Deduce vector of effective diffusion tensor components usinag a least squares fit
         # of the directions to the computed ADCs
         Dvec = G \ adc[icmpt, :]
 
         # Tensorize component vectors (symmetric)
-        tensors[icmpt] = SMatrix{3,3}(
-            [
-                Dvec[1, :] Dvec[4, :] Dvec[5, :]
-                Dvec[4, :] Dvec[2, :] Dvec[6, :]
-                Dvec[5, :] Dvec[6, :] Dvec[3, :]
-            ],
-        )
-
+        tensors[icmpt] = [
+            Dvec[1, :] Dvec[4, :] Dvec[5, :]
+            Dvec[4, :] Dvec[2, :] Dvec[6, :]
+            Dvec[5, :] Dvec[6, :] Dvec[3, :]
+        ]
     end
 
     tensors
