@@ -42,17 +42,10 @@ plotting backend (`]add GLMakie; using GLMakie`). The plot is updated every `nup
 step. The resulting figure contains a plot of the time profile, total signal attenuation,
 and magnetization field (complex magnitude and phase shift).
 """
-Base.@kwdef mutable struct Plotter{T,dim} <: AbstractCallback
+Base.@kwdef mutable struct Plotter{T} <: AbstractCallback
     nupdate::Int = 1
     n::Int = 1
-    t::Observable{Vector{T}} = Observable(T[])
-    f::Observable{Vector{T}} = Observable(T[])
-    gvec::Observable{Vector{Vec{dim,Float32}}} = Observable([Vec{dim,Float32}(zeros(dim)...)])
-    gvec_hist::Observable{Vector{Vec{dim,Float32}}} = Observable([Vec{dim,Float32}(zeros(dim)...)])
-    ξ::Observable{Vector{Complex{T}}} = Observable(Complex{T}[])
-    magnitude::Matrix{Observable{Vector{T}}} = [Observable(Vector{T}());;]
-    phase::Matrix{Observable{Vector{T}}} = [Observable(Vector{T}());;]
-    attenuation::Observable{Vector{T}} = Observable(T[])
-    S₀::T = one(T)
+    t::Observable{T} = Observable(0.0)
+    ξ::Observable{Vector{Complex{T}}} = Observable(Complex{Float64}[])
     fig::Figure = Figure()
 end

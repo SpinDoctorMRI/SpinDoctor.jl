@@ -54,7 +54,7 @@ matrices = assemble_matrices(model)
 
 ## Magnetic field gradient
 TE = 5000.0
-φ = -π / 6
+φ = -π / 12
 R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
 gvec(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
 gradient = GeneralGradient(; gvec, TE)
@@ -64,7 +64,7 @@ gradient = GeneralGradient(; gvec, TE)
 # for showing time stepping information, and [`VTKWriter`](@ref) for saving the solution time
 # series for visualization in ParaView.
 
-plotter = Plotter{Float64,3}()
+plotter = Plotter()
 
 # We may then define the problem and solve for our gradient (with the callback).
 

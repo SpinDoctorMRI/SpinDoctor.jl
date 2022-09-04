@@ -9,93 +9,98 @@ function initialize!(writer::VTKWriter, problem, gradient, ξ, t)
     update!(writer, problem, gradient, ξ, t)
 end
 
-function initialize!(p::Plotter{T,dim}, problem, gradient, ξ, t) where {T,dim}
+function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
+    p.n = 1
+    p.t = Observable(t)
+    p.ξ = Observable(ξ)
+
     femesh = problem.model.mesh
     M = problem.matrices.M
     ncompartment, nboundary = size(femesh.facets)
-    ξ_cmpts = split_field(femesh, ξ)
+    dim = size(femesh.points[1], 1)
+
     ξmax = maximum(abs, ξ)
-    p.S₀ = sum(abs, M * ξ)
+    S₀ = sum(abs, M * ξ)
     TE = echotime(gradient)
 
-    p.n = 1
-    p.t[] = [t]
-    p.ξ[] = copy(ξ)
-    p.attenuation = Observable(T[1])
-    if dim == 2
-        p.magnitude = [Observable(T[]) for _ = 1:ncompartment, _ = 1:1]
-        p.phase = [Observable(T[]) for _ = 1:ncompartment, _ = 1:1]
-    elseif dim == 3
-        p.magnitude = [Observable(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
-        p.phase = [Observable(T[]) for _ = 1:ncompartment, _ = 1:nboundary]
-    end
+    npoint_cmpts = size.(femesh.points, 2)
+    inds = [0; cumsum(npoint_cmpts[1:end])]
+    ξ_cmpts = [@lift($(p.ξ)[1+inds[i]:inds[i+1]]) for i = 1:ncompartment]
 
     p.fig = Figure()
 
     if gradient isa ScalarGradient
-        p.f[] = [gradient.profile(t)]
+        _f = Point2f[]
+        f = @lift push!(_f, Point2f($(p.t), gradient.profile($(p.t))))
         ax = Axis(p.fig[1, 1]; xlabel = "t [μs]", title = "Time profile")
         xlims!(ax, 0, TE)
         ylims!(ax, -1.1, 1.1)
-        lines!(ax, p.t, p.f)
+        lines!(ax, f)
     else
         grads = mapreduce(gradient, hcat, LinRange(0, TE, 200))
         pmin = min.(minimum(grads; dims = 2), zero(T))
         pmax = max.(maximum(grads; dims = 2), zero(T))
-        inds = pmin .≈ pmax
+        i = pmin .≈ pmax
         gmax = maximum(norm, grads)
-        pmin[inds] .-= gmax / 2
-        pmax[inds] .+= gmax / 2
-        grad = Vec{dim,Float32}(gradient(t))
-         p.gvec = Observable([grad])
-         p.gvec_hist = Observable([grad])
+        pmin[i] .-= gmax / 2
+        pmax[i] .+= gmax / 2
+        gvec = @lift Vec{dim,Float32}(gradient($(p.t)))
+        _gvecs = Vec{dim,Float32}[]
+        gvecs = @lift push!(_gvecs, $gvec)
         if dim == 2
             ax = Axis(p.fig[1, 1]; title = "Gradient [T/m]")
             ax.aspect = :data
             xlims!(ax, pmin[1], pmax[1])
             ylims!(ax, pmin[2], pmax[2])
-             lines!(ax, p.gvec_hist)
-             arrows!(ax, [Point2f(0, 0)], p.gvec)
+            lines!(ax, gvecs)
+            arrows!(ax, [Point2f(0, 0)], @lift([$gvec]))
         elseif dim == 3
             ax = Axis3(p.fig[1, 1]; title = "Gradient [T/m]")
             ax.aspect = :data
             xlims!(ax, pmin[1], pmax[1])
             ylims!(ax, pmin[2], pmax[2])
             zlims!(ax, pmin[3], pmax[3])
-             lines!(ax, p.gvec_hist)
-             arrows!(ax, [Point3f(0, 0, 0)], p.gvec)
+            lines!(ax, gvecs)
+            arrows!(ax, [Point3f(0, 0, 0)], @lift([$gvec]))
         end
     end
+
+    # Note: `p.ξ[]` must already be updated before `p.t`
+    _attenuation = Point2f[]
+    attenuation = @lift push!(_attenuation, Point2f($(p.t), sum(abs, M * p.ξ[]) / S₀))
 
     ax = Axis(p.fig[2, 1]; xlabel = "t [μs]", title = "Signal attenuation")
     xlims!(ax, 0, TE)
     # ylims!(ax, 1e-8, 1)
     ylims!(ax, 0, 1.1)
-    lines!(ax, p.t, p.attenuation)
+    lines!(ax, attenuation)
 
+    gm = p.fig[1, 2] = GridLayout()
     if dim == 2
-        gm = p.fig[1, 2] = GridLayout()
         ax = Axis(gm[1, 1]; title = "Magnetization (magnitude)")
         colorrange = (0, ξmax)
         for icmpt = 1:ncompartment
             elements = femesh.elements[icmpt]
             points = femesh.points[icmpt]
-            color = p.magnitude[icmpt]
-            color[] = abs.(ξ_cmpts[icmpt])
+            color = @lift abs.($(ξ_cmpts[icmpt]))
             mesh!(ax, points', elements'; color, shading = false, colorrange)
         end
     elseif dim == 3
-        gm = p.fig[1, 2] = GridLayout()
         ax = Axis3(gm[1, 1]; title = "Magnetization (magnitude)")
         ax.aspect = :data
         colorrange = (0, ξmax)
-        for icmpt = 1:ncompartment, iboundary = 1:nboundary
-            facets = femesh.facets[icmpt, iboundary]
-            if !isempty(facets)
-                points = femesh.points[icmpt]
-                color = p.magnitude[icmpt, iboundary]
-                color[] = abs.(ξ_cmpts[icmpt])
-                mesh!(ax, points', facets'; color, shading = false, colorrange)
+        for icmpt = 1:ncompartment
+            color = @lift abs.($(ξ_cmpts[icmpt]))
+            points = femesh.points[icmpt]
+            for iboundary = 1:nboundary
+                facets = femesh.facets[icmpt, iboundary]
+                if !isempty(facets)
+                    mesh!(ax, points', facets';
+                        color,
+                        shading = false,
+                        colorrange,
+                    )
+                end
             end
         end
     end
@@ -110,22 +115,22 @@ function initialize!(p::Plotter{T,dim}, problem, gradient, ξ, t) where {T,dim}
         gm = p.fig[2, 2] = GridLayout()
         ax = Axis(gm[1, 1]; title = "Magnetization (phase-shift)")
         for icmpt = 1:ncompartment
+            color = @lift angle.($(ξ_cmpts[icmpt]))
             elements = femesh.elements[icmpt]
             points = femesh.points[icmpt]
-            color = p.phase[icmpt]
-            color[] = angle.(ξ_cmpts[icmpt])
             mesh!(ax, points', elements'; color, shading = false, colorrange, colormap)
         end
     elseif dim == 3
         ax = Axis3(gm[1, 1]; title = "Magnetization (phase-shift)")
         ax.aspect = :data
-        for icmpt = 1:ncompartment, iboundary = 1:nboundary
-            facets = femesh.facets[icmpt, iboundary]
-            if !isempty(facets)
-                points = femesh.points[icmpt]
-                color = p.phase[icmpt, iboundary]
-                color[] = angle.(ξ_cmpts[icmpt])
-                mesh!(ax, points', facets'; color, shading = false, colorrange, colormap)
+        for icmpt = 1:ncompartment
+            color = @lift angle.($(ξ_cmpts[icmpt]))
+            points = femesh.points[icmpt]
+            for iboundary = 1:nboundary
+                facets = femesh.facets[icmpt, iboundary]
+                if !isempty(facets)
+                    mesh!(ax, points', facets'; color, shading = false, colorrange, colormap)
+                end
             end
         end
     end

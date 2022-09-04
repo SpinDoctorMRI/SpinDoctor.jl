@@ -32,33 +32,11 @@ function update!(writer::VTKWriter, problem, gradient, ξ, t)
     writer.n += 1
 end
 
-function update!(p::Plotter{T,dim}, problem, gradient, ξ, t) where {T,dim}
+function update!(p::Plotter, problem, gradient, ξ, t)
     if p.n % p.nupdate == 0
-        femesh = problem.model.mesh
-        M = problem.matrices.M
-        ncompartment, nboundary = size(femesh.facets)
-        ξ_cmpts = split_field(femesh, ξ)
-        push!(p.t[], t)
-        if gradient isa ScalarGradient
-            p.f[] = push!(p.f[], gradient.profile(t))
-        else
-            grad = Vec{dim,Float32}(gradient(t))
-            p.gvec[] = [grad]
-            p.gvec_hist[] = push!(p.gvec_hist[], grad)
-        end
-        p.attenuation[] = push!(p.attenuation[], sum(abs, M * ξ) / p.S₀)
+        # ξ updates first: important!
         p.ξ[] = ξ
-        if dim == 2
-            for icmpt = 1:ncompartment
-                p.magnitude[icmpt][] = abs.(ξ_cmpts[icmpt])
-                p.phase[icmpt][] = angle.(ξ_cmpts[icmpt])
-            end
-        elseif dim == 3
-            for icmpt = 1:ncompartment, iboundary = 1:nboundary
-                p.magnitude[icmpt, iboundary][] = abs.(ξ_cmpts[icmpt])
-                p.phase[icmpt, iboundary][] = angle.(ξ_cmpts[icmpt])
-            end
-        end
+        p.t[] = t
 
         sleep(0.01)
     end

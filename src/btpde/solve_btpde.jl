@@ -1,6 +1,6 @@
 """
     solve(
-        problem::GeneralBTPDE,
+        problem::BTPDE,
         gradient,
         odesolver = QNDF();
         abstol = 1e-6,
@@ -14,7 +14,7 @@ Solve the Bloch-Torrey partial differential equation using P1 finite elements in
 function solve(
     problem::BTPDE{T,dim},
     gradient,
-    odesolver::OrdinaryDiffEqAlgorithm = QNDF(; autodiff = false);
+    odesolver::OrdinaryDiffEqAlgorithm = QNDF();
     abstol = 1e-6,
     reltol = 1e-4,
     callbacks = AbstractCallback[],
@@ -58,7 +58,7 @@ function solve(
     TE = echotime(gradient)
 
     for cb ∈ callbacks
-        initialize!(cb, problem, gradient, ρ, 0)
+        initialize!(cb, problem, gradient, ρ, 0.0)
     end
 
     odefunction = ODEFunction(Mdξ!; jac = jac!, mass_matrix = M, jac_prototype)

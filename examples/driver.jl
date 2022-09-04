@@ -53,7 +53,7 @@ gradient = ScalarGradient(dir, profile, g)
 # Callbacks for time stepping (plot solution, save time series)
 printer = Printer(; nupdate = 1, verbosity = 2)
 writer = VTKWriter(; dir = joinpath("output", name), nupdate = 5)
-plotter = Plotter{T,dim}(; nupdate = 5)
+plotter = Plotter(; nupdate = 5)
 callbacks = [printer, plotter]
 # callbacks = [printer, plotter, writer]
 
