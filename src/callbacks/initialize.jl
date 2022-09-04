@@ -95,11 +95,7 @@ function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
             for iboundary = 1:nboundary
                 facets = femesh.facets[icmpt, iboundary]
                 if !isempty(facets)
-                    mesh!(ax, points', facets';
-                        color,
-                        shading = false,
-                        colorrange,
-                    )
+                    mesh!(ax, points', facets'; color, shading = false, colorrange)
                 end
             end
         end
@@ -129,7 +125,15 @@ function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
             for iboundary = 1:nboundary
                 facets = femesh.facets[icmpt, iboundary]
                 if !isempty(facets)
-                    mesh!(ax, points', facets'; color, shading = false, colorrange, colormap)
+                    mesh!(
+                        ax,
+                        points',
+                        facets';
+                        color,
+                        shading = false,
+                        colorrange,
+                        colormap,
+                    )
                 end
             end
         end

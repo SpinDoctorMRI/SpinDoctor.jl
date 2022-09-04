@@ -15,17 +15,17 @@ function get_mesh_surface(points, facets)
 
     # Facet normals
     if dim == 2
-        normals = reshape(
-            mapslices(x; dims = [1, 2]) do x
-                v = x[:, 1] - x[:, 2]
-                [v[2], -v[1]]
-            end,
-            2,
-            nfacet,
-        )
+        normals = reshape(mapslices(x; dims = [1, 2]) do x
+            v = x[:, 1] - x[:, 2]
+            [v[2], -v[1]]
+        end, 2, nfacet)
     elseif dim == 3
         normals = reshape(
-            mapslices(x -> 1 / 2 * (x[:, 1] - x[:, 2]) × (x[:, 3] - x[:, 2]), x; dims = [1, 2]),
+            mapslices(
+                x -> 1 / 2 * (x[:, 1] - x[:, 2]) × (x[:, 3] - x[:, 2]),
+                x;
+                dims = [1, 2],
+            ),
             3,
             nfacet,
         )

@@ -45,7 +45,6 @@ b = 1000
 g = √(b / int_F²(profile)) / coeffs.γ
 gradient = ScalarGradient(dir, profile, g)
 
-
 ## Solve BTPDE
 
 # Callbacks for time stepping (plot solution, save time series)
@@ -73,7 +72,6 @@ compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
 ## Save magnetization
 savefield(model.mesh, ξ, joinpath("output", name, "magnetization"))
 
-
 ## Matrix Formalism
 
 volumes = get_cmpt_volumes(model.mesh)
@@ -93,11 +91,9 @@ lap_eig = limit_lengthscale(lap_eig, λ_max)
 mf = MatrixFormalism(; model, matrices, lap_eig)
 ξ = @time solve(mf, gradient; ninterval = 500)
 
-
 ## Solve HADC
 hadc = HADC(; model, matrices)
 adc_cmpts = @time solve(hadc, gradient)
-
 
 ## Solve Karger model
 
@@ -118,7 +114,6 @@ difftensors = fit_tensors(directions, adcs)
 # Solve Karger
 karger = Karger(; model, difftensors)
 signal = @time solve(karger, gradient; timestep = 5.0)
-
 
 ## Solve analytical model
 # Compute analytical Laplace eigenfunctions

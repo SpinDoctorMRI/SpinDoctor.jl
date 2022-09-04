@@ -4,7 +4,6 @@
 Read surface triangulation from file.
 """
 function read_surfaces(filename)
-
     @info "Loading surface triangulation from " * filename
 
     # Get list of nodes from .node file

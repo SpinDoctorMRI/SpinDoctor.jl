@@ -1,5 +1,4 @@
 @testset "sequences.jl" begin
-
     @testset "PGSE" begin
         δ, Δ = 500.0, 2000.0
         f = PGSE(δ, Δ)
@@ -79,13 +78,9 @@
         @test int_F²(f) ≈ b rtol = 1e-8
     end
 
-    @testset "CosOGSE" begin
+    @testset "CosOGSE" begin end
 
-    end
-
-    @testset "SinOGSE" begin
-
-    end
+    @testset "SinOGSE" begin end
 
     @testset "UnknownSequence" begin
         struct UnknownSequence{T} <: TimeProfile{T} end

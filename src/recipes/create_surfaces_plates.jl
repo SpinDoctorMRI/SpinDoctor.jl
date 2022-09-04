@@ -18,11 +18,10 @@ function create_surfaces(setup::PlateSetup{T}, _) where {T}
     edges[:, 1] = [1, 2]
     for i = 1:n
         inds = 1 + 3(i - 1) .+ (1:3)
-        edges[:, inds] .=
-            2(i - 1) .+ [
-                1 4 3
-                3 2 4
-            ]
+        edges[:, inds] .= 2(i - 1) .+ [
+            1 4 3
+            3 2 4
+        ]
     end
 
     ninterface = (n - 1) * n ÷ 2

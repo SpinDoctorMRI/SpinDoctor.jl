@@ -23,5 +23,4 @@ function read_cells(cellfilename)
         end
         (; centers, radii)
     end
-
 end

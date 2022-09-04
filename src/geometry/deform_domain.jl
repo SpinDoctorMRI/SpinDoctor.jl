@@ -1,6 +1,5 @@
 # Deform domain by bending and twisting.
 function deform_domain!(points, bend, twist)
-
     height = maximum(points[3, :]) - minimum(points[3, :])
     width = maximum(points[1, :]) - minimum(points[1, :])
 

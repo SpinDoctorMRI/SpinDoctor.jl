@@ -76,7 +76,6 @@ struct SinOGSE{T} <: AbstractTimeProfile{T}
     end
 end
 
-
 """
     ft = (f::TimeProfile)(t)
 
