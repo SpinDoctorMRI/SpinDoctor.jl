@@ -49,7 +49,7 @@ function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
         gvecs = @lift push!(_gvecs, $gvec)
         if dim == 2
             ax = Axis(p.fig[1, 1]; title = "Gradient [T/m]")
-            ax.aspect = :data
+            ax.aspect = DataAspect()
             xlims!(ax, pmin[1], pmax[1])
             ylims!(ax, pmin[2], pmax[2])
             lines!(ax, gvecs)
@@ -95,11 +95,7 @@ function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
             for iboundary = 1:nboundary
                 facets = femesh.facets[icmpt, iboundary]
                 if !isempty(facets)
-                    mesh!(ax, points', facets';
-                        color,
-                        shading = false,
-                        colorrange,
-                    )
+                    mesh!(ax, points', facets'; color, shading = false, colorrange)
                 end
             end
         end
@@ -129,7 +125,15 @@ function initialize!(p::Plotter{T}, problem, gradient, ξ, t) where {T}
             for iboundary = 1:nboundary
                 facets = femesh.facets[icmpt, iboundary]
                 if !isempty(facets)
-                    mesh!(ax, points', facets'; color, shading = false, colorrange, colormap)
+                    mesh!(
+                        ax,
+                        points',
+                        facets';
+                        color,
+                        shading = false,
+                        colorrange,
+                        colormap,
+                    )
                 end
             end
         end

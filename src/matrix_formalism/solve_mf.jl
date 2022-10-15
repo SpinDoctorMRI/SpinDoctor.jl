@@ -2,6 +2,8 @@
     solve(problem::MatrixFormalism, gradient; ninterval = 500)
 
 Solve for magnetization using Matrix Formalism.
+
+See [Li2020](@cite), [Agdestein2021](@cite).
 """
 function solve(problem::MatrixFormalism{TT,dim}, gradient; ninterval = 500) where {TT,dim}
     (; model, matrices, lap_eig) = problem
@@ -24,7 +26,7 @@ function solve(problem::MatrixFormalism{TT,dim}, gradient; ninterval = 500) wher
     L = diagm(λ)
 
     # Bloch-Torrey operator in Laplace eigenfunction basis for given gradient
-     function K!(K, g)
+    function K!(K, g)
         if dim == 2
             @. K = L + T + im * γ * (g[1] * Ax[1] + g[2] * Ax[2])
         elseif dim == 3

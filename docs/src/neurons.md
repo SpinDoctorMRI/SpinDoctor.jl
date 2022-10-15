@@ -5,12 +5,14 @@ Bloch-Torrey partial differential equation. In order to facilitate the diffusion
 simulation of realistic neurons by the research community, we constructed finite element
 meshes for a group of 36 pyramidal neurons and a group of 29 spindle neurons whose
 morphological descriptions were found in the publicly available neuron repository
-[NeuroMopho.org](http://neuromorpho.org). These finite elements meshes range from having
+[NeuroMopho.org](http://neuromorpho.org) [Fang2020](@cite). These finite elements meshes range from having
 15163 nodes to 622553 nodes. We also broke the neurons into the soma and dendrite branches
 and created finite elements meshes for these cell components. Through the Neuron Module,
 these neuron and components finite element meshes can be seamlessly coupled with the
 functionalities of SpinDoctor to provide the diffusion MRI signal that can be attributed to
 spins inside neurons.
+
+The neuron models and the measurement data are from [Ascoli2007](@cite) and [Watson2006](@cite).
 
 The neuron mesh files are available at
 [https://github.com/SpinDoctorMRI/RealNeuronMeshes](https://github.com/SpinDoctorMRI/RealNeuronMeshes).
@@ -122,5 +124,3 @@ The following table shows the morphological characteristics for the neurons.
 | 28o\_spindle21aFI    | fronto-insula      | 2.62                  | 298.57             | 35579.06                | 37783.31                 |
 | 29o\_spindle22aFI    | fronto-insula      | 3.52                  | 402.84             | 62928.22                | 83279.12                 |
 | 31o\_pyramidal19aFI  | fronto-insula      | 2.26                  | 303.55             | 65950.80                | 86376.72                 |
-
-The neuron models and the measurement data are from (Ascoli 2007) and (Watson 2006).

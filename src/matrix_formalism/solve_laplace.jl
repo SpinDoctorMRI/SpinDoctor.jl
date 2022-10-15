@@ -2,6 +2,8 @@
     solve(problem::Laplace)
 
 Compute the Laplace eigenvalues, eigenfunctions and first order moments of products of pairs of eigenfunctions.
+
+See [Li2020](@cite), [Agdestein2021](@cite).
 """
 function solve(laplace::Laplace{T,dim}) where {T,dim}
     (; matrices, neig_max) = laplace

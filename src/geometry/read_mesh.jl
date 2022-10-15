@@ -7,13 +7,13 @@ function read_mesh(filename)
     @info "Reading Tetgen FE mesh from " * filename
 
     # Read points
-    dim, points = open(filename * ".node", "r") do io
+    points, dim = open(filename * ".node", "r") do io
         npoint, dim, = parse.(Int, split(readline(io)))
         points = zeros(dim, npoint)
         for ipoint = 1:npoint
-            points[:, ipoint] = parse.(Float64, split(readline(io))[2:4])
+            points[:, ipoint] = parse.(Float64, split(readline(io))[2:1+dim])
         end
-        points
+        points, dim
     end
 
     # Read facets and their associated boundaries

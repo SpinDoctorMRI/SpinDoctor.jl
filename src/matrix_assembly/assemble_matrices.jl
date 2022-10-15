@@ -54,7 +54,6 @@ function assemble_matrices(model::Model{T,dim}) where {T,dim}
                 end
             end
         end
-
     end
 
     # Assemble global finite element matrices

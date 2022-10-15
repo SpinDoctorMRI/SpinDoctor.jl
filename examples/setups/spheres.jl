@@ -11,7 +11,7 @@ setup = SphereSetup(
     dmin = 0.2,
     dmax = 0.3,
     nsidewall = 200,
-    ecs = ConvexHullECS(; margin = 1.0)
+    ecs = ConvexHullECS(; margin = 1.0),
     # refinement = 0.5,
 )
 

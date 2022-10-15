@@ -5,7 +5,6 @@ Save surface triangulation.
 The files may be passed to Tetgen with `filename`.node.
 """
 function save_surfaces(filename, surfaces)
-
     default_refinement = 0.1
 
     # Extract surface triangulation
@@ -83,7 +82,5 @@ function save_surfaces(filename, surfaces)
                 )
             end
         end
-
     end
-
 end

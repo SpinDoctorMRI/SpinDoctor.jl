@@ -28,11 +28,7 @@ end
 # vertical diffusion with the permeable membranes.
 
 ncell = 5
-setup = PlateSetup(;
-    depth = 50.0,
-    widths = fill(5.0, ncell),
-    refinement = 1.0,
-)
+setup = PlateSetup(; depth = 50.0, widths = fill(5.0, ncell), refinement = 1.0)
 coeffs = coefficients(
     setup;
     D = [0.002 * I(2) for d ∈ 1:ncell],
@@ -83,7 +79,6 @@ signals = map(gradients) do grad
     ξ = solve(btpde, grad, solver)
     abs(compute_signal(matrices.M, ξ))
 end
-
 
 # We may plot the directionalized signal attenuations.
 

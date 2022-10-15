@@ -9,7 +9,7 @@ is based on the
 [SpinDoctor User Guide](https://github.com/jingrebeccali/SpinDoctor/blob/master/user_guide.pdf).
 
 SpinDoctor is a software package that performs numerical simulations of diffusion magnetic
-resonance imaging (dMRI) for prototyping purposes.
+resonance imaging (dMRI) for prototyping purposes [Li2019](@cite).
 
 SpinDoctor can be used
 
@@ -25,10 +25,10 @@ SpinDoctor can be used
 The PDEs and Laplace eigenvalue decompositions are solved by P1 finite elements. The
 geometry recipes create surface triangulations that are passed to
 [TetGen](https://wias-berlin.de/software/index.jsp?id=TetGen&lang=1) to perform the finite
-element mesh generation.
+element mesh generation (see [Si2015](@cite)).
 
 SpinDoctor has support for the following features:
-1. multiple compartments connected through permeable membranes, with different
+1. multiple compartments connected through permeable membranes [Nguyen2014d](@cite), with different
     * initial spin densities,
     * diffusion tensors,
     * T2-relaxation, and
