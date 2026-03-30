@@ -14,7 +14,7 @@ Solve the Bloch-Torrey partial differential equation using P1 finite elements in
 function solve(
     problem::BTPDE{T,dim},
     gradient,
-    odesolver::OrdinaryDiffEqAlgorithm = QNDF();
+    odesolver = QNDF();
     abstol = 1e-6,
     reltol = 1e-4,
     callbacks = AbstractCallback[],
@@ -67,7 +67,7 @@ function solve(
     callback = FunctionCallingCallback(func; func_start = false)
 
     # Solve ODE problem
-    sol = OrdinaryDiffEq.solve(
+    sol = OrdinaryDiffEqCore.solve(
         odeproblem,
         odesolver;
         reltol,

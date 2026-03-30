@@ -32,13 +32,4 @@ function update!(writer::VTKWriter, problem, gradient, ξ, t)
     writer.n += 1
 end
 
-function update!(p::Plotter, problem, gradient, ξ, t)
-    if p.n % p.nupdate == 0
-        # ξ updates first: important!
-        p.ξ[] = ξ
-        p.t[] = t
-
-        sleep(0.01)
-    end
-    p.n += 1
-end
+# Plotter update requires Makie — see ext/SpinDoctorMakieExt

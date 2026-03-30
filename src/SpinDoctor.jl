@@ -10,16 +10,9 @@ using DiffEqCallbacks: PresetTimeCallback, FunctionCallingCallback
 using Expokit: expmv!
 using GLPK: Optimizer
 using LinearAlgebra
-using Makie
-using OrdinaryDiffEq: OrdinaryDiffEq
-using OrdinaryDiffEq:
-    DiffEqArrayOperator,
-    DiscreteCallback,
-    ODEProblem,
-    ODEFunction,
-    OrdinaryDiffEqAlgorithm,
-    QNDF,
-    MagnusGL6
+using OrdinaryDiffEqBDF: QNDF
+using OrdinaryDiffEqCore: OrdinaryDiffEqCore
+using SciMLBase: ODEProblem, ODEFunction, DiscreteCallback
 using Parameters
 using Polynomials: fit
 using Printf
@@ -50,6 +43,11 @@ export savefield
 export compute_adc_sta
 export fit_adc
 export fit_tensors
+# Plot functions are available when Makie is loaded (via extension)
+function plot_surfaces end
+function plot_mesh end
+function plot_field end
+function plot_hardi end
 export plot_surfaces, plot_mesh, plot_field, plot_hardi
 
 export BTPDE, HADC, Karger
@@ -65,7 +63,7 @@ export unitcircle, unitsphere
 export compute_signal
 
 # Callbacks
-export Printer, VTKWriter, Plotter
+export Printer, VTKWriter, AbstractPlotter
 
 # Recipes
 export NoECS, BoxECS, ConvexHullECS, TightWrapECS
@@ -170,11 +168,7 @@ include("postprocess/fit_adc.jl")
 include("postprocess/fit_tensors.jl")
 include("postprocess/savefield.jl")
 
-# Plot
-include("plot/plot_field.jl")
-include("plot/plot_hardi.jl")
-include("plot/plot_mesh.jl")
-include("plot/plot_surfaces.jl")
+# Plot (implementations in ext/SpinDoctorMakieExt when Makie is loaded)
 
 # Callbacks
 include("callbacks/callbacks.jl")
