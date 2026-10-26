@@ -8,7 +8,9 @@ For the `PGSE`, `SinOGSE`, `CosOGSE` and `DoublePGSE` sequences, analytical
 expressions are available. Otherwise a numerical integral is computed.
 """
 function integral(f::AbstractTimeProfile, t = echotime(f))
-    quadgk(f, zero(t), t)
+    # Split the integral at the characteristic times, where `f` may jump
+    breaks = filter(s -> zero(t) < s < t, intervals(f))
+    first(quadgk(f, zero(t), breaks..., t))
 end
 
 function integral(f::PGSE, t = echotime(f))

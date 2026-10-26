@@ -3,10 +3,12 @@
 
 General time profile type (gradient sequence).
 
-A `AbstractTimeProfile` should implement a calling method returning the value of the time profile at
-time `t`. It can optionally overwrite the [`echotime`](@ref), [`integral`](@ref), and
-[`int_F²`](@ref) methods, the first providing a default value and the latter two computing
-numerical approximation to the integral quantities if not overwritten.
+A `AbstractTimeProfile` should implement a calling method returning the value of the time
+profile at time `t`, and [`intervals`](@ref), returning the characteristic times at which
+the profile may be discontinuous (the last one being the echo time). It can optionally
+overwrite the [`echotime`](@ref), [`integral`](@ref), and [`int_F²`](@ref) methods, the
+first providing a default value and the latter two computing numerical approximation to the
+integral quantities if not overwritten.
 """
 abstract type AbstractTimeProfile{T} <: Function end
 

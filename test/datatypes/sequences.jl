@@ -78,22 +78,35 @@
         @test int_F²(f) ≈ b rtol = 1e-8
     end
 
-    @testset "CosOGSE" begin end
+    @testset "OGSE" begin
+        δ, Δ = 2000.0, 3000.0
+        for f ∈ (CosOGSE(δ, Δ, 2), SinOGSE(δ, Δ, 2))
+            for t ∈ LinRange(0.0, Δ + δ, 7)
+                i = filter(s -> 0 < s < t, intervals(f))
+                @test integral(f, t) ≈ quadgk(f, 0.0, i..., t; rtol = 1e-12)[1] atol =
+                    1e-8 * δ
+            end
+            b = quadgk(t -> integral(f, t)^2, intervals(f)...; rtol = 1e-12)[1]
+            @test int_F²(f) ≈ b rtol = 1e-8
+        end
+    end
 
-    @testset "SinOGSE" begin end
+    @testset "Custom profile" begin
+        # A profile without closed forms falls back on numerical integration
+        struct CustomPGSE <: SpinDoctor.AbstractTimeProfile{Float64}
+            pgse::PGSE{Float64}
+        end
+        (f::CustomPGSE)(t) = f.pgse(t)
+        SpinDoctor.intervals(f::CustomPGSE) = intervals(f.pgse)
 
-    @testset "UnknownSequence" begin
-        struct UnknownSequence{T} <: TimeProfile{T} end
-
-        f = UnknownSequence{Float64}()
-
-        @test_throws Exception f(0.0)
-        @test_throws Exception integral(f, 0.0)
-        @test_throws Exception int_F²(f)
-        @test_throws Exception intervals(f)
-        @test_throws Exception echotime(f)
-        @test_throws Exception get_interval(f, 0.0)
-        @test_throws Exception constant_intervals(f)
-        @test_throws Exception isconstant(f, 0.0)
+        pgse = PGSE(500.0, 2000.0)
+        f = CustomPGSE(pgse)
+        @test echotime(f) ≈ echotime(pgse)
+        for t ∈ (300.0, 1000.0, 2300.0)
+            @test integral(f, t) isa Float64
+            @test integral(f, t) ≈ integral(pgse, t) rtol = 1e-6
+        end
+        @test int_F²(f) isa Float64
+        @test int_F²(f) ≈ int_F²(pgse) rtol = 1e-6
     end
 end

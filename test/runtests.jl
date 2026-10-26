@@ -10,14 +10,21 @@ using LinearAlgebra
 using QuadGK
 using Test
 using Aqua
+using Random
 
 include("testutils.jl")
 
-# Run through typical workflow
-@testset "Workflow" begin
-    include("workflow.jl")
-end
+@testset "SpinDoctor" begin
+    @testset "Gradient sequences" begin
+        include("datatypes/sequences.jl")
+    end
 
-@testset "Aqua" begin
-    Aqua.test_all(SpinDoctor; ambiguities = false)
+    # Run through typical workflow
+    @testset "Workflow" begin
+        include("workflow.jl")
+    end
+
+    @testset "Aqua" begin
+        Aqua.test_all(SpinDoctor; ambiguities = false)
+    end
 end
