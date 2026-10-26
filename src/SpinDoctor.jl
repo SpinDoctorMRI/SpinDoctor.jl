@@ -10,20 +10,17 @@ and are used as `SpinDoctor.name`.
 """
 module SpinDoctor
 
-using DiffEqCallbacks: FunctionCallingCallback
-using Expokit: expmv!
 using KrylovKit: KrylovKit, InnerProductVec
 using LinearAlgebra
-using OrdinaryDiffEqBDF: QNDF
 using Parameters: @with_kw
 using Polynomials: fit
 using Printf: @sprintf
 using QuadGK: quadgk
 using Random: Random
 using Roots: find_zeros
-using SciMLBase: SciMLBase, AbstractODEAlgorithm, ODEFunction, ODEProblem
 using SparseArrays
-using SpecialFunctions: besselj, bessely, erf, sphericalbesselj, sphericalbessely
+using SpecialFunctions:
+    AmosException, besselj, bessely, erf, sphericalbesselj, sphericalbessely
 using StaticArrays: SMatrix, SVector
 using Statistics: mean
 using TetGen: RawTetGenIO, facetlist!, tetrahedralize
@@ -49,11 +46,12 @@ export coefficients, analytical_coefficients, Model, initial_conditions
 export assemble_matrices
 
 # Gradients
-export PGSE, DoublePGSE, CosOGSE, SinOGSE, ScalarGradient, GeneralGradient, bvalue
+export PGSE, DoublePGSE, CosOGSE, SinOGSE, ScalarGradient, GeneralGradient, bvalue, echotime
 export unitcircle, unitsphere
 
 # Solvers
-export solve_btpde, IntervalConstantSolver, QNDF, solve_hadc, compute_adc_sta
+export solve_btpde, ThetaSolver, solve_hadc, solve_hadc_tensors
+export compute_adc_sta
 export solve_karger, solve_laplace, solve_mf, solve_analytical_laplace, solve_analytical_mf
 export eig2length, length2eig, limit_lengthscale, compute_mf_diffusion_tensor
 
@@ -92,7 +90,6 @@ export plot_surfaces, plot_mesh, plot_field, plot_hardi
             integral,
             int_F2,
             intervals,
-            echotime,
             isconstant,
             diffusion_time,
             diffusion_time_sta,

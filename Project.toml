@@ -4,18 +4,14 @@ version = "0.2.0"
 authors = ["Syver Døving Agdestein <syverda@gmail.com>"]
 
 [deps]
-DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
-Expokit = "a1e7a1ef-7a5d-5822-a38c-be74e1bb89f4"
 KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
-SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -27,15 +23,15 @@ WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 [weakdeps]
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [extensions]
 SpinDoctorJLD2Ext = "JLD2"
 SpinDoctorMakieExt = "Makie"
+SpinDoctorSciMLExt = "SciMLBase"
 
 [compat]
 Aqua = "0.8"
-DiffEqCallbacks = "4"
-Expokit = "0.2"
 JLD2 = "0.6"
 KrylovKit = "0.10"
 LinearAlgebra = "1"
@@ -61,7 +57,8 @@ julia = "1.10"
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "JLD2", "Test"]
+test = ["Aqua", "JLD2", "OrdinaryDiffEqBDF", "Test"]

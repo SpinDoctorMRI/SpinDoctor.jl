@@ -95,17 +95,32 @@ end
 
 @testset "HADC" begin
     @test_throws MethodError solve_hadc(model, matrices, general_gradient)
-    @test solve_hadc(model, matrices, pgse_gradient) isa Vector{T}
+    adcs = solve_hadc(model, matrices, pgse_gradient)
+    @test adcs isa Vector{T}
     @test solve_hadc(model, matrices, ogse_gradient) isa Vector{T}
+
+    # Apparent diffusion tensors: symmetric, restricted, and giving the ADCs
+    tensors = solve_hadc_tensors(model, matrices, pgse_gradient.profile)
+    @test all(D -> D ≈ D', tensors)
+    @test all(D -> all(0 .< eigvals(Symmetric(D)) .<= 0.002), tensors)
+    d = pgse_gradient.dir
+    @test adcs ≈ [d' * D * d for D in tensors]
 end
 
 @testset "BTPDE" begin
     @test solve_btpde(model, matrices, general_gradient) isa Vector{Complex{T}}
     @test solve_btpde(model, matrices, ogse_gradient) isa Vector{Complex{T}}
-    solver = IntervalConstantSolver(; theta = 0.5, timestep = 5.0)
-    @test_throws MethodError solve_btpde(model, matrices, general_gradient, solver)
-    @test_throws ErrorException solve_btpde(model, matrices, ogse_gradient, solver)
+    solver = ThetaSolver(; timestep = 5.0)
     @test solve_btpde(model, matrices, pgse_gradient, solver) isa Vector{Complex{T}}
+
+    # OrdinaryDiffEq algorithms (SciMLBase extension) agree with the theta-scheme
+    for gradient in (pgse_gradient, ogse_gradient)
+        u_ode =
+            solve_btpde(model, matrices, gradient, QNDF(); reltol = 1e-8, abstol = 1e-10)
+        u_theta = solve_btpde(model, matrices, gradient, ThetaSolver(; timestep = 1.0))
+        @test compute_signal(matrices.M, u_ode) ≈ compute_signal(matrices.M, u_theta) rtol =
+            1e-4
+    end
 end
 
 @testset "Karger" begin

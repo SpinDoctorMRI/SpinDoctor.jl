@@ -1,179 +1,112 @@
 # Bloch-Torrey PDE solvers
+#
+# The semi-discrete Bloch-Torrey equation is M u' = -J(t) u with J(t) = A + i gamma g(t) . Mx,
+# where A = S + Q + R (stiffness, flux and relaxation matrices), M is the mass matrix and Mx
+# the first order moment matrices. Further time stepping methods (OrdinaryDiffEq algorithms)
+# are available in the SciMLBase extension.
 
 """
-    IntervalConstantSolver(; theta = 0.5, timestep)
+    ThetaSolver(; theta = 0.5, timestep = nothing)
 
-Time stepping for the BTPDE with interval-wise constant scalar gradients, e.g.
-[`PGSE`](@ref) and [`DoublePGSE`](@ref): a theta-scheme with steps of at most `timestep`
-in each interval (`theta = 0.5`: Crank-Nicolson, `theta = 1`: implicit Euler). See
-[`solve_btpde`](@ref).
+Theta-scheme time stepping for the BTPDE (`theta = 0.5`: Crank-Nicolson, second order;
+`theta = 1`: implicit Euler, first order), with steps of at most `timestep` in each
+characteristic interval of the gradient (by default a thousandth of the echo time). The
+gradient is evaluated at the middle of each step.
+
+For interval-wise constant scalar gradients (e.g. [`PGSE`](@ref), [`DoublePGSE`](@ref)),
+the linear systems are solved with one sparse factorization per interval. For other
+gradients, they are solved with GMRES, preconditioned with a factorization of the diffusion
+part (one per step size), so that the matrices are not refactorized at every step.
 """
-Base.@kwdef struct IntervalConstantSolver{T}
-    theta::T = 0.5
-    timestep::T
+Base.@kwdef struct ThetaSolver
+    theta::Float64 = 0.5
+    timestep::Union{Nothing,Float64} = nothing
 end
 
 """
-    solve_btpde(
-        model,
-        matrices,
-        gradient,
-        odesolver = QNDF();
-        abstol = 1e-6,
-        reltol = 1e-4,
-        callbacks = [],
-    )
+    solve_btpde(model, matrices, gradient, solver = ThetaSolver(); callbacks = [])
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements in space and
-the ODE algorithm `odesolver` in time. Return the magnetization at the echo time.
+the time stepping `solver`, and return the magnetization at the echo time.
 
-For interval-wise constant gradients, an [`IntervalConstantSolver`](@ref) may be used
-instead of an ODE algorithm.
+The time stepping is a [`ThetaSolver`](@ref). With OrdinaryDiffEq, its ODE algorithms may
+also be used, e.g. `using OrdinaryDiffEqBDF; solve_btpde(model, matrices, gradient, QNDF();
+abstol, reltol)`.
+
+The `callbacks` (see [`AbstractCallback`](@ref)) are called after each time step.
 """
 function solve_btpde(
     model::Model{T,dim},
     matrices,
     gradient,
-    odesolver::AbstractODEAlgorithm = QNDF();
-    abstol = 1e-6,
-    reltol = 1e-4,
+    solver::ThetaSolver = ThetaSolver();
     callbacks = AbstractCallback[],
 ) where {T,dim}
     problem = (; model, matrices)
+    (; theta) = solver
     (; gamma) = model
     (; M, S, R, Mx, Q) = matrices
-
-    xi0 = initial_conditions(model)
-
-    # Time dependent Jacobian of ODE function with respect to the state `xi`
-    function jac!(J, xi, p, t)
-        (; S, Q, R, gradient) = p
-        g = gradient(t)
-        if dim == 2
-            @. J = -(S + Q + R + im * gamma * (g[1] * Mx[1] + g[2] * Mx[2]))
-        elseif dim == 3
-            @. J = -(S + Q + R + im * gamma * (g[1] * Mx[1] + g[2] * Mx[2] + g[3] * Mx[3]))
-        end
-    end
-
-    # Time dependent ODE function
-    function Mdxi!(dxi, xi, p, t)
-        jac!(p.J, xi, p, t)
-        mul!(dxi, p.J, xi)
-    end
-
-    function func(u, t, integrator)
-        for cb in callbacks
-            update!(cb, problem, gradient, u, t)
-        end
-    end
-
-    # Jacobian sparsity pattern
-    jac_prototype = -(S + Q + im * sum(Mx))
-
-    # ODE problem
-    J = copy(jac_prototype)
-    p = (; J, S, Q, R, gradient)
-    TE = echotime(gradient)
-
-    for cb in callbacks
-        initialize!(cb, problem, gradient, xi0, zero(T))
-    end
-
-    odefunction = ODEFunction(Mdxi!; jac = jac!, mass_matrix = M, jac_prototype)
-    odeproblem = ODEProblem(odefunction, xi0, (0, TE), p)
-
-    callback = FunctionCallingCallback(func; func_start = false)
-
-    # Solve ODE problem
-    sol = SciMLBase.solve(
-        odeproblem,
-        odesolver;
-        reltol,
-        abstol,
-        callback,
-        save_everystep = false,
-        tstops = intervals(gradient)[2:end],
-    )
-
-    finalize!.(callbacks)
-
-    sol.u[end]
-end
-
-"""
-    solve_btpde(
-        model,
-        matrices,
-        gradient::ScalarGradient,
-        solver::IntervalConstantSolver;
-        callbacks = [],
-    )
-
-Solve the Bloch-Torrey partial differential equation using P1 finite elements in space and
-the theta-scheme of `solver` in time. The time profile of the gradient must be interval-wise
-constant.
-"""
-function solve_btpde(
-    model::Model{T,dim},
-    matrices,
-    gradient::ScalarGradient,
-    solver::IntervalConstantSolver{T};
-    callbacks = AbstractCallback[],
-) where {T,dim}
-    problem = (; model, matrices)
-    (; theta, timestep) = solver
-    (; gamma) = model
-    (; M, S, R, Mx, Q) = matrices
-
-    isconstant(gradient.profile) || error("Time profile must be interval-wise constant")
-    ivals = intervals(gradient.profile)
-
-    function jac!(J, g)
-        if dim == 2
-            @.(J = -(S + Q + R + im * gamma * (g[1] * Mx[1] + g[2] * Mx[2])))
-        elseif dim == 3
-            @.(J = -(S + Q + R + im * gamma * (g[1] * Mx[1] + g[2] * Mx[2] + g[3] * Mx[3])))
-        end
-    end
+    timestep = something(solver.timestep, echotime(gradient) / 1000)
+    A = S + Q + R
+    J(t) = A + im * gamma * sum(gradient(t)[d] * Mx[d] for d = 1:dim)
+    constant = gradient isa ScalarGradient && isconstant(gradient.profile)
 
     t = zero(T)
-    xi = initial_conditions(model)
-    Ey = copy(xi)
-    J = -(S + Q + im * sum(Mx)) # Allocate sparsity pattern
-
+    u = initial_conditions(model)
     for cb in callbacks
-        initialize!(cb, problem, gradient, xi, t)
+        initialize!(cb, problem, gradient, u, t)
     end
 
-    # Theta-scheme time stepping
+    # Preconditioners: factorizations of the diffusion part, one per step size
+    preconditioners = Dict{T,Any}()
+    preconditioner(h) = get!(preconditioners, h) do
+        P = M + h * theta * A
+        issymmetric(P) ? cholesky(Symmetric(P)) : lu(P)
+    end
+
+    ivals = intervals(gradient)
     for i = 1:(length(ivals)-1)
-        # Divide the interval into steps of at most `timestep`
-        ival_length = ivals[i+1] - ivals[i]
-        nt = max(1, ceil(Int, ival_length / timestep))
-        dt = ival_length / nt
-
-        # Compute gradient at midpoint of interval
-        tmid = (ivals[i] + ivals[i+1]) / 2
-        g = gradient(tmid)
-
-        # Build matrices for interval
-        jac!(J, g)
-        F = lu(M .- dt .* theta .* J)
-        E = @. complex(M) + dt * (1 - theta) * J
-
-        # Step to end of interval
-        for _ = 1:nt
-            mul!(Ey, E, xi)
-            ldiv!(xi, F, Ey)
-            t += dt
+        nstep = max(1, ceil(Int, (ivals[i+1] - ivals[i]) / timestep))
+        h = (ivals[i+1] - ivals[i]) / nstep
+        if constant
+            # Constant gradient in the interval: one factorization
+            Ji = J((ivals[i] + ivals[i+1]) / 2)
+            F = lu(M + h * theta * Ji)
+            E = M - h * (1 - theta) * Ji
+        else
+            P = preconditioner(h)
+        end
+        for n = 1:nstep
+            t0 = ivals[i] + (n - 1) * h
+            t1 = n == nstep ? ivals[i+1] : t0 + h
+            if constant
+                u = F \ (E * u)
+            else
+                Jn = J((t0 + t1) / 2)
+                rhs = M * u - h * (1 - theta) * (Jn * u)
+                u = preconditioned_gmres(M + h * theta * Jn, rhs, u, P)
+            end
+            t = t1
             for cb in callbacks
-                update!(cb, problem, gradient, xi, t)
+                update!(cb, problem, gradient, u, t)
             end
         end
     end
 
     finalize!.(callbacks)
 
-    xi
+    u
+end
+
+# Solve K x = b with GMRES, left preconditioned with the real factorization P
+function preconditioned_gmres(K, b, x0, P)
+    Pinv(v) = (w = P \ [real(v) imag(v)]; complex.(w[:, 1], w[:, 2]))
+    x, info = KrylovKit.linsolve(
+        v -> Pinv(K * v),
+        Pinv(b),
+        x0,
+        KrylovKit.GMRES(; krylovdim = 30, maxiter = 100, tol = 1e-10 * norm(x0)),
+    )
+    info.converged > 0 || @warn "GMRES did not converge" info.normres
+    x
 end

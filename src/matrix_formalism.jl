@@ -158,7 +158,7 @@ function solve_mf(
             dt = t[i+1] - t[i]
             t_i = (t[i+1] + t[i]) / 2
             K!(K, gradient(t_i))
-            expmv!(-dt, K, nu)
+            nu = expv(-dt, K, nu)
         end
     else
         t = LinRange(0, echotime(gradient), ninterval + 1)
@@ -166,7 +166,7 @@ function solve_mf(
             dt = t[i+1] - t[i]
             g_i = (gradient(t[i+1]) + gradient(t[i])) / 2
             K!(K, g_i)
-            expmv!(-dt, K, nu)
+            nu = expv(-dt, K, nu)
         end
     end
 
@@ -187,3 +187,6 @@ function compute_mf_diffusion_tensor(mesh, M, lap_eig, gradient::ScalarGradient)
     j = j_integral.(gradient.profile, lap_eig.values)
     a * Diagonal(j) * a' / sum(volumes)
 end
+
+# exp(t A) v with Krylov iterations
+expv(t, A, v) = first(KrylovKit.exponentiate(A, t, v; tol = 1e-12))

@@ -73,7 +73,7 @@ S0 = abs(compute_signal(matrices.M, rho))
 
 # We may solve the BTPDE for each gradient.
 
-solver = IntervalConstantSolver(; timestep = 10.0)
+solver = ThetaSolver(; timestep = 10.0)
 signals = map(gradients) do grad
     @show grad.dir
     u = solve_btpde(model, matrices, grad, solver)

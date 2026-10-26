@@ -20,7 +20,7 @@ refactoring does not change results unintentionally.
 To check the current code:
 
 ```bash
-julia --project=. test/regression/record.jl /tmp/outputs.toml
+julia --project=test/regression test/regression/record.jl /tmp/outputs.toml
 julia test/regression/compare.jl /tmp/outputs.toml test/regression/reference.toml
 ```
 
@@ -47,4 +47,12 @@ The baseline records an error instead of values for:
    compartments by element faces"): these setups now run; their outputs are
    recorded for the first time.
 
-The current `reference.toml` was recorded after these changes, on Julia 1.12.
+4. Analytical eigenvalues (commit "Hand-written time stepping..."): `analytical`
+   changes by 1.5 %, since eigenvalues were missed.
+5. Time stepping (same commit): `hadc`, `hadc_ogse` and
+   `karger` are computed with the Crank-Nicolson HADC instead of QNDF, and change within
+   the tolerance of QNDF (at most 2e-4). The BTPDE keys `btpde_qndf` and `btpde_general`
+   still use QNDF, through the OrdinaryDiffEq extension.
+
+The current `reference.toml` was recorded after these changes, on Julia 1.12, with the
+environment `Project.toml` of this folder.

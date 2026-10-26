@@ -10,6 +10,7 @@ using SpinDoctor
 using LinearAlgebra
 using Random
 using TOML
+using OrdinaryDiffEqBDF: QNDF
 
 outfile = ARGS[1]
 generate = length(ARGS) >= 2 && ARGS[2] == "generate"
@@ -223,7 +224,7 @@ for (name, (seed, setup, coeffs, analytical)) in cases
         out,
         "btpde_qndf",
         () -> begin
-            u = solve_btpde(model, matrices, grad)
+            u = solve_btpde(model, matrices, grad, QNDF())
             s = compute_signal.(matrices.M_cmpts, split_field(mesh, u))
             Dict("re" => re(s), "im" => im_(s))
         end,
@@ -232,7 +233,7 @@ for (name, (seed, setup, coeffs, analytical)) in cases
         out,
         "btpde_cn",
         () -> begin
-            solver = IntervalConstantSolver(; theta = 0.5, timestep = 20.0)
+            solver = ThetaSolver(; timestep = 20.0)
             u = solve_btpde(model, matrices, grad, solver)
             s = compute_signal.(matrices.M_cmpts, split_field(mesh, u))
             s0 = compute_signal.(
@@ -256,7 +257,7 @@ for (name, (seed, setup, coeffs, analytical)) in cases
             out,
             "btpde_general",
             () -> begin
-                u = solve_btpde(model, matrices, general)
+                u = solve_btpde(model, matrices, general, QNDF())
                 s = compute_signal.(matrices.M_cmpts, split_field(mesh, u))
                 Dict("re" => re(s), "im" => im_(s))
             end,

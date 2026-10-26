@@ -103,10 +103,10 @@ bvalues = 0:400:4000
 gradients =
     [ScalarGradient(dir, profile; bvalue = b, gamma = coeffs.gamma) for b in bvalues]
 
-# We compute the magnetization for each gradient. Since the gradients are
-# interval-wise constant, we can use a specialized solver.
+# We compute the magnetization for each gradient, with Crank-Nicolson time steps of
+# 5 µs.
 
-solver = IntervalConstantSolver(; theta = 0.5, timestep = 5.0)
+solver = ThetaSolver(; timestep = 5.0)
 signals_cmpts = map(gradients) do grad
     @show grad.amplitude
     u = solve_btpde(model, matrices, grad, solver)

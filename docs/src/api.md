@@ -62,8 +62,9 @@ solver function.
 
 ```@docs
 solve_btpde
-IntervalConstantSolver
+ThetaSolver
 solve_hadc
+solve_hadc_tensors
 compute_adc_sta
 solve_karger
 solve_laplace

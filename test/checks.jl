@@ -135,7 +135,7 @@ end
         dim = size(mesh.points[1], 1)
         dir = [1.0; zeros(dim - 1)]
         gradient = ScalarGradient(dir, profile; bvalue = 1000, gamma)
-        u = solve_btpde(model, matrices, gradient, IntervalConstantSolver(; timestep = 5.0))
+        u = solve_btpde(model, matrices, gradient, ThetaSolver(; timestep = 5.0))
         volumes = compartment_volumes(mesh)
         signal = compute_signal(matrices.M, u) / sum(volumes)
         acoeffs = analytical_coefficients(setup, coeffs)
@@ -146,6 +146,17 @@ end
         )
         signal_analytical = solve_analytical_mf(laplace, volumes, gradient) / sum(volumes)
         @test real(signal) ≈ real(signal_analytical) rtol = 1e-2
+
+        # The analytical solution converges with the number of eigenmodes (the closely
+        # spaced eigenvalues of weakly coupled layers used to be missed)
+        coarse = solve_analytical_laplace(;
+            acoeffs...,
+            eiglim = length2eig(1.0, 0.002),
+            eigstep = 1e-8,
+        )
+        @test length(coarse.alpha) < length(laplace.alpha)
+        @test solve_analytical_mf(coarse, volumes, gradient) / sum(volumes) ≈
+              signal_analytical rtol = 1e-4
     end
 end
 
@@ -265,7 +276,7 @@ end
         gradient = ScalarGradient([1.0; zeros(dim - 1)], PGSE(10.0, 20.0), 0.01)
         mktempdir() do dir
             writer = VTKWriter(; dir = joinpath(dir, "nested", "output"), nupdate = 2)
-            solver = IntervalConstantSolver(; timestep = 5.0)
+            solver = ThetaSolver(; timestep = 5.0)
             u = solve_btpde(model, matrices, gradient, solver; callbacks = [writer])
             @test isfile(joinpath(dir, "nested", "output", "solution.pvd"))
             save_field(joinpath(dir, "field"), mesh, u)

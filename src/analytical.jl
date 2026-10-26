@@ -114,9 +114,9 @@ function solve_analytical_mf(laplace, volumes, gradient::ScalarGradient)
     U0 = complex(U)
     U = complex(U)
 
-    expmv!(-delta, Lambda + Br + im * w * B, U)
-    expmv!(-(Delta - delta), Lambda + Br, U)
-    expmv!(-delta, Lambda + Br - im * w * B, U)
+    U = expv(-delta, Lambda + Br + im * w * B, U)
+    U = expv(-(Delta - delta), Lambda + Br, U)
+    U = expv(-delta, Lambda + Br - im * w * B, U)
 
     U0'U * volumes'rho
 end
@@ -124,8 +124,29 @@ end
 function find_alpha(params, alpha_min, alpha_max, dalpha)
     (; dim) = params
 
+    # Sample the characteristic function with steps `dalpha`, so that close roots (as for
+    # weakly coupled layers) are not missed
+    no_pts = max(12, ceil(Int, (alpha_max - alpha_min) / dalpha))
+
+    # Zeros of the characteristic function of order n. Bessel functions of high order
+    # overflow or underflow for small arguments, where there are no zeros.
+    function zeros_n(n)
+        function f(alpha)
+            try
+                alpha_func(params, alpha, n)
+            catch e
+                e isa AmosException ? NaN : rethrow()
+            end
+        end
+        try
+            find_zeros(f, alpha_min, alpha_max; no_pts, naive = true)
+        catch e
+            e isa DomainError ? Float64[] : rethrow()
+        end
+    end
+
     if dim == 1
-        alpha = find_zeros(alpha -> alpha_func(params, alpha, 0), alpha_min, alpha_max)
+        alpha = zeros_n(0)
         n = zeros(Int, size(alpha))
     else
         alpha = Float64[]
@@ -134,7 +155,7 @@ function find_alpha(params, alpha_min, alpha_max, dalpha)
         j = 0
         while !isempty(alpha0) && alpha0[1] < alpha_max
             @debug "Computing zeros of F_n(alpha) for n = $j"
-            alpha0 = find_zeros(alpha -> alpha_func(params, alpha, j), alpha_min, alpha_max)
+            alpha0 = zeros_n(j)
             append!(alpha, alpha0)
             append!(n, fill(j, size(alpha0)))
             j = j + 1
@@ -272,7 +293,9 @@ function compute_nu(n, dim)
     nu
 end
 
-function compute_JY(z, n, dim)
+# Radial functions J (regular) and Y (singular at the origin) and their derivatives. If
+# `needY` is false, Y is not computed (it may overflow for high orders at small arguments).
+function compute_JY(z, n, dim; needY = true)
     if dim == 1
         J = cos.(z)
         Y = sin.(z)
@@ -280,12 +303,16 @@ function compute_JY(z, n, dim)
         dY = cos.(z)
     elseif dim == 2
         J = besselj.(n, z)
-        Y = bessely.(n, z)
         dJ = (besselj.(n - 1, z) - besselj.(n + 1, z)) / 2
-        dY = (bessely.(n - 1, z) - bessely.(n + 1, z)) / 2
+        if needY
+            Y = bessely.(n, z)
+            dY = (bessely.(n - 1, z) - bessely.(n + 1, z)) / 2
+        else
+            Y, dY = zero(J), zero(dJ)
+        end
     elseif dim == 3
         J = sphericalbesselj.(n, z)
-        Y = sphericalbessely.(n, z)
+        Y = needY ? sphericalbessely.(n, z) : zero(J)
 
         dJ = [copy(z);]
         dY = [copy(z);]
@@ -297,11 +324,15 @@ function compute_JY(z, n, dim)
                 sphericalbesselj(n - 1, zz) - sphericalbesselj(n + 1, zz) -
                 sphericalbesselj(n, zz) / zz
             ) / 2
-        @. dY[ind] =
-            (
-                sphericalbessely(n - 1, zz) - sphericalbessely(n + 1, zz) -
-                sphericalbessely(n, zz) / zz
-            ) / 2
+        if needY
+            @. dY[ind] =
+                (
+                    sphericalbessely(n - 1, zz) - sphericalbessely(n + 1, zz) -
+                    sphericalbessely(n, zz) / zz
+                ) / 2
+        else
+            dY .= 0
+        end
 
         ind = [z .== 0;]
         dJ[ind] .= (n == 1) / 3
@@ -329,8 +360,9 @@ function compute_v(params, alpha, n, x, bc = compute_bc(params, alpha, n))
         r1[m+1] += 1e-8
         for i = 1:m
             inds = r1[i] .< x .<= r1[i+1]
-            J, Y, dJ, dY = compute_JY(alpha * x[inds] / sqrt(D[i]), n, dim)
-            if abs(bc[i, 2]) > 1e-12
+            needY = abs(bc[i, 2]) > 1e-12
+            J, Y, dJ, dY = compute_JY(alpha * x[inds] / sqrt(D[i]), n, dim; needY)
+            if needY
                 v[inds] = bc[i, 1] * J + bc[i, 2] * Y
                 dv[inds] = alpha / sqrt(D[i]) * (bc[i, 1] * dJ + bc[i, 2] * dY)
             else

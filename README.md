@@ -53,7 +53,9 @@ Optional packages extend SpinDoctor:
 
 - a Makie backend (`using CairoMakie` or `using GLMakie`) for plotting meshes, fields and
   the time stepping;
-- `using JLD2` for storing geometries (`create_geometry(setup; cache = "geometry.jld2")`).
+- `using JLD2` for storing geometries (`create_geometry(setup; cache = "geometry.jld2")`);
+- OrdinaryDiffEq solver packages (e.g. `using OrdinaryDiffEqBDF` for `QNDF()`) for adaptive
+  time stepping of the BTPDE, in addition to the built-in `ThetaSolver`.
 
 The matrix assembly uses all Julia threads (start Julia with `--threads=auto`).
 

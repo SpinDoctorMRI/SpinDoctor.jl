@@ -58,9 +58,8 @@ plotter = Plotter(; nupdate = 5)
 callbacks = [printer, plotter]
 # callbacks = [printer, plotter, writer]
 
-# Choose BTDPE solver (specialized solver only for PGSE)
-solver = IntervalConstantSolver(; theta = 0.5, timestep = 5.0)
-solver = QNDF()
+# Time stepping
+solver = ThetaSolver(; timestep = 5.0)
 
 # Solve BTPDE
 u = @time solve_btpde(model, matrices, gradient, solver; callbacks)
