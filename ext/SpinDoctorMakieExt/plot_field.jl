@@ -1,10 +1,3 @@
-"""
-    plot_field(femesh, ξ)
-
-Plot field `ξ` on the finite element mesh.
-"""
-function plot_field end
-
 function plot_field(
     femesh::FEMesh{T,2},
     ξ,
@@ -17,7 +10,7 @@ function plot_field(
         elements = femesh.elements[icmpt]
         points = femesh.points[icmpt]
         colors = abs.(ξ_cmpts[icmpt])
-        mesh!(ax, points', elements'; color = colors, shading = false)
+        mesh!(ax, points', elements'; color = colors, shading = NoShading)
     end
     fig
 end
@@ -39,10 +32,10 @@ function plot_field(
             # colors = fill(1.0 * iboundary, length(colors))
             # colors = iboundary / nboundary
             if first
-                scene = mesh(points', facets'; color = colors, shading = false)
+                scene = mesh(points', facets'; color = colors, shading = NoShading)
                 first = false
             else
-                mesh!(points', facets'; color = colors, shading = false)
+                mesh!(points', facets'; color = colors, shading = NoShading)
             end
         end
     end

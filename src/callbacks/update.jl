@@ -32,4 +32,4 @@ function update!(writer::VTKWriter, problem, gradient, ξ, t)
     writer.n += 1
 end
 
-# Plotter update requires Makie — see ext/SpinDoctorMakieExt
+update!(p::Plotter, problem, gradient, ξ, t) = update_plotter!(p, problem, gradient, ξ, t)

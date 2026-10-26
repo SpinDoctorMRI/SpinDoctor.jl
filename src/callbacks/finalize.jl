@@ -1,3 +1,3 @@
 finalize!(::Printer) = nothing
-finalize!(::AbstractPlotter) = nothing
+finalize!(::Plotter) = nothing
 finalize!(writer::VTKWriter) = vtk_save(writer.pvd)

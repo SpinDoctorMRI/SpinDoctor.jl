@@ -38,9 +38,15 @@ end
     Plotter(; nupdate = 1)
 
 Plot the evolution of the BTPDE during time stepping. This requires loading a Makie
-plotting backend (`using GLMakie` or `using CairoMakie`). The plot is updated every
-`nupdate` time step.
-
-The Plotter struct is defined in the SpinDoctorMakieExt extension.
+plotting backend (`using GLMakie` for an interactive window, or `using CairoMakie`). The
+plot is updated every `nupdate` time step. The resulting figure contains a plot of the time
+profile, total signal attenuation, and magnetization field (complex magnitude and phase
+shift), and is available as `plotter.fig` after solving.
 """
-abstract type AbstractPlotter <: AbstractCallback end
+Base.@kwdef mutable struct Plotter <: AbstractCallback
+    nupdate::Int = 1
+    n::Int = 1
+    t::Any = nothing
+    ξ::Any = nothing
+    fig::Any = nothing
+end

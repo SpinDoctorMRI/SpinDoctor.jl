@@ -9,4 +9,5 @@ function initialize!(writer::VTKWriter, problem, gradient, ξ, t)
     update!(writer, problem, gradient, ξ, t)
 end
 
-# Plotter initialization requires Makie — see ext/SpinDoctorMakieExt
+initialize!(p::Plotter, problem, gradient, ξ, t) =
+    initialize_plotter!(p, problem, gradient, ξ, t)

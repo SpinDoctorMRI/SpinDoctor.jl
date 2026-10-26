@@ -1,8 +1,3 @@
-"""
-    plot_surfaces(femesh, compartments = 1:ncompartment)
-
-Plot surfaces.
-"""
 function plot_surfaces(surfaces, boundaries = 1:maximum(surfaces.facetmarkers))
     (; points, facets, facetmarkers) = surfaces
     dim, npoint = size(points)
@@ -34,7 +29,7 @@ function plot_surfaces(surfaces, boundaries = 1:maximum(surfaces.facetmarkers))
                         f';
                         color = (:blue, 0.2),
                         strokewidth = 1,
-                        shading = false,
+                        shading = NoShading,
                     )
                     first = false
                 else
@@ -43,7 +38,7 @@ function plot_surfaces(surfaces, boundaries = 1:maximum(surfaces.facetmarkers))
                         f';
                         color = (:blue, 0.2),
                         strokewidth = 1,
-                        shading = false,
+                        shading = NoShading,
                     )
                 end
             end

@@ -7,7 +7,12 @@ end
 
 using SpinDoctor
 using LinearAlgebra
-using GLMakie
+
+if haskey(ENV, "GITHUB_ACTIONS")
+    using CairoMakie
+else
+    using GLMakie
+end
 
 ## Create model from setup recipe
 # include("setups/axon.jl")
@@ -27,7 +32,7 @@ dim = size(surfaces.points, 1)
 ## Plot mesh
 plot_surfaces(surfaces)
 plot_surfaces(surfaces, 1:10)
-plot_mesh(mesh, 1:4, 10:10)
+plot_mesh(mesh, 1:4)
 plot_mesh(mesh)
 
 ## Assemble finite element matrices

@@ -110,11 +110,11 @@ gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues
 btpde = BTPDE(; model, matrices)
 solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
 signals_cmpts = map(gradients) do grad
-    @show grad.g
+    @show grad.amplitude
     ξ = solve(btpde, grad, solver)
     compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
 end
-signals = sum(signals_cmpts)
+signals = sum.(signals_cmpts)
 
 # Fitting the ADC is straightforward.
 

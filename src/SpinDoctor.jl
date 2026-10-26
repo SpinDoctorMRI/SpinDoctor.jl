@@ -41,11 +41,6 @@ export savefield
 export compute_adc_sta
 export fit_adc
 export fit_tensors
-# Plot functions are available when Makie is loaded (via extension)
-function plot_surfaces end
-function plot_mesh end
-function plot_field end
-function plot_hardi end
 export plot_surfaces, plot_mesh, plot_field, plot_hardi
 
 export BTPDE, HADC, Karger
@@ -61,7 +56,7 @@ export unitcircle, unitsphere
 export compute_signal
 
 # Callbacks
-export Printer, VTKWriter, AbstractPlotter
+export Printer, VTKWriter, Plotter
 
 # Recipes
 export NoECS, BoxECS, ConvexHullECS, TightWrapECS
@@ -166,7 +161,8 @@ include("postprocess/fit_adc.jl")
 include("postprocess/fit_tensors.jl")
 include("postprocess/savefield.jl")
 
-# Plot (implementations in ext/SpinDoctorMakieExt when Makie is loaded)
+# Plotting (implemented in the Makie extension)
+include("plot.jl")
 
 # Callbacks
 include("callbacks/callbacks.jl")

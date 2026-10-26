@@ -18,6 +18,6 @@ function plot_hardi(directions, values)
         for (i, v) ∈ enumerate(values)
             points[:, i] .*= v
         end
-        poly(points', facets'; strokewidth = 1, color = values, shading = false)
+        poly(points', facets'; strokewidth = 1, color = values, shading = NoShading)
     end
 end
