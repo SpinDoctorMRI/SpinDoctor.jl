@@ -2,58 +2,44 @@
     assemble_matrices(model)
 
 Assemble finite element matrices.
+
+Returns a named tuple with the global (block diagonal) mass matrix `M`, stiffness matrix
+`S`, relaxation matrix `R` (`M` divided by `T₂`), first order moment matrices `Mx`
+(`∫ xᵢ φⱼ φₖ`, one per axis) and flux matrix `Q` (permeable interfaces and outer
+boundaries), the compartment blocks `M_cmpts`, `S_cmpts` and `Mx_cmpts`, the surface
+integrals `G` (`∫_Γ φᵢ n dS` over the boundary `Γ` of each compartment, one row per point and
+one column per axis) and the compartment `volumes`.
 """
 function assemble_matrices(model::Model{T,dim}) where {T,dim}
-    (; mesh, D, T₂, ρ) = model
+    (; mesh, D, T₂) = model
+    ncompartment = length(mesh.points)
 
-    # Deduce sizes
-    ncompartment, nboundary = size(mesh.facets)
-    npoint_cmpts = size.(mesh.points, 2)
-
-    # Assemble finite element matrices
-    volumes = zeros(ncompartment)
+    M_cmpts = SparseMatrixCSC{T,Int}[]
+    S_cmpts = SparseMatrixCSC{T,Int}[]
+    Mx_cmpts = [SparseMatrixCSC{T,Int}[] for _ = 1:dim]
+    G = Matrix{T}[]
+    volumes = zeros(T, ncompartment)
     for icmpt = 1:ncompartment
         points = mesh.points[icmpt]
         elements = mesh.elements[icmpt]
-        fevolumes, = get_mesh_volumes(points, elements)
-        volumes[icmpt] = sum(fevolumes)
-    end
+        pattern = FEPattern(elements, size(points, 2))
+        volumes[icmpt] = sum(first(get_mesh_volumes(points, elements)))
 
-    # Assemble finite element matrices compartment-wise
-    M_cmpts = []
-    S_cmpts = []
-    Mx_cmpts = [[] for _ = 1:dim]
-    G = []
-    for icmpt = 1:ncompartment
-        # Finite elements
-        points = mesh.points[icmpt]
-        elements = mesh.elements[icmpt]
-        fevolumes, = get_mesh_volumes(points, elements)
-
-        # Assemble mass, stiffness and flux matrices
-        push!(M_cmpts, assemble_mass_matrix(elements, points))
-        push!(S_cmpts, assemble_stiffness_matrix(elements, points, D[icmpt]))
-
-        # Assemble first order product moment matrices
+        push!(M_cmpts, assemble_mass_matrix(elements, points; pattern))
+        push!(S_cmpts, assemble_stiffness_matrix(elements, points, D[icmpt]; pattern))
         for d = 1:dim
-            push!(Mx_cmpts[d], assemble_mass_matrix(elements, points, points[d, :]))
+            Mx = assemble_mass_matrix(elements, points; nodeweights = points[d, :], pattern)
+            push!(Mx_cmpts[d], Mx)
         end
 
-        # Compute surface integrals
-        push!(G, zeros(npoint_cmpts[icmpt], dim))
-        for iboundary = 1:nboundary
-            facets = mesh.facets[icmpt, iboundary]
-            if !isempty(facets)
-                # Get facet normals
-                _, _, normals = get_mesh_surfacenormals(points, elements, facets)
-
-                # Surface normal weighted flux matrix (in each canonical direction)
-                for d = 1:dim
-                    Q = assemble_mass_matrix(facets, points, normals[d, :])
-                    G[icmpt][:, d] += sum(Q; dims = 2)
-                end
-            end
+        # Surface integrals ∫ φᵢ n dS with outward normals n
+        facets = reduce(hcat, mesh.facets[icmpt, :])
+        areas, _, normals = get_mesh_surfacenormals(points, elements, facets)
+        Gᵢ = zeros(T, size(points, 2), dim)
+        for f ∈ axes(facets, 2), a ∈ axes(facets, 1), d = 1:dim
+            Gᵢ[facets[a, f], d] += areas[f] / size(facets, 1) * normals[d, f]
         end
+        push!(G, Gᵢ)
     end
 
     # Assemble global finite element matrices
@@ -61,8 +47,7 @@ function assemble_matrices(model::Model{T,dim}) where {T,dim}
     S = blockdiag(S_cmpts...)
     R = blockdiag((M_cmpts ./ T₂)...)
     Mx = [blockdiag(Mx_cmpts[d]...) for d = 1:dim]
-    Q_blocks = assemble_flux_matrices(mesh.points, mesh.facets)
-    Q = couple_flux_matrix(model, Q_blocks, false)
+    Q = couple_flux_matrix(model)
 
     (; M, S, R, Mx, Q, M_cmpts, S_cmpts, Mx_cmpts, G, volumes)
 end

@@ -118,11 +118,7 @@ include("geometry/split_mesh.jl")
 include("geometry/split_field.jl")
 
 # Matrix assembly
-include("matrix_assembly/assemble_mass_matrix.jl")
-include("matrix_assembly/assemble_stiffness_matrix.jl")
-include("matrix_assembly/assemble_flux_matrices.jl")
-include("matrix_assembly/compute_areas.jl")
-include("matrix_assembly/compute_lengths.jl")
+include("matrix_assembly/fem.jl")
 include("matrix_assembly/couple_flux_matrix.jl")
 include("matrix_assembly/assemble_matrices.jl")
 

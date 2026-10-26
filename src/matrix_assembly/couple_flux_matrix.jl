@@ -1,97 +1,70 @@
 """
-    couple_flux_matrix(model, Q_blocks[, symmetrical])
+    couple_flux_matrix(model[, symmetrical])
 
-Create global flux matrix with coupling between compartments.
+Assemble the global flux matrix `Q` of the permeable interfaces between compartments and of
+the relaxing outer boundaries.
+
+At an interface with permeability `κ`, the coupling coefficients on each side are weighted
+by the initial spin densities `ρ₁` and `ρ₂` (`2ρ₂ / (ρ₁ + ρ₂) κ` and `2ρ₁ / (ρ₁ + ρ₂) κ`), so
+that the equilibrium magnetization `ρ` has no net flux. With `symmetrical = true`, `κ` is
+used on both sides.
 """
-function couple_flux_matrix(model, Q_blocks, symmetrical = false)
-    # Extract mesh fields
+function couple_flux_matrix(model, symmetrical = false)
     (; mesh, ρ, κ) = model
     (; point_map, points, facets) = mesh
+    ncompartment, nboundary = size(facets)
+    offsets = cumsum([0; size.(points, 2)])
+    npoint = offsets[end]
 
-    # Sizes
-    nboundary = size(facets, 2)
-    inds_cmpts = cumsum([0; size.(points, 2)])
-    npoint = inds_cmpts[end]
-    get_inds(icmpt) = inds_cmpts[icmpt]+1:inds_cmpts[icmpt+1]
-
-    # Assemble sparse block diagonal flux matrix
-    Q = spzeros(npoint, npoint)
-
-    # Couple flux matrix at boundaries
+    I, J, V = Int[], Int[], eltype(points[1])[]
     for iboundary = 1:nboundary
-        # Check if boundary is an interface between two compartments
-        cmpts_touch = findall(.!isempty.(facets[:, iboundary]))
-        ntouch = length(cmpts_touch)
-        if ntouch == 0
-        elseif ntouch == 1
-            # Only one compartment touches boundary. It is thus an outer boundary,
-            # and may possibly have a boundary relaxation coefficient
-            cmpt = cmpts_touch[1]
+        cmpts = findall(!isempty, facets[:, iboundary])
+        if length(cmpts) == 1
+            # Outer boundary, possibly with a boundary relaxation coefficient
+            c = only(cmpts)
+            iszero(κ[iboundary]) && continue
+            f = facets[c, iboundary]
+            g = f .+ offsets[c]
+            facet_mass_triplets!(I, J, V, points[c], f, g, g, κ[iboundary])
+        elseif length(cmpts) == 2
+            # Interface: the facets in the local numbering of both compartments
+            c₁, c₂ = cmpts
+            f₁ = facets[c₁, iboundary]
+            f₂ = local_indices(point_map[c₂], point_map[c₁][f₁])
+            g₁ = f₁ .+ offsets[c₁]
+            g₂ = f₂ .+ offsets[c₂]
 
-            # Global indices of the boundary
-            inds = get_inds(cmpt)
-
-            # Add boundary contribution to global flux matrix for compartment
-            κ[iboundary] ≈ 0 || (Q[inds, inds] += κ[iboundary] * Q_blocks[cmpt, iboundary])
-        elseif ntouch == 2
-            # Extract flux matrices from corresponding compartments
-            cmpt₁, cmpt₂ = cmpts_touch[1], cmpts_touch[2]
-            Q₁₁ = Q_blocks[cmpt₁, iboundary]
-            Q₂₂ = Q_blocks[cmpt₂, iboundary]
-            Q₁₂ = spzeros(size(Q₁₁, 1), size(Q₂₂, 2))
-            Q₂₁ = spzeros(size(Q₂₂, 1), size(Q₁₁, 2))
-
-            # Identify pairs of points using global numbering
-            inds₁ = unique(facets[cmpt₁, iboundary])
-            inds₂ = unique(facets[cmpt₂, iboundary])
-
-            # Check if local indices are already sorted with a one-to-one correspondence
-            if all(point_map[cmpt₁][inds₁] .== point_map[cmpt₂][inds₂])
-                indinds₁ = 1:length(inds₁)
-                indinds₂ = 1:length(inds₂)
-            else
-                pairmap = point_map[cmpt₁][inds₁] .== point_map[cmpt₂][inds₂]'
-                indinds₁ = 1:length(inds₁)
-                indinds₂ = [findfirst(pairmap[i, :]) for i ∈ indinds₁]
-            end
-
-            # Create coupling blocks
-            Q₁₂[:, inds₂[indinds₂]] = Q₁₁[:, inds₁[indinds₁]]
-            Q₂₁[:, inds₁[indinds₁]] = Q₂₂[:, inds₂[indinds₂]]
-
-            # Check whether to use same permeability coefficients on both sides
             if symmetrical
-                # Use the same permeability coefficient on each side of the boundary
-                c₁₂ = 1
-                c₂₁ = 1
+                κ₁ = κ₂ = κ[iboundary]
             else
-                # Weigh permeability coefficients on each side of the boundary with
-                # initial spin density equilibrium
-                ρ₁ = ρ[cmpt₁]
-                ρ₂ = ρ[cmpt₂]
-                c₂₁ = 2 * ρ₂ / (ρ₁ + ρ₂)
-                c₁₂ = 2 * ρ₁ / (ρ₁ + ρ₂)
+                ρ₁, ρ₂ = ρ[c₁], ρ[c₂]
+                κ₁ = real(2ρ₂ / (ρ₁ + ρ₂)) * κ[iboundary]
+                κ₂ = real(2ρ₁ / (ρ₁ + ρ₂)) * κ[iboundary]
             end
 
-            # Adjust permeability coefficients
-            κ₁ = c₂₁ * κ[iboundary]
-            κ₂ = c₁₂ * κ[iboundary]
-
-            # Global indices of the boundary in each of the compartments
-            inds₁ = get_inds(cmpt₁)
-            inds₂ = get_inds(cmpt₂)
-
-            # Add interface contribution to global flux matrix for compartment 1
-            Q[inds₁, inds₁] += κ₁ * Q₁₁
-            Q[inds₁, inds₂] -= κ₂ * Q₁₂
-
-            # Add interface contribution to global flux matrix for compartment 2
-            Q[inds₂, inds₁] -= κ₁ * Q₂₁
-            Q[inds₂, inds₂] += κ₂ * Q₂₂
-        else
-            error("Each interface only touches 1 or 2 compartments")
+            # Q₁₁ += κ₁ M, Q₁₂ -= κ₂ M, Q₂₁ -= κ₁ M, Q₂₂ += κ₂ M (M: interface mass matrix)
+            facet_mass_triplets!(I, J, V, points[c₁], f₁, g₁, g₁, κ₁)
+            facet_mass_triplets!(I, J, V, points[c₁], f₁, g₁, g₂, -κ₂)
+            facet_mass_triplets!(I, J, V, points[c₁], f₁, g₂, g₁, -κ₁)
+            facet_mass_triplets!(I, J, V, points[c₁], f₁, g₂, g₂, κ₂)
+        elseif length(cmpts) > 2
+            error("Boundary $iboundary touches more than two compartments")
         end
     end
 
-    Q
+    sparse(I, J, V, npoint, npoint)
+end
+
+"""
+    local_indices(point_map, globals)
+
+Local indices of the global points `globals` in a compartment with (sorted) `point_map`.
+"""
+function local_indices(point_map, globals)
+    issorted(point_map) || error("The point map of the compartment must be sorted")
+    map(globals) do g
+        i = searchsortedfirst(point_map, g)
+        i ≤ length(point_map) && point_map[i] == g || error("Point $g is not in the compartment")
+        i
+    end
 end

@@ -10,28 +10,15 @@ end
 """
     get_mesh_volumes(points, elements)
 
-Get total volume and volumes of each tetrahedron of mesh.
+Get the volumes and centers of the elements of a mesh.
 """
 function get_mesh_volumes(points, elements)
-    # Sizes
     dim = size(points, 1)
-    nbasis, nelement = size(elements)
-
-    # Elements
-    x = reshape(points[:, elements], dim, nbasis, nelement)
-
-    # Element centers
-    centers = mean(x, dims = 2)[:, 1, :]
-
-    # Element volumes
-    if dim == 2
-        volumes = compute_areas(elements, points)
-    elseif dim == 3
-        areavectors =
-            [cross(x[:, 2, i] - x[:, 4, i], x[:, 3, i] - x[:, 4, i]) for i = 1:nelement]
-        volumes =
-            [1 / 6 * abs(dot(x[:, 1, i] - x[:, 4, i], areavectors[i])) for i = 1:nelement]
-    end
-
+    n = size(elements, 1)
+    volumes = _element_measures(points, elements, Val(dim), Val(n))
+    centers = reshape(mean(reshape(points[:, elements], dim, n, :); dims = 2), dim, :)
     volumes, centers
 end
+
+_element_measures(points, elements, dim, n) =
+    [simplex_measure(simplex(points, elements, e, dim, n)) for e ∈ axes(elements, 2)]

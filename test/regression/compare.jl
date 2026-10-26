@@ -94,6 +94,8 @@ for case in sort(collect(keys(ref)))
         # geometries): compare them on the scale of the quadratic form
         m = match(r"^(matrix_\w+)_sum$", key)
         scale = isnothing(m) ? 0.0 : abs(get(ref[case], m[1] * "_vAv", 0.0))
+        # The integral of the normal over a closed surface vanishes
+        key == "G_sum" && (scale = sqrt(sum(abs2, ref[case]["G_xn"])))
         msg, ok = compare(key, new[case][key], ref[case][key]; scale)
         println("  ", rpad(key, 22), ok ? "" : "✗ ", msg)
         global allok &= ok

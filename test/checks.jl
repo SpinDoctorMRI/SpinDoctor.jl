@@ -2,6 +2,39 @@
 
 γ = 2.67513e-4
 
+@testset "Finite element matrices" begin
+    # Exact identities for P1 elements, which represent the coordinates exactly:
+    # 1ᵀM1 = |Ω|, xᵀMy = ∫ x y, xᵀSy = ∫ ∇x ⋅ D ∇y = D_xy |Ω|, 1ᵀMₓ1 = ∫ x
+    D = [3.0 1.0 0.0; 1.0 2.0 0.5; 0.0 0.5 1.0]
+    for (setup, Dᵢ) ∈ [
+        (DiskSetup(; ncell = 2, ecs = BoxECS(; margin = 1.0)), D[1:2, 1:2]),
+        (SphereSetup(; ncell = 2, nsidewall = 60, ecs = BoxECS(; margin = 1.0)), D),
+    ]
+        Random.seed!(2)
+        mesh, = create_geometry(setup)
+        dim = size(mesh.points[1], 1)
+        for i ∈ eachindex(mesh.points)
+            p, e = mesh.points[i], mesh.elements[i]
+            V = sum(first(SpinDoctor.get_mesh_volumes(p, e)))
+            M = SpinDoctor.assemble_mass_matrix(e, p)
+            S = SpinDoctor.assemble_stiffness_matrix(e, p, Dᵢ)
+            @test M == M' && S == S'
+            @test sum(M) ≈ V
+            for a = 1:dim, b = 1:dim
+                xa, xb = p[a, :], p[b, :]
+                @test xa' * S * xb ≈ Dᵢ[a, b] * V atol = 1e-10 * norm(Dᵢ) * V
+            end
+            # ∫ x y = (xᵀMy), and with x as a P1 weight: ∫ x φᵢ φⱼ
+            Mx = SpinDoctor.assemble_mass_matrix(e, p; nodeweights = p[1, :])
+            @test sum(Mx) ≈ ones(size(p, 2))' * M * p[1, :]
+            @test p[2, :]' * Mx * ones(size(p, 2)) ≈ p[1, :]' * M * p[2, :]
+            # Piecewise constant weights
+            w = fill(2.0, size(e, 2))
+            @test SpinDoctor.assemble_mass_matrix(e, p; elementweights = w) ≈ 2M
+        end
+    end
+end
+
 @testset "Compartment boundaries" begin
     # Every boundary facet of a compartment is a face of one of its elements. The
     # saved meshes of bent and layered cylinders used to violate this (and could
