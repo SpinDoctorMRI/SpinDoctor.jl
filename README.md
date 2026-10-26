@@ -1,116 +1,108 @@
-![Logo](docs/src/assets/logo_text.png)
+<div align="center">
 
-# SpinDoctor
+![SpinDoctor](assets/logo_text.png)
 
-| Documentation | Workflows | Code coverage | Quality assurance |
-| :-----------: | :-------: | :-----------: | :---------------: |
-| [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/stable) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/dev) | [![Build Status](https://github.com/spindoctormri/SpinDoctor.jl/workflows/CI/badge.svg)](https://github.com/spindoctormri/SpinDoctor.jl/actions) | [![Coverage](https://codecov.io/gh/spindoctormri/SpinDoctor.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/spindoctormri/SpinDoctor.jl) | [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl) |
+[![Docs (stable)](https://img.shields.io/badge/docs-stable-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/stable)
+[![Docs (dev)](https://img.shields.io/badge/docs-dev-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/dev)
+[![Tests](https://github.com/SpinDoctorMRI/SpinDoctor.jl/actions/workflows/UnitTest.yml/badge.svg)](https://github.com/SpinDoctorMRI/SpinDoctor.jl/actions/workflows/UnitTest.yml)
+[![Coverage](https://codecov.io/gh/SpinDoctorMRI/SpinDoctor.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/SpinDoctorMRI/SpinDoctor.jl)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
-This is a Julia implementation of the SpinDoctor toolbox. The original MATLAB toolbox can be
-found at <https://github.com/SpinDoctorMRI/SpinDoctor>.
+</div>
 
+SpinDoctor simulates diffusion MRI in biological tissue. It solves the Bloch-Torrey
+equation with finite elements on meshes of cells and tissue (axons, neurons, packed cells,
+with layers, an extracellular space and permeable membranes), and computes signals and
+apparent diffusion coefficients with several methods. This is the Julia version of the
+[SpinDoctor](https://github.com/SpinDoctorMRI/SpinDoctor) MATLAB toolbox.
 
-## Getting started
+![Geometry recipes](docs/src/public/gallery/geometries.png)
 
-1. The `examples` folder contains drivers showing how to create geometry and solve
-   different problems.
-2. The input files for the drivers are found in the folder `examples/setups`, and define
-   different models.
-3. Multiple neuron meshes are available from
-   [RealNeuronMeshes](https://github.com/SpinDoctorMRI/RealNeuronMeshes). These can be loaded in
-   the file `examples/setups/neuron.jl`.
-4. See the [documentation page](https://spindoctormri.github.io/SpinDoctor.jl/dev) for more details.
+## Features
 
+- **Geometries**: plates, slabs, disks, cylinders (bent, twisted), spheres, with layers
+  (myelin, nuclei) and an extracellular space; dense samples of periodic tissue (packed
+  cylinders, polyhedral cells); realistic neurons from
+  [RealNeuronMeshes](https://github.com/SpinDoctorMRI/RealNeuronMeshes).
+- **Signals**: the Bloch-Torrey equation for PGSE, double PGSE, OGSE and arbitrary
+  three-dimensional gradient sequences, with permeable membranes, T2 relaxation and
+  anisotropic diffusion.
+- **ADCs**: fitted signals, the homogenized ADC model, the matrix formalism (Laplace
+  eigenfunctions), the Kärger model and the short diffusion time approximation;
+  analytical solutions for layered plates, cylinders and spheres.
+- **Periodic boundary conditions** for samples of periodic tissue, free of the walls of a
+  finite sample.
+- **Fast**: multithreaded assembly, built-in time stepping with sparse direct solvers, and
+  NVIDIA GPUs through CUDA and cuDSS.
+- **Plots** of meshes, magnetizations and direction-dependent signals with Makie.
+
+## Installation
+
+SpinDoctor requires Julia 1.10 or later:
+
+```julia
+using Pkg
+Pkg.add("SpinDoctor")
+```
+
+## Example
+
+The signal of three myelinated axons in an extracellular space:
+
+```julia
+using SpinDoctor
+using LinearAlgebra
+
+setup = CylinderSetup(;
+    ncell = 3,
+    rmin = 2.0,
+    rmax = 4.0,
+    layersizes = [0.6, 1.0], # Axon and myelin
+    ecs = ConvexHullECS(; margin = 1.0),
+    height = 20.0,
+)
+mesh, surfaces, cells = create_geometry(setup)
+
+# Coefficients of the layers and the ECS (micrometers and microseconds)
+coeffs = coefficients(
+    setup;
+    D = (; cell = [0.002 * I(3), 0.0005 * I(3)], ecs = 0.002 * I(3)),
+    T2 = (; cell = [Inf, Inf], ecs = Inf),
+    rho = (; cell = [1.0, 1.0], ecs = 1.0),
+    kappa = (; cell_interfaces = [1e-5], cell_boundaries = [0, 0], cell_ecs = 1e-5, ecs = 0),
+    gamma = 2.67513e-4,
+)
+model = Model(; mesh, coeffs...)
+matrices = assemble_matrices(model)
+
+# PGSE sequence (δ = 5 ms, Δ = 20 ms) across the axons, b = 1000 s/mm²
+gradient = ScalarGradient([1.0, 0.0, 0.0], PGSE(5000.0, 20000.0); bvalue = 1000, gamma = model.gamma)
+
+u = solve_btpde(model, matrices, gradient)    # Magnetization at the echo time
+signal = compute_signal(matrices.M, u)        # Signal
+adcs = solve_hadc(model, matrices, gradient)  # ADC of each compartment
+```
 
 ## Gallery
 
-### Setup recipes
+| [![](docs/src/public/gallery/quickstart.png)](https://spindoctormri.github.io/SpinDoctor.jl/dev/examples/generated/quickstart) | [![](docs/src/public/gallery/white_matter.png)](https://spindoctormri.github.io/SpinDoctor.jl/dev/examples/generated/white_matter) | [![](docs/src/public/gallery/neuron.png)](https://spindoctormri.github.io/SpinDoctor.jl/dev/examples/generated/neuron) |
+| :---: | :---: | :---: |
+| Myelinated axons | White matter, with periodic boundaries | A spindle neuron |
+| [![](docs/src/public/gallery/periodic_tissue.png)](https://spindoctormri.github.io/SpinDoctor.jl/dev/examples/generated/periodic_tissue) | [![](docs/src/public/gallery/matrix_formalism.png)](https://spindoctormri.github.io/SpinDoctor.jl/dev/examples/generated/matrix_formalism) | [![](docs/src/public/gallery/compare_adcs.png)](https://spindoctormri.github.io/SpinDoctor.jl/dev/examples/generated/compare_adcs) |
+| Tortuosity of dense tissue | Laplace eigenfunctions | ADC methods |
 
-| ![Disks](assets/setups/disks.png)             | ![Plates](assets/setups/plates.png)     | ![Spheres](assets/setups/spheres.png)     |
-|:---------------------------------------------:|:---------------------------------------:|:-----------------------------------------:|
-| [DiskSetup](examples/setups/disks.jl)         | [PlateSetup](examples/setups/plates.jl) | [SphereSetup](examples/setups/spheres.jl) |
-| ![Cylinders](assets/setups/cylinders.png)     | ![Slabs](assets/setups/slabs.png)       | ![Neuron](assets/setups/neuron.png)       |
-| [CylinderSetup](examples/setups/cylinders.jl) | [SlabSetup](examples/setups/slabs.jl)   | [NeuronSetup](examples/setups/neuron.jl)  |
+The [documentation](https://spindoctormri.github.io/SpinDoctor.jl/dev) has all the
+examples, with interactive figures, and the manual.
 
-### Matrix formalism with Laplace eigenfunctions
-
-![Eigenfunctions](assets/eigenfunctions.png)
-
-### Spinning spindle spins in SpinDoctor
+### Spinning spindle spins
 
 ![Spindle](assets/spindle.gif)
 
-The above graphic visualizes the real part of the magnetization as a z-displacement for the
-spindle neuron geometry `03b_spindle4aACC` (extracted from
-[NeuroMorpho](http://neuromorpho.org/)). The gradient is a PGSE sequence in the x-direction.
-The magnetization was saved for 200 time steps, and the exported VTK sequence was visualized
-using [ParaView](https://www.paraview.org).
+The real part of the magnetization as a displacement, for the spindle neuron
+`03b_spindle4aACC` from [NeuroMorpho.org](https://neuromorpho.org), during a PGSE sequence
+in the x-direction (exported with `VTKWriter` and rendered with
+[ParaView](https://www.paraview.org)).
 
+## Citing
 
-### Test new gradient sequences with live plotting
-
-![Gradient](assets/gradient.gif)
-
-Here the magnetization is shown in a dendrite branch during a three-dimensional gradient
-sequence.
-
-## About
-
-SpinDoctor is a software package that performs numerical simulations of diffusion magnetic
-resonance imaging (dMRI) for prototyping purposes.
-
-SpinDoctor can be used
-
-1. to solve the Bloch-Torrey partial differential equation (BTDPE) to obtain the dMRI signal
-   (the toolbox provides a way of robustly fitting the dMRI signal to obtain the fitted
-   Apparent Diffusion Coefficient (ADC));
-2. to solve the diffusion equation for the homogenized ADC (HADC) model to obtain the ADC;
-3. a short-time approximation formula for the ADC is also included in the toolbox for
-   comparison with the simulated ADC;
-4. Compute the dMRI signal using a matrix formalism (MF) analytical solution based Laplace
-   eigenfunctions.
-
-The PDEs and Laplace eigenvalue decompositions are solved by P1 finite elements. The
-geometry recipes create surface triangulations that are passed to
-[TetGen](https://wias-berlin.de/software/index.jsp?id=TetGen&lang=1) to perform the finite
-element mesh generation. For 2D geometries, as similar approach is used, with
-[Triangle](https://www.cs.cmu.edu/~quake/triangle.html).
-
-SpinDoctor has support for the following features:
-
-1. multiple compartments connected through permeable membranes, with different
-   * initial spin densities,
-   * diffusion tensors,
-   * T2-relaxation, and
-   * permeability coefficients for the BTPDE and MF (the HADC assumes negligible
-     permeability);
-2. diffusion-encoding gradient pulse sequences, including
-   * the pulsed gradient spin echo sequence (PGSE),
-   * the double-PGSE,
-   * the oscillating gradient spin echo (OGSE), and
-   * custom three-dimensional pulse sequences `g⃗(t) = (g_x(t), g_y(t),
-     g_z(t))`;
-3. uniformly distributed gradient directions in 2D and 3D for high angular resolution
-   diffusion imaging (HARDI).
-4. Live plotting utilities
-5. Export VTK snapshots or time series to visualize finite element magnetization
-   fields in [ParaView](https://www.paraview.org).
-
-SpinDoctor also comes with a geometry generation module, allowing for
-
-1. multilayered spherical cells with a nucleus;
-2. multilayered disk and cylinder cells with a myelin layer;
-3. an extra-cellular space (ECS) enclosed in either a box, a convex hull, or a tight
-   wrapping around the cells;
-4. stacks of plates or slab cells;
-5. deformation of canonical cells by bending and twisting.
-
-In addition, a variety of neuron meshes is available, whose surface geometries were
-extracted from [NeuroMopho.org](http://neuromorpho.org). The neurons may also be enclosed in
-an extracellular space as described above.
-
-
-## How to cite us
-
-If you use our software for research, please consider citing us. See
-[CITATION.md](CITATION.md) for further details.
+If you use SpinDoctor in your research, please cite it (see [CITATION.md](CITATION.md)).

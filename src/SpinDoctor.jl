@@ -1,189 +1,140 @@
 """
     SpinDoctor
 
-Diffusion MRI simulation toolbox.
+Diffusion MRI simulation toolbox: finite element simulations of the Bloch-Torrey equation
+and related models in geometries of cells and extracellular space.
+
+The main functions and types are exported. Lower level building blocks (meshes, assembly,
+geometry files, gradient sequence internals, callback hooks) are public but not exported,
+and are used as `SpinDoctor.name`.
 """
 module SpinDoctor
 
-using Arpack: eigs
-using DiffEqCallbacks: PresetTimeCallback, FunctionCallingCallback
-using Expokit: expmv!
-using GLPK: Optimizer
+using KrylovKit: KrylovKit, InnerProductVec
 using LinearAlgebra
-using OrdinaryDiffEqBDF: QNDF
-using OrdinaryDiffEqCore: OrdinaryDiffEqCore
-using SciMLBase: ODEProblem, ODEFunction, DiscreteCallback
-using Parameters
+using Parameters: @with_kw
 using Polynomials: fit
-using Printf
-using QuadGK
+using Printf: @sprintf
+using QuadGK: quadgk
+using Random: Random
 using Roots: find_zeros
 using SparseArrays
-using SpecialFunctions
-using StaticArrays
+using SpecialFunctions:
+    AmosException, besselj, bessely, erf, sphericalbesselj, sphericalbessely
+using StaticArrays: SMatrix, SVector
 using Statistics: mean
-using TetGen: RawTetGenIO, facetlist!, tetrahedralize
+using TetGen: RawFacet, RawTetGenIO, TetGenError, facetlist!, tetrahedralize
 using Triangulate: TriangulateIO, triangulate
-using WriteVTK
-
-# Gradidents
-export PGSE, CosOGSE, SinOGSE, DoublePGSE, GeneralGradient, ScalarGradient
-export integral, int_F², intervals, isconstant, echotime
-
-export assemble_matrices
-export split_mesh
-export split_field
-export get_cmpt_volumes
-
-export Model
-export initial_conditions
-
-export savefield
-
-export compute_adc_sta
-export fit_adc
-export fit_tensors
-# Plot functions are available when Makie is loaded (via extension)
-function plot_surfaces end
-function plot_mesh end
-function plot_field end
-function plot_hardi end
-export plot_surfaces, plot_mesh, plot_field, plot_hardi
-
-export BTPDE, HADC, Karger
-export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
-export QNDF, IntervalConstantSolver
-export solve
-
-# Matrix formalism
-export length2eig, eig2length, limit_lengthscale, compute_mf_diffusion_tensor
-
-# Utils
-export unitcircle, unitsphere
-export compute_signal
-
-# Callbacks
-export Printer, VTKWriter, AbstractPlotter
-
-# Recipes
-export NoECS, BoxECS, ConvexHullECS, TightWrapECS
-export AbstractSetup,
-    PlateSetup,
-    ExtrusionSetup,
-    DiskSetup,
-    SphereSetup,
-    NeuronSetup,
-    CylinderSetup,
-    SlabSetup
-export coefficients, analytical_coefficients
-export create_geometry
-
-# Utils
-include("utils/fresnel.jl")
-include("utils/unitcircle.jl")
-include("utils/unitsphere.jl")
-include("utils/compute_signal.jl")
-
-# Magnetic field gradient sequences
-include("gradients/sequences.jl")
-include("gradients/gradient.jl")
-include("gradients/integral.jl")
-include("gradients/int_F2.jl")
-include("gradients/intervals.jl")
-include("gradients/echotime.jl")
-include("gradients/isconstant.jl")
-include("gradients/diffusion_time.jl")
-include("gradients/diffusion_time_sta.jl")
-include("gradients/j_integral.jl")
-
-# Datatypes
-include("datatypes/femesh.jl")
-include("datatypes/model.jl")
-
-# Problems
-include("problems/problems.jl")
-include("problems/solve.jl")
+using WriteVTK:
+    MeshCell,
+    VTKCellTypes,
+    VTKFieldData,
+    VTKPointData,
+    paraview_collection,
+    vtk_grid,
+    vtk_multiblock,
+    vtk_save
 
 # Geometry
-include("geometry/create_mesh.jl")
-include("geometry/convexhull.jl")
-include("geometry/create_fibonacci_sphere.jl")
-include("geometry/deform_domain.jl")
-include("geometry/get_volumes.jl")
-include("geometry/get_mesh_surface.jl")
-include("geometry/get_mesh_surfacenormals.jl")
-include("geometry/gmesh2fem.jl")
-include("geometry/read_cells.jl")
-include("geometry/read_surfaces.jl")
-include("geometry/read_mesh.jl")
-include("geometry/save_cells.jl")
-include("geometry/save_surfaces.jl")
-include("geometry/save_mesh.jl")
-include("geometry/split_mesh.jl")
-include("geometry/split_field.jl")
+export PlateSetup, DiskSetup, SphereSetup, CylinderSetup, SlabSetup, ExtrusionSetup
+export VoronoiSetup
+export NeuronSetup, NoECS, BoxECS, ConvexHullECS, PeriodicBoxECS, periodic_packing
+export create_geometry, save_geometry, load_geometry
+export compartment_mesh, box_faces, compartment_volumes
 
-# Matrix assembly
-include("matrix_assembly/assemble_mass_matrix.jl")
-include("matrix_assembly/assemble_stiffness_matrix.jl")
-include("matrix_assembly/assemble_flux_matrices.jl")
-include("matrix_assembly/compute_areas.jl")
-include("matrix_assembly/compute_lengths.jl")
-include("matrix_assembly/couple_flux_matrix.jl")
-include("matrix_assembly/assemble_matrices.jl")
+# Model and matrices
+export coefficients, analytical_coefficients, Model, initial_conditions
+export assemble_matrices
 
-# Matrix formalism
-include("matrix_formalism/eig2length.jl")
-include("matrix_formalism/limit_lengthscale.jl")
-include("matrix_formalism/solve_laplace.jl")
-include("matrix_formalism/solve_mf.jl")
-include("matrix_formalism/compute_mf_diffusion_tensor.jl")
+# Gradients
+export PGSE, DoublePGSE, CosOGSE, SinOGSE, ScalarGradient, GeneralGradient, bvalue, echotime
+export unitcircle, unitsphere
 
-# Analytical
-include("analytical/alpha_func.jl")
-include("analytical/compute_bc.jl")
-include("analytical/compute_beta.jl")
-include("analytical/compute_int_I.jl")
-include("analytical/compute_int_J.jl")
-include("analytical/compute_int_K.jl")
-include("analytical/compute_JY.jl")
-include("analytical/compute_nu.jl")
-include("analytical/compute_v.jl")
-include("analytical/find_alpha.jl")
-include("analytical/solve_analytical_laplace.jl")
-include("analytical/solve_analytical_mf.jl")
+# Solvers
+export solve_btpde, ThetaSolver, solve_hadc, solve_hadc_tensors
+export compute_adc_sta
+export solve_karger, solve_laplace, solve_mf, solve_analytical_laplace, solve_analytical_mf
+export eig2length, length2eig, limit_lengthscale, compute_mf_diffusion_tensor
 
-# BTPDE
-include("btpde/initial_conditions.jl")
-include("btpde/interval_constant_solver.jl")
-include("btpde/solve_btpde.jl")
-include("btpde/solve_btpde_midpoint.jl")
-include("btpde/solve_karger.jl")
+# Post-processing and output
+export compute_signal, split_field, compartment_weights, fit_adc, fit_tensors, save_field
+export Printer, VTKWriter, Plotter
+export plot_surfaces,
+    plot_mesh, plot_mesh!, plot_field, plot_field!, plot_hardi, plot_hardi!
 
-# ADC
-include("adc/compute_adc_sta.jl")
-include("adc/solve_hadc.jl")
+# Public, but not exported
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Meta.parse("""
+        public FEMesh,
+            split_mesh,
+            facet_elements,
+            element_geometry,
+            facet_geometry,
+            periodic_restriction,
+            assemble_mass_matrix,
+            assemble_stiffness_matrix,
+            assemble_derivative_matrix,
+            assemble_flux_matrix,
+            AbstractSetup,
+            AbstractECS,
+            create_cells,
+            create_surfaces,
+            create_mesh,
+            deform_domain!,
+            radial_dimension,
+            read_gmsh,
+            read_cells,
+            save_cells,
+            read_surfaces,
+            save_surfaces,
+            read_mesh,
+            save_mesh,
+            AbstractTimeProfile,
+            AbstractGradient,
+            integral,
+            int_F2,
+            wavevector,
+            intervals,
+            isconstant,
+            diffusion_time,
+            diffusion_time_sta,
+            j_integral,
+            fibonacci_sphere,
+            AbstractCallback,
+            initialize!,
+            update!,
+            finalize!
+        """))
+end
 
-# Postprocessing
-include("postprocess/fit_adc.jl")
-include("postprocess/fit_tensors.jl")
-include("postprocess/savefield.jl")
+include("directions.jl")
+include("gradients.jl")
+include("gradient_integrals.jl")
 
-# Plot (implementations in ext/SpinDoctorMakieExt when Makie is loaded)
+include("mesh.jl")
+include("meshing.jl")
+include("io.jl")
+include("model.jl")
 
-# Callbacks
-include("callbacks/callbacks.jl")
-include("callbacks/initialize.jl")
-include("callbacks/update.jl")
-include("callbacks/finalize.jl")
+include("assembly.jl")
+include("matrices.jl")
 
-# Recipes
-include("recipes/ecs.jl")
+include("btpde.jl")
+include("karger.jl")
+include("adc.jl")
+include("matrix_formalism.jl")
+include("analytical.jl")
+include("postprocess.jl")
+include("callbacks.jl")
+
 include("recipes/setups.jl")
 include("recipes/coefficients.jl")
-include("recipes/create_cells.jl")
-include("recipes/create_surfaces.jl")
-include("recipes/create_geometry.jl")
-include("recipes/radial_dimension.jl")
-include("recipes/analytical_coefficients.jl")
+include("recipes/packing.jl")
+include("recipes/cells.jl")
+include("recipes/surfaces.jl")
+include("recipes/voronoi.jl")
+include("recipes/geometry.jl")
+
+include("extensions.jl")
 
 end

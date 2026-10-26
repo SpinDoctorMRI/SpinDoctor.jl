@@ -1,239 +1,146 @@
-# # Compare ADCs
+# # [Apparent diffusion coefficients](@id adc-methods)
 #
-# The [apparent diffusion coefficient](@ref adc) (ADC) may be sufficient to describe the
-# signal attenuation for small ``b``-values. SpinDoctor comes with multiple approaches for
-# computing or estimating the ADC for a `ScalarGradient` ``\vec{g}(t) = f(t) g \vec{d}``:
+# At low b-values, the signal attenuation is described by the apparent diffusion
+# coefficient (ADC), ``S / S_0 \approx e^{-b \, \mathrm{ADC}}`` (see
+# [Apparent diffusion coefficient](@ref adc)). SpinDoctor computes the ADC in several ways:
 #
-# - Using the free diffusion coefficient ``\vec{d}^\mathsf{T} \mathbf{D} \vec{d}``, which
-#   represents unrestricted diffusion in the absence of boundaries;
-# - Computing the short diffusion time approximation for the ADC
-# - Fitting the log-signal obtained by solving the BTPDE for different ``b``-values
-# - Solving a homogenized model (HADC) assuming negligible permeability
-# - Using the matrix formalism effective diffusion tensor
+# - by fitting the signals of the Bloch-Torrey equation for several b-values (the
+#   reference, but the most expensive);
+# - with the homogenized ADC model ([`solve_hadc`](@ref)), which assumes impermeable
+#   membranes;
+# - with the matrix formalism ([`compute_mf_diffusion_tensor`](@ref)), from the Laplace
+#   eigenfunctions;
+# - with the short diffusion time approximation ([`compute_adc_sta`](@ref)), from the
+#   surface-to-volume ratios.
 #
-# In this example we will compare the different approaches.
-
-# ## Building a biological model
-#
-# We start by loading SpinDoctor and a Makie plotting backend.
-
-# LSP indexing solution                                                          #src
-# https://github.com/julia-vscode/julia-vscode/issues/800#issuecomment-650085983 #src
-if isdefined(@__MODULE__, :LanguageServer)                                       #src
-    include("../src/SpinDoctor.jl")                                              #src
-    using .SpinDoctor                                                            #src
-end                                                                              #src
+# In this example, we compare them for stacked slabs separated by permeable membranes.
 
 using SpinDoctor
 using LinearAlgebra
+using CairoMakie
 
-if haskey(ENV, "GITHUB_ACTIONS")
-    using CairoMakie
-else
-    using GLMakie
-end
-
-# Here we create a recipe for five stacked plates with isotropic diffusion tensors. They
-# should allow for free diffusion in the horizontal direction, but a rather restricted
-# vertical diffusion with the permeable membranes.
+# ## Model
+#
+# Five slabs of 5 µm, twisted around the vertical axis. The water diffuses freely along
+# the slabs, and crosses the membranes between them slowly. The second slab has a higher
+# diffusion coefficient.
 
 ncell = 5
 setup = SlabSetup(;
     depth = 50.0,
     widths = fill(5.0, ncell),
     height = 50.0,
-    bend = 0.0,
-    twist = π / 6,
+    twist = pi / 6,
     refinement = 10.0,
 )
-d = fill(0.002, ncell)
-d[2] = 0.005
+D = fill(0.002, ncell)
+D[2] = 0.003
 coeffs = coefficients(
     setup;
-    D = [d * I(3) for d ∈ d],
-    T₂ = fill(Inf, ncell),
-    ρ = fill(1.0, ncell),
-    κ = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
-    γ = 2.67513e-4,
+    D = [d * I(3) for d in D],
+    T2 = fill(Inf, ncell),
+    rho = fill(1.0, ncell),
+    kappa = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
+    gamma = 2.67513e-4,
 )
-
-# We then proceed to build the geometry and finite element mesh.
-
 mesh, = create_geometry(setup)
-plot_mesh(mesh)
+plot_mesh(mesh; decorations = false)
 
-# The mesh looks good, so we may then proceed to assemble the biological model and the
-# associated finite element matrices.
+#-
 
 model = Model(; mesh, coeffs...)
-matrices = assemble_matrices(model);
+matrices = assemble_matrices(model)
+volumes = matrices.volumes
+D_mean = sum(volumes .* D) / sum(volumes)
 
-# We may also compute some useful quantities, including a scalar diffusion coefficient from
-# the diffusion tensors.
-
-volumes = get_cmpt_volumes(model.mesh)
-D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
-ncompartment = length(model.mesh.points)
-
-# The gradient pulse sequence will be a PGSE with both x and z components.
-# This allows for both restricted horizontal diffusion and almost unrestricted
-# vertical diffusion. The different approaches should hopefully confirm this
-# behaviour.
+# The gradient is a PGSE sequence across and along the slabs (the `x` and `z` directions).
 
 dir = [1.0, 0.0, 1.0]
 profile = PGSE(2500.0, 4000.0)
-b = 1000
-g = √(b / int_F²(profile)) / model.γ
-gradient = ScalarGradient(dir, profile, g)
+gradient = ScalarGradient(dir, profile; bvalue = 1000, gamma = model.gamma)
 
-# ## Computing the ADC using different methods
-
-# ### Short term approximation
-
-# A simple model for the ADC is given by the [short term approximation](@ref STA).
-
-adc_sta_cmpts = compute_adc_sta(model, gradient)
-adc_sta = volumes'adc_sta_cmpts / sum(volumes)
-
-# ### Fitting the ADC
-
-# A more robust approach is to directly fit the BTPDE signal to a series of b-values. This
-# is however more computationally expensive. We start by building a set of gradients.
+# ## ADCs
+#
+# The signals of the Bloch-Torrey equation for b-values up to 4000 s/mm², and their ADC:
+# the initial slope of a quadratic fit of the log-signal (for the sample, and for each
+# compartment):
 
 bvalues = 0:400:4000
-gvalues = map(b -> √(b / int_F²(profile)) / coeffs.γ, bvalues)
-gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues]
-
-# We compute the magnetization for each gradient. Since the gradients are
-# interval-wise constant, we can use a specialized solver.
-
-btpde = BTPDE(; model, matrices)
-solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
-signals_cmpts = map(gradients) do grad
-    @show grad.g
-    ξ = solve(btpde, grad, solver)
-    compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
+solver = ThetaSolver(; timestep = 20.0)
+signals = map(bvalues) do b
+    gradient = ScalarGradient(dir, profile; bvalue = b, gamma = model.gamma)
+    u = solve_btpde(model, matrices, gradient, solver)
+    compute_signal.(matrices.M_cmpts, split_field(mesh, u))
 end
-signals = sum(signals_cmpts)
+adc_fit = fit_adc(bvalues, sum.(signals); degree = 2)
+adc_fit_cmpts = [fit_adc(bvalues, [s[i] for s in signals]; degree = 2) for i = 1:ncell]
 
-# Fitting the ADC is straightforward.
+# The homogenized ADC model, with impermeable membranes:
 
-adc_fit = fit_adc(bvalues, signals)
-adc_fit_cmpts =
-    [fit_adc(bvalues, [s[icmpt] for s ∈ signals_cmpts]) for icmpt = 1:ncompartment]
+adc_hadc_cmpts = solve_hadc(model, matrices, gradient)
+adc_hadc = sum(volumes .* adc_hadc_cmpts) / sum(volumes)
 
-# ### Homogenized ADC model
+# The matrix formalism, with the Laplace eigenfunctions of the whole sample (including the
+# permeable membranes), gives the effective diffusion tensor:
 
-# The [HADC](@ref)-model uses homogenization and assumes negligible permeability between the
-# compartments. This does require solving an ODE involving all the degrees of freedom.
+laplace = solve_laplace(model, matrices; neig_max = 400)
+D_mf = compute_mf_diffusion_tensor(mesh, matrices.M, laplace, gradient)
+adc_mf = dir' * D_mf * dir / (dir' * dir)
 
-hadc = HADC(; model, matrices)
-adc_homogenized_cmpts = solve(hadc, gradient)
-adc_homogenized = volumes'adc_homogenized_cmpts / sum(volumes)
+# The short diffusion time approximation:
 
-# ### Matrix Formalism
+adc_sta_cmpts = compute_adc_sta(model, gradient)
+adc_sta = sum(volumes .* adc_sta_cmpts) / sum(volumes)
 
-# If a Laplace eigendecomposition is available, the HADC can be approximated with little
-# additional computational expense.
-
-laplace = Laplace(; model, matrices, neig_max = 400)
-lap_eig = solve(laplace)
-
-# An effective diffusion tensor can be computed.
-
-D_mf = compute_mf_diffusion_tensor(model.mesh, matrices.M, lap_eig, gradient)
-
-# We observe that ``D_{x x}`` and ``D_{y y}`` are very close to the intrinsic diffusion
-# coefficient ``D = 0.002``, which confirms that diffusion in the horizontal direction is
-# almost unrestricted. ``D_{z z}`` is significantly smaller, confirming the presence of
-# membranes along the vertical direction.
-
-# In particular, we may deduce the MF-ADC in our direction.
-
-adc_mf = dir'D_mf * dir / dir'dir
-
-# ## Comparing results
-
-# ### Compartment ADCs
-
-# Here we make a comparison between the compartment ADCs. For MF, only a global ADC was computed.
-
-n = ncompartment
-fig = Figure()
-ax = Axis(
-    fig[1, 1];
-    xticks = (1:4, ["STA", "Fit BTPDE", "HADC", "MF"]),
-    ylabel = "ADC / D",
-    title = "Compartment ADCs",
-)
-barplot!(ax, fill(1, n), adc_sta_cmpts ./ D_avg; dodge = 1:n)
-barplot!(ax, fill(2, n), adc_fit_cmpts ./ D_avg; dodge = 1:n)
-barplot!(ax, fill(3, n), adc_homogenized_cmpts ./ D_avg; dodge = 1:n)
-barplot!(ax, [4], [adc_mf / D_avg])
-fig
-
-# The STA and HADC are the same for all compartments, as they consider them separately and
-# all the compartments have the same size. The fitted ADC is larger for the three inner
-# compartments, as they all have permeable membranes both below and above, in contrast to
-# the top and bottom compartments that have hard walls.
-
-# ### Signal attenuation
-
-# We may also inspect the resulting signal attenuations.
-
-fig = Figure()
-ax = Axis(fig[1, 1]; xlabel = "b", yscale = log10, title = "Signal attenuation")
-lines!(
-    ax,
-    [0, bvalues[end]],
-    [1, exp(-adc_sta * bvalues[end])];
-    linestyle = :dash,
-    label = "ADC STA",
-)
-lines!(
-    ax,
-    [0, bvalues[end]],
-    [1, exp(-adc_fit * bvalues[end])];
-    linestyle = :dash,
-    label = "ADC Fit",
-)
-lines!(
-    ax,
-    [0, bvalues[end]],
-    [1, exp(-adc_homogenized * bvalues[end])];
-    linestyle = :dash,
-    label = "HADC",
-)
-lines!(
-    ax,
-    [0, bvalues[end]],
-    [1, exp(-adc_mf * bvalues[end])];
-    linestyle = :dash,
-    label = "ADC MF",
-)
-lines!(
-    ax,
-    [0, bvalues[end]],
-    [1, exp(-D_avg * bvalues[end])];
-    linestyle = :dash,
-    label = "Free diffusion",
-)
-scatterlines!(ax, bvalues, abs.(signals) ./ abs(signals[1]); label = "BTPDE Signal")
-axislegend(ax)
-fig
-
-# We observe the following:
+# ## Comparison
 #
-# - The exact signal starts to visually deviate from the log-linear regime after ``b =
-#   2000``. For higher ``b``-values, the ADC is no longer sufficient to describe the
-#   attenuation, as higher order terms can no longer be neglected.
-# - The fit-ADC signal coincides with the exact signal for the lowest ``b``-values. This
-#   makes sense since that is how this ADC was obtained to begin with. This is considered to
-#   be the "reference" ADC.
-# - The free diffusion signal attenuates more thant the exact signal by many orders of
-#   magnitude, which confirms the presence of restrictive membranes and boundaries in the
-#   gradient direction.
-# - The HADC signal attenuates less than the exact signal, as it assumes a more severe
-#   restriction with impermeable membranes.
-# - The MF-ADC signal coincides with the HADC signal, as the former is simply an MF
-#   approximation of the latter.
+# The ADCs of the sample, relative to the mean diffusion coefficient, and the signal
+# attenuations they predict, with the signals of the Bloch-Torrey equation:
+
+methods = ["Fit", "HADC", "MF", "STA", "Free"]
+adcs = [adc_fit, adc_hadc, adc_mf, adc_sta, D_mean]
+fig = Figure(; size = (900, 400))
+ax = Axis(fig[1, 1]; xticks = (1:5, methods), ylabel = "ADC / D", title = "ADC")
+barplot!(ax, 1:5, adcs ./ D_mean; color = Makie.wong_colors()[1:5])
+ax = Axis(
+    fig[1, 2];
+    xlabel = "b [s/mm²]",
+    ylabel = "S / S₀",
+    yscale = log10,
+    title = "Signal attenuation",
+)
+for (method, adc, color) in zip(methods, adcs, Makie.wong_colors())
+    lines!(ax, [0, 4000], [1, exp(-4000 * adc)]; color, linestyle = :dash, label = method)
+end
+scatter!(ax, bvalues, abs.(sum.(signals)) ./ sum(volumes); color = :black, label = "BTPDE")
+axislegend(ax; position = :lb)
+fig
+
+# - The signal deviates from a straight line (in log scale) at the higher b-values: the
+#   ADC only describes the low b-values.
+# - The HADC is smaller than the fitted ADC, as it assumes impermeable membranes. The MF
+#   effective tensor, from the same model with permeable membranes, is close to the HADC
+#   here, as the membranes are only weakly permeable.
+# - The short time approximation underestimates the ADC, as the diffusion time is not
+#   short.
+# - Free diffusion attenuates much more: the membranes restrict the diffusion.
+
+# The compartment ADCs: the fitted ADCs are larger than the HADC, as the water crosses the
+# membranes, most for the inner slabs, which have membranes on both sides. The HADC and the
+# STA treat each slab separately.
+
+fig = Figure(; size = (650, 350))
+ax = Axis(fig[1, 1]; xlabel = "Slab", ylabel = "ADC / D", xticks = 1:ncell)
+group = repeat(1:3; inner = ncell)
+values = [adc_fit_cmpts ./ D; adc_hadc_cmpts ./ D; adc_sta_cmpts ./ D]
+barplot!(
+    ax,
+    repeat(1:ncell, 3),
+    values;
+    dodge = group,
+    color = Makie.wong_colors()[[1, 2, 4]][group],
+)
+labels = ["Fit", "HADC", "STA"]
+elements = [PolyElement(; color = Makie.wong_colors()[i]) for i in [1, 2, 4]]
+Legend(fig[1, 2], elements, labels)
+fig

@@ -61,7 +61,7 @@ where
     favored in the absence of a
     gradient, or
   - ``c_{i j} = \frac{2 \rho_i}{\rho_i + \rho_j}`` and ``c_{j i} = \frac{2 \rho_j}{\rho_i +
-    \rho_j}``, which ensures that the non-uniform intitial spin density is preserved in the
+    \rho_j}``, which ensures that the non-uniform initial spin density is preserved in the
     absence of a gradient [Lee2021](@cite).
 
 The diffusion MRI signal is measured at echo time ``t = T_\text{echo}``. This signal is
@@ -71,3 +71,29 @@ T_\text{echo})``:
 ```math
 S(\vec{g}) = \int_\Omega M(\vec{x}, T_\text{echo}) \, \mathrm{d} \Omega(\vec{x}).
 ```
+
+## [Periodic boundary conditions](@id periodic-theory)
+
+A sample of periodic tissue fills a box ``[0, L_1] \times \dots \times [0, L_d]``, with the
+cells cut by its faces and their periodic images entering on the opposite faces
+([`PeriodicBoxECS`](@ref), [`VoronoiSetup`](@ref)). Because of the term ``\vec{g}(t)
+\cdot \vec{x}``, the magnetization is not periodic, but the phase-shifted magnetization
+
+```math
+m(\vec{x}, t) = e^{\mathrm{i} \vec{q}(t) \cdot \vec{x}} M(\vec{x}, t), \quad \vec{q}(t) =
+\gamma \int_0^t \vec{g}(s) \, \mathrm{d} s,
+```
+
+is, where ``\vec{q}`` is the wave vector (see [`SpinDoctor.wavevector`](@ref)). It solves
+
+```math
+\frac{\partial m}{\partial t} = (\nabla - \mathrm{i} \vec{q}(t)) \cdot \mathbf{D} (\nabla
+- \mathrm{i} \vec{q}(t)) m - \frac{1}{T_2} m
+```
+
+in the compartments, with the interface conditions of ``M`` (with ``\mathbf{D} \nabla M``
+replaced by ``\mathbf{D} (\nabla - \mathrm{i} \vec{q}) m``), and periodic boundary
+conditions on the faces of the box. The finite element mesh is periodic (the opposite faces
+of the box have the same points), and the points on opposite faces are identified in each
+compartment (`assemble_matrices(model; periodic = true)`). For refocused sequences,
+``\vec{q}(T_\text{echo}) = 0`` and the signal is the integral of ``m``.

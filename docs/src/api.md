@@ -1,77 +1,94 @@
-# API Reference
+# API reference
+
+```@docs
+SpinDoctor
+```
+
+The main functions and types are exported. The building blocks listed under
+[Public, not exported](@ref) are used with the module name, e.g. `SpinDoctor.FEMesh`.
+
+## Setup recipes and geometry
+
+SpinDoctor comes with recipes for creating finite element meshes of plates, slabs, disks,
+cylinders, spheres, polyhedra and neurons, possibly immersed in an extracellular space (ECS).
+
+```@docs
+PlateSetup
+SlabSetup
+DiskSetup
+CylinderSetup
+SphereSetup
+ExtrusionSetup
+NeuronSetup
+VoronoiSetup
+NoECS
+BoxECS
+ConvexHullECS
+PeriodicBoxECS
+periodic_packing
+create_geometry
+save_geometry
+load_geometry
+compartment_mesh
+box_faces
+compartment_volumes
+```
+
+## Model and matrices
+
+```@docs
+coefficients
+analytical_coefficients
+Model
+initial_conditions
+assemble_matrices
+```
 
 ## Gradients
 
-These functions deal with gradient pulse sequences.
-
 ```@docs
-GeneralGradient
-ScalarGradient
 PGSE
 DoublePGSE
 CosOGSE
 SinOGSE
-integral
-int_F²
-intervals
-isconstant
-echotime
-```
-
-## Geometry
-
-```@docs
-assemble_matrices
-split_mesh
-split_field
-get_cmpt_volumes
-Model
-initial_conditions
-```
-
-## Postprocessing
-
-```@docs
-savefield
-compute_adc_sta
-fit_adc
-fit_tensors
-plot_mesh
-plot_field
-```
-
-## Problems
-
-SpinDoctor allows for considering a wide range of diffusion MRI problems. These can be
-solved for using the [`solve`](@ref) function.
-
-```@docs
-BTPDE
-HADC
-Karger
-Laplace
-MatrixFormalism
-AnalyticalLaplace
-AnalyticalMatrixFormalism
-IntervalConstantSolver
-solve
-```
-
-## Matrix formalism
-
-```@docs
-length2eig
-eig2length
-limit_lengthscale
-compute_mf_diffusion_tensor
-```
-
-## Utils
-
-```@docs
+ScalarGradient
+GeneralGradient
+bvalue
 unitcircle
 unitsphere
+```
+
+## Solvers
+
+SpinDoctor allows for considering a wide range of diffusion MRI problems, each with its own
+solver function.
+
+```@docs
+solve_btpde
+ThetaSolver
+solve_hadc
+solve_hadc_tensors
+compute_adc_sta
+solve_karger
+solve_laplace
+solve_mf
+eig2length
+length2eig
+limit_lengthscale
+compute_mf_diffusion_tensor
+solve_analytical_laplace
+solve_analytical_mf
+```
+
+## Post-processing and output
+
+```@docs
 compute_signal
+split_field
+compartment_weights
+fit_adc
+fit_tensors
+save_field
 ```
 
 ## Callbacks
@@ -84,18 +101,76 @@ VTKWriter
 Plotter
 ```
 
-## Recipes
+## Plotting
 
-SpinDoctor comes with pre-configures recipes for creating finite element meshes of plates,
-cylinders, spheres, and neurons.
+The plotting functions require a Makie backend, e.g. `using CairoMakie` or
+`using GLMakie`.
 
 ```@docs
-PlateSetup
-DiskSetup
-ExtrusionSetup
-SphereSetup
-NeuronSetup
-coefficients
-analytical_coefficients
-create_geometry
+plot_surfaces
+plot_mesh
+plot_mesh!
+plot_field
+plot_field!
+plot_hardi
+plot_hardi!
+```
+
+## Public, not exported
+
+### Meshes and finite elements
+
+```@docs
+SpinDoctor.FEMesh
+SpinDoctor.split_mesh
+SpinDoctor.facet_elements
+SpinDoctor.element_geometry
+SpinDoctor.facet_geometry
+SpinDoctor.periodic_restriction
+SpinDoctor.assemble_mass_matrix
+SpinDoctor.assemble_stiffness_matrix
+SpinDoctor.assemble_derivative_matrix
+SpinDoctor.assemble_flux_matrix
+```
+
+### Geometry generation and files
+
+```@docs
+SpinDoctor.AbstractSetup
+SpinDoctor.AbstractECS
+SpinDoctor.create_cells
+SpinDoctor.create_surfaces
+SpinDoctor.create_mesh
+SpinDoctor.deform_domain!
+SpinDoctor.radial_dimension
+SpinDoctor.fibonacci_sphere
+SpinDoctor.read_gmsh
+SpinDoctor.read_cells
+SpinDoctor.save_cells
+SpinDoctor.read_surfaces
+SpinDoctor.save_surfaces
+SpinDoctor.read_mesh
+SpinDoctor.save_mesh
+```
+
+### Gradient sequences
+
+```@docs
+SpinDoctor.AbstractTimeProfile
+SpinDoctor.AbstractGradient
+SpinDoctor.integral
+SpinDoctor.int_F2
+SpinDoctor.wavevector
+SpinDoctor.intervals
+SpinDoctor.echotime
+SpinDoctor.isconstant
+SpinDoctor.diffusion_time
+SpinDoctor.diffusion_time_sta
+SpinDoctor.j_integral
+```
+
+### Callbacks
+
+```@docs
+SpinDoctor.AbstractCallback
 ```

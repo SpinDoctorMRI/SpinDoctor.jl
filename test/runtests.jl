@@ -1,27 +1,30 @@
-# LSP indexing solution
-# https://github.com/julia-vscode/julia-vscode/issues/800#issuecomment-650085983
-if isdefined(@__MODULE__, :LanguageServer)
-    include("../src/SpinDoctor.jl")
-    using .SpinDoctor
-end
-
 using SpinDoctor
+using SpinDoctor: integral, int_F2, intervals, echotime
 using LinearAlgebra
 using QuadGK
 using Test
 using Aqua
+using Random
+using JLD2
+using OrdinaryDiffEqBDF: QNDF
 
 include("testutils.jl")
 
-# Run through typical workflow
-@testset "Workflow" begin
-    include("workflow.jl")
-end
+@testset "SpinDoctor" begin
+    @testset "Gradient sequences" begin
+        include("datatypes/sequences.jl")
+    end
 
-@testset "Aqua" begin
-    Aqua.test_all(
-        SpinDoctor;
-        ambiguities = false,
-        project_toml_formatting = false, # https://github.com/JuliaTesting/Aqua.jl/issues/72
-    )
+    @testset "Checks" begin
+        include("checks.jl")
+    end
+
+    # Run through typical workflow
+    @testset "Workflow" begin
+        include("workflow.jl")
+    end
+
+    @testset "Aqua" begin
+        Aqua.test_all(SpinDoctor; ambiguities = false)
+    end
 end
