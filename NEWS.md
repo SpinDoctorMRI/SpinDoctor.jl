@@ -55,6 +55,8 @@ extension, split OrdinaryDiffEq packages).
   coupled layers, and high angular orders), so that its signal did not converge with the
   number of modes (e.g. for four permeable plates: 0.66, 0.76, 0.65, 0.71 for decreasing
   length scales; now 0.6526 for all). Bessel overflows for high orders are handled.
+- `read_gmsh` failed on the meshes of RealNeuronMeshes, which also contain surface
+  triangles.
 - 2D VTK output, ignored keywords of `unitsphere`, the precision of the text geometry files,
   the quadratic-time extraction of neuron boundaries, `Printer` ignoring `nupdate`, a
   division by zero in the theta-scheme for intervals shorter than half a time step,
@@ -91,3 +93,12 @@ extension, split OrdinaryDiffEq packages).
   ECS is not restricted by the box faces.
 - Value-based tests (analytical solutions, exact identities), and regression outputs of
   v0.1.0 in `test/regression`.
+- Plotting: `plot_mesh!`, `plot_field!` and `plot_hardi!` plot into a given axis; the 3D
+  plots show each surface once, sorted by depth (box faces show the cross-sections of
+  packed cells); colors and transparency per compartment; fields as magnitude, real or
+  imaginary part, or phase, with colorbars. The `Plotter` window is shown with interactive
+  backends only.
+- New examples (myelinated axons, geometry recipes, white matter, tortuosity, neurons, ADC
+  methods, matrix formalism, custom gradients, validation), and a new documentation site
+  (DocumenterVitepress) with interactive WGLMakie figures, an examples gallery and a
+  manual.

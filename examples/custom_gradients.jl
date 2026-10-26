@@ -1,20 +1,17 @@
-# # Custom gradients
+# # [Custom gradient sequences](@id custom-gradients)
 #
-# Here we will consider a custom gradient applied to a spherical geometry.
-#
-# We start by loading SpinDoctor and a Makie plotting backend.
+# Besides the scalar sequences (PGSE, double PGSE, OGSE), the gradient may be any function
+# of time, with a varying direction ([`GeneralGradient`](@ref)). Here, we follow the
+# magnetization of a cell with a nucleus during such a sequence.
 
 using SpinDoctor
 using LinearAlgebra
+using CairoMakie
 
-if haskey(ENV, "GITHUB_ACTIONS")
-    using CairoMakie
-else
-    using GLMakie
-end
+# A spherical cell with a nucleus (the inner 60 % of the radius), in an ECS:
 
 setup = SphereSetup(; ncell = 1, layersizes = [0.6, 1.0], rmin = 5.0, rmax = 5.0)
-nlayer = length(setup.layersizes)
+nlayer = 2
 coeffs = coefficients(
     setup;
     D = (; cell = [0.002 * I(3) for _ = 1:nlayer], ecs = 0.002 * I(3)),
@@ -28,40 +25,31 @@ coeffs = coefficients(
     ),
     gamma = 2.67513e-4,
 )
-
-# We then proceed to build the geometry and finite element mesh.
-
 mesh, = create_geometry(setup)
-plot_mesh(mesh)
+plot_mesh(mesh; colors = [:crimson, (:steelblue, 0.5)])
 
-# The mesh looks good, so we may then proceed to assemble the biological model and the
-# associated finite element matrices.
+#-
 
 model = Model(; mesh, coeffs...)
-matrices = assemble_matrices(model)
+matrices = assemble_matrices(model);
 
-# The Bloch-Torrey PDE takes a magnetic field gradient pulse sequence as an input. We may
-# define our custom three dimensional gradient sequence (given in T/m) as a simple Julia
-# function. The echo time `TE` (given in microseconds) is also needed.
+# The gradient (T/m) is a Julia function of time (µs), here a rotating field, with the echo
+# time `TE`:
 
-## Magnetic field gradient
 TE = 5000.0
 phi = -pi / 12
 R = [cos(phi) sin(phi) 0; -sin(phi) cos(phi) 0; 0 0 1]
 gvec(t) = 1.0 * R * [sin(2pi * t / TE), sin(20pi * t / TE) / 5, cos(2pi * t / TE)]
 gradient = GeneralGradient(; gvec, TE)
 
-# In order to follow the evolution of the solution during time stepping, we add a
-# [`Plotter`](@ref) to a list of callbacks. Other available callbacks are [`Printer`](@ref)
-# for showing time stepping information, and [`VTKWriter`](@ref) for saving the solution time
-# series for visualization in ParaView.
+# The [`Plotter`](@ref) callback follows the time stepping: the gradient, the signal
+# attenuation, and the magnitude and phase of the magnetization. Other callbacks print
+# information ([`Printer`](@ref)) or save the magnetization for ParaView
+# ([`VTKWriter`](@ref)).
 
 plotter = Plotter()
-
-# We may then define the problem and solve for our gradient (with the callback).
-
 u = solve_btpde(model, matrices, gradient; callbacks = [plotter])
 plotter.fig
 
-# [`solve_mf`](@ref) also accepts [`GeneralGradient`](@ref)s. However, the ADC methods
-# currently only support [`ScalarGradient`](@ref)s.
+# With an interactive backend (`using GLMakie`), the figure is shown and updated during
+# the time stepping.
