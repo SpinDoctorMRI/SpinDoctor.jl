@@ -1,15 +1,15 @@
 function plot_field(
     femesh::FEMesh{T,2},
-    ξ,
+    u,
     compartments = 1:length(femesh.points),
 ) where {T}
-    ξ_cmpts = split_field(femesh, ξ)
+    u_cmpts = split_field(femesh, u)
     fig = Figure()
     ax = Axis(fig[1, 1])
-    for icmpt ∈ compartments
+    for icmpt in compartments
         elements = femesh.elements[icmpt]
         points = femesh.points[icmpt]
-        colors = abs.(ξ_cmpts[icmpt])
+        colors = abs.(u_cmpts[icmpt])
         mesh!(ax, points', elements'; color = colors, shading = NoShading)
     end
     fig
@@ -17,18 +17,18 @@ end
 
 function plot_field(
     femesh::FEMesh{T,3},
-    ξ,
+    u,
     compartments = 1:length(femesh.points),
 ) where {T}
     nboundary = size(femesh.facets, 2)
-    ξ_cmpts = split_field(femesh, ξ)
+    u_cmpts = split_field(femesh, u)
     scene = nothing
     first = true
-    for icmpt ∈ compartments, iboundary = 1:nboundary
+    for icmpt in compartments, iboundary = 1:nboundary
         facets = femesh.facets[icmpt, iboundary]
         if !isempty(facets)
             points = femesh.points[icmpt]
-            colors = abs.(ξ_cmpts[icmpt])
+            colors = abs.(u_cmpts[icmpt])
             # colors = fill(1.0 * iboundary, length(colors))
             # colors = iboundary / nboundary
             if first

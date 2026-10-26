@@ -1,109 +1,79 @@
-"""
-    compute_signal(M, ξ)
-
-Compute signal from magnetization `ξ`, using the mass matrix `M` for integration.
-
-Given a mesh `mesh` and a vector of compartment mass matrices `M_cmpts`, a vector of
-compartment signals may be obtained by `compute_signal.(M_cmpts, split_field(mesh, ξ))`.
-"""
-compute_signal(M, ξ) = sum(M * ξ)
+# Signals, ADC and tensor fits, and output of fields
 
 """
-    fit_adc(bvalues, signals)
+    compute_signal(M, u)
 
-Fit the apparent diffusion coefficient (ADC) using a polynomial logfit of the normalized signals
-`signals` against the b-values `bvalues`.
+Compute the signal from the magnetization `u`, using the mass matrix `M` for integration.
+
+Given a mesh `mesh` and the compartment mass matrices `M_cmpts`, the compartment signals
+are `compute_signal.(M_cmpts, split_field(mesh, u))`.
 """
-function fit_adc(bvalues, signals)
-    # Fit log of signal
-    p = fit(bvalues, log.(abs.(signals)))
+compute_signal(M, u) = sum(M * u)
 
-    # ADC is the negative linear term
+"""
+    fit_adc(bvalues, signals; degree = length(bvalues) - 1)
+
+Compute the apparent diffusion coefficient (ADC) as the initial slope of the logarithm of
+the `signals` with respect to the `bvalues`, by fitting a polynomial of degree `degree`
+(by default interpolating all the points; use `degree = 1` for a log-linear least squares
+fit).
+"""
+function fit_adc(bvalues, signals; degree = length(bvalues) - 1)
+    p = fit(bvalues, log.(abs.(signals)), degree)
     -p[1]
 end
 
 """
     fit_tensors(directions, adcs)
 
-Fit effective diffusion tensors to directionalized ADCs.
-The six components of the symmetric diffusion tensors are fitted by least
-squares to the gradient directions and resulting ADCs.
+Fit effective diffusion tensors to the ADCs `adcs[i]` (one value per compartment) in the
+`directions[:, i]`. The components of the symmetric tensors are fitted by least squares.
 """
 function fit_tensors(directions, adcs)
-    T = eltype(directions)
-    dim = size(directions, 1)
-
+    dim, ndirection = size(directions)
     adc = reduce(hcat, adcs)
-    ncompartment, ndirection = size(adc)
-
-    # Get vectors of gradient interactions
     d = directions
+
+    # The ADC in the direction d is d' * D * d, linear in the tensor components
     if dim == 2
-        G = zeros(ndirection, 3)
-        G[:, 1] = d[1, :] .^ 2
-        G[:, 2] = d[2, :] .^ 2
-        G[:, 3] = 2 .* d[1, :] .* d[2, :]
-    elseif dim == 3
-        G = zeros(ndirection, 6)
-        G[:, 1] = d[1, :] .^ 2
-        G[:, 2] = d[2, :] .^ 2
-        G[:, 3] = d[3, :] .^ 2
-        G[:, 4] = 2 .* d[1, :] .* d[2, :]
-        G[:, 5] = 2 .* d[1, :] .* d[3, :]
-        G[:, 6] = 2 .* d[2, :] .* d[3, :]
+        pairs = [(1, 1), (2, 2), (1, 2)]
+    else
+        pairs = [(1, 1), (2, 2), (3, 3), (1, 2), (1, 3), (2, 3)]
     end
+    G = [(i == j ? 1 : 2) * d[i, k] * d[j, k] for k = 1:ndirection, (i, j) in pairs]
 
-    tensors = [zeros(T, 0, 0) for _ = 1:ncompartment]
-    for icmpt = 1:ncompartment
-        # Deduce vector of effective diffusion tensor components using a
-        # least squares fit of the directions to the computed ADCs
-        Dvec = G \ adc[icmpt, :]
-
-        # Tensorize component vectors (symmetric)
-        if dim == 2
-            tensors[icmpt] = [
-                Dvec[1, :] Dvec[3, :]
-                Dvec[3, :] Dvec[2, :]
-            ]
-        elseif dim == 3
-            tensors[icmpt] = [
-                Dvec[1, :] Dvec[4, :] Dvec[5, :]
-                Dvec[4, :] Dvec[2, :] Dvec[6, :]
-                Dvec[5, :] Dvec[6, :] Dvec[3, :]
-            ]
+    map(eachrow(adc)) do a
+        c = G \ a
+        D = zeros(eltype(c), dim, dim)
+        for ((i, j), cij) in zip(pairs, c)
+            D[i, j] = D[j, i] = cij
         end
+        D
     end
-
-    tensors
 end
 
 """
-    savefield(mesh, ξ, filename; fieldname = "Magnetization")
+    save_field(filename, mesh, u; name = "Magnetization")
 
-Save field `ξ` to a VTK file. It may then be visualized in ParaView.
+Save the field `u` (real and imaginary parts) to the VTK multiblock file `filename.vtm`,
+with one block per compartment. It may then be visualized in ParaView.
 """
-function savefield(
-    mesh::FEMesh{T,dim},
-    ξ,
-    filename;
-    fieldname = "Magnetization",
-) where {T,dim}
-    if dim == 2
-        cell_type = VTKCellTypes.VTK_TRIANGLE
-    elseif dim == 3
-        cell_type = VTKCellTypes.VTK_TETRA
+function save_field(filename, mesh, u; name = "Magnetization")
+    mkpath(dirname(abspath(filename)))
+    vtm = vtk_multiblock(filename)
+    add_vtk_field!(vtm, mesh, u, name)
+    vtk_save(vtm)
+end
+
+# Add one VTK grid per compartment to the multiblock file `vtm`, with the real and
+# imaginary parts of the field `u`, and return the grids
+function add_vtk_field!(vtm, mesh::FEMesh{T,dim}, u, name) where {T,dim}
+    celltype = dim == 2 ? VTKCellTypes.VTK_TRIANGLE : VTKCellTypes.VTK_TETRA
+    map(mesh.points, mesh.elements, split_field(mesh, u)) do points, elements, u_i
+        cells = [MeshCell(celltype, e) for e in eachcol(elements)]
+        vtk = vtk_grid(vtm, points, cells)
+        vtk[name*" (real part)", VTKPointData()] = real(u_i)
+        vtk[name*" (imaginary part)", VTKPointData()] = imag(u_i)
+        vtk
     end
-    ξ_cmpts = split_field(mesh, ξ)
-    isdir(dirname(filename)) || mkpath(dirname(filename))
-    vtmfile = vtk_multiblock(filename)
-    for icmpt = 1:length(mesh.points)
-        ξᵢ = ξ_cmpts[icmpt]
-        points = mesh.points[icmpt]
-        elements = mesh.elements[icmpt]
-        cells = [MeshCell(cell_type, elements[:, i]) for i = 1:size(elements, 2)]
-        vtkfile = vtk_grid(vtmfile, points, cells)
-        vtkfile[fieldname*" (real part)"] = real(ξᵢ)
-        vtkfile[fieldname*" (imaginary part)"] = imag(ξᵢ)
-    end
-    vtk_save(vtmfile)
 end

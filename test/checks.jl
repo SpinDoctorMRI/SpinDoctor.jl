@@ -1,30 +1,30 @@
 # Checks of computed values against exact identities and analytical solutions
 
-γ = 2.67513e-4
+gamma = 2.67513e-4
 
 @testset "Finite element matrices" begin
     # Exact identities for P1 elements, which represent the coordinates exactly:
-    # 1ᵀM1 = |Ω|, xᵀMy = ∫ x y, xᵀSy = ∫ ∇x ⋅ D ∇y = D_xy |Ω|, 1ᵀMₓ1 = ∫ x
+    # 1ᵀM1 = |Omega|, xᵀMy = ∫ x y, xᵀSy = ∫ ∇x ⋅ D ∇y = D_xy |Omega|, 1ᵀMₓ1 = ∫ x
     D = [3.0 1.0 0.0; 1.0 2.0 0.5; 0.0 0.5 1.0]
-    for (setup, Dᵢ) ∈ [
+    for (setup, D_i) in [
         (DiskSetup(; ncell = 2, ecs = BoxECS(; margin = 1.0)), D[1:2, 1:2]),
         (SphereSetup(; ncell = 2, nsidewall = 60, ecs = BoxECS(; margin = 1.0)), D),
     ]
         Random.seed!(2)
         mesh, = create_geometry(setup)
         dim = size(mesh.points[1], 1)
-        for i ∈ eachindex(mesh.points)
+        for i in eachindex(mesh.points)
             p, e = mesh.points[i], mesh.elements[i]
-            V = sum(first(SpinDoctor.get_mesh_volumes(p, e)))
+            V = sum(first(SpinDoctor.element_geometry(p, e)))
             M = SpinDoctor.assemble_mass_matrix(e, p)
-            S = SpinDoctor.assemble_stiffness_matrix(e, p, Dᵢ)
+            S = SpinDoctor.assemble_stiffness_matrix(e, p, D_i)
             @test M == M' && S == S'
             @test sum(M) ≈ V
             for a = 1:dim, b = 1:dim
                 xa, xb = p[a, :], p[b, :]
-                @test xa' * S * xb ≈ Dᵢ[a, b] * V atol = 1e-10 * norm(Dᵢ) * V
+                @test xa' * S * xb ≈ D_i[a, b] * V atol = 1e-10 * norm(D_i) * V
             end
-            # ∫ x y = (xᵀMy), and with x as a P1 weight: ∫ x φᵢ φⱼ
+            # ∫ x y = (xᵀMy), and with x as a P1 weight: ∫ x phi_i phi_j
             Mx = SpinDoctor.assemble_mass_matrix(e, p; nodeweights = p[1, :])
             @test sum(Mx) ≈ ones(size(p, 2))' * M * p[1, :]
             @test p[2, :]' * Mx * ones(size(p, 2)) ≈ p[1, :]' * M * p[2, :]
@@ -40,7 +40,7 @@ end
     # saved meshes of bent and layered cylinders used to violate this (and could
     # not be assembled), since facets with all their points on an interface were
     # also assigned to the neighboring compartment.
-    for (name, setup) ∈ [
+    for (name, setup) in [
         "cylinders_bent_hull" => CylinderSetup(;
             ncell = 3,
             rmin = 2.0,
@@ -48,7 +48,7 @@ end
             ecs = ConvexHullECS(; margin = 1.0),
             height = 10.0,
             bend = 0.02,
-            twist = π / 4,
+            twist = pi / 4,
         ),
         "cylinders_layers_hull" => CylinderSetup(;
             ncell = 2,
@@ -58,12 +58,12 @@ end
             ecs = ConvexHullECS(; margin = 1.0),
             height = 10.0,
             bend = 0.02,
-            twist = π / 4,
+            twist = pi / 4,
         ),
     ]
         savedir = joinpath(@__DIR__, "regression", "meshes", name)
         mesh, = create_geometry(setup; savedir, recreate = false)
-        for i ∈ eachindex(mesh.points), f ∈ mesh.facets[i, :]
+        for i in eachindex(mesh.points), f in mesh.facets[i, :]
             isempty(f) || @test all(>(0), SpinDoctor.facet_elements(mesh.elements[i], f))
         end
         model = Model(; mesh, get_coeffs(setup)...)
@@ -72,7 +72,7 @@ end
 end
 
 @testset "Outward normals" begin
-    # Divergence theorem: ∫_∂Ω x_d n_d dS = |Ω| for each compartment Ω and axis d.
+    # Divergence theorem: ∫_∂Omega x_d n_d dS = |Omega| for each compartment Omega and axis d.
     # P1 elements represent x_d exactly, so the surface integrals G must reproduce
     # the compartment volumes, also for non-convex compartments such as the ECS.
     setups = [
@@ -91,7 +91,7 @@ end
             ecs = ConvexHullECS(; margin = 1.0),
             height = 10.0,
             bend = 0.02,
-            twist = π / 4,
+            twist = pi / 4,
         ),
         CylinderSetup(;
             ncell = 2,
@@ -102,20 +102,20 @@ end
             height = 10.0,
         ),
     ]
-    for setup ∈ setups
+    for setup in setups
         Random.seed!(1)
         mesh, = create_geometry(setup)
         model = Model(; mesh, get_coeffs(setup)...)
         matrices = assemble_matrices(model)
         dim = size(mesh.points[1], 1)
-        for i ∈ eachindex(mesh.points), d = 1:dim
+        for i in eachindex(mesh.points), d = 1:dim
             @test mesh.points[i][d, :]' * matrices.G[i][:, d] ≈ matrices.volumes[i] rtol =
                 1e-8
         end
 
         # With equal spin densities, permeable interfaces conserve magnetization
         # and the flux matrix is symmetric
-        @test norm(matrices.Q * ones(size(matrices.Q, 1))) ≤ 1e-10 * norm(matrices.Q, 1)
+        @test norm(matrices.Q * ones(size(matrices.Q, 1))) <= 1e-10 * norm(matrices.Q, 1)
         @test matrices.Q ≈ matrices.Q'
     end
 end
@@ -124,7 +124,7 @@ end
     # For a gradient across the plates, the 2D plates and the 3D slabs reduce to
     # the one-dimensional problem of the analytical matrix formalism
     profile = PGSE(2000.0, 6000.0)
-    for setup ∈ [
+    for setup in [
         PlateSetup(; depth = 20.0, widths = fill(5.0, 4), refinement = 0.5),
         SlabSetup(; depth = 20.0, widths = fill(5.0, 4), height = 5.0, refinement = 2.0),
     ]
@@ -134,10 +134,10 @@ end
         matrices = assemble_matrices(model)
         dim = size(mesh.points[1], 1)
         dir = [1.0; zeros(dim - 1)]
-        gradient = ScalarGradient(dir, profile, √(1000 / int_F²(profile)) / γ)
-        ξ = solve_btpde(model, matrices, gradient, IntervalConstantSolver(; timestep = 5.0))
-        volumes = get_cmpt_volumes(mesh)
-        signal = compute_signal(matrices.M, ξ) / sum(volumes)
+        gradient = ScalarGradient(dir, profile; bvalue = 1000, gamma)
+        u = solve_btpde(model, matrices, gradient, IntervalConstantSolver(; timestep = 5.0))
+        volumes = compartment_volumes(mesh)
+        signal = compute_signal(matrices.M, u) / sum(volumes)
         acoeffs = analytical_coefficients(setup, coeffs)
         laplace = solve_analytical_laplace(;
             acoeffs...,
@@ -150,7 +150,7 @@ end
 end
 
 @testset "Compartment meshes and box faces" begin
-    for setup ∈ [
+    for setup in [
         DiskSetup(; ncell = 3, rmin = 2.0, rmax = 4.0, ecs = BoxECS(; margin = 1.0)),
         SphereSetup(;
             ncell = 3,
@@ -170,18 +170,18 @@ end
         Random.seed!(3)
         mesh, = create_geometry(setup)
         dim = size(mesh.points[1], 1)
-        volumes = get_cmpt_volumes(mesh)
+        volumes = compartment_volumes(mesh)
 
         # The ECS as a mesh and model of its own
         ecs = compartment_mesh(mesh, length(mesh.points))
-        @test get_cmpt_volumes(ecs) ≈ volumes[end:end]
+        @test compartment_volumes(ecs) ≈ volumes[end:end]
         model = Model(;
             mesh = ecs,
-            ρ = [1.0 + 0im],
+            rho = [1.0 + 0im],
             D = [0.002 * Matrix(I, dim, dim)],
-            T₂ = [Inf],
-            κ = zeros(size(ecs.facets, 2)),
-            γ = γ,
+            T2 = [Inf],
+            kappa = zeros(size(ecs.facets, 2)),
+            gamma = gamma,
         )
         matrices = assemble_matrices(model)
         @test sum(matrices.M) ≈ volumes[end]
@@ -191,9 +191,9 @@ end
         faces = box_faces(mesh)
         p = mesh.points[end]
         L = vec(maximum(p; dims = 2) - minimum(p; dims = 2))
-        area(f) = sum(first(SpinDoctor.get_mesh_surface(p, f)))
+        area(f) = sum(first(SpinDoctor.facet_geometry(p, f)))
         ncomplete = setup isa ExtrusionSetup ? 2 : dim
-        for d = 1:ncomplete, face ∈ (faces[2d-1], faces[2d])
+        for d = 1:ncomplete, face in (faces[2d-1], faces[2d])
             @test area(face) ≈ prod(L[[1:(d-1); (d+1):dim]])
         end
         if setup isa ExtrusionSetup
@@ -207,8 +207,8 @@ end
     setup = DiskSetup(; ncell = 2, nsidewall = 40, ecs = BoxECS(; margin = 1.0))
     cells = (; centers = [-4.0 4.0; 0.0 0.0], radii = [3.0 2.0])
     mesh, = create_geometry(setup; cells)
-    volumes = get_cmpt_volumes(mesh)
-    @test volumes[1:2] ≈ π * [3.0, 2.0] .^ 2 rtol = 0.02
+    volumes = compartment_volumes(mesh)
+    @test volumes[1:2] ≈ pi * [3.0, 2.0] .^ 2 rtol = 0.02
     @test_throws ErrorException create_geometry(SphereSetup(; ncell = 3); cells)
 end
 
@@ -245,7 +245,7 @@ end
     # Directions on a hemisphere
     d = unitsphere(20; half = true, normal = [1.0, 1.0, 0.0])
     @test size(d) == (3, 20)
-    @test all(≥(0), [1, 1, 0]' * d)
+    @test all(>=(0), [1, 1, 0]' * d)
     @test all(≈(1), sum(abs2, d; dims = 1))
 
     # Reproducible cell configurations
@@ -254,7 +254,7 @@ end
           SpinDoctor.create_cells(setup; rng = Xoshiro(1))
 
     # VTK output of 2D (triangle) and 3D (tetrahedron) meshes
-    for setup ∈ [
+    for setup in [
         PlateSetup(; depth = 2.0, widths = [1.0, 1.0]),
         SlabSetup(; depth = 2.0, widths = [1.0, 1.0], height = 1.0),
     ]
@@ -266,9 +266,9 @@ end
         mktempdir() do dir
             writer = VTKWriter(; dir = joinpath(dir, "nested", "output"), nupdate = 2)
             solver = IntervalConstantSolver(; timestep = 5.0)
-            ξ = solve_btpde(model, matrices, gradient, solver; callbacks = [writer])
+            u = solve_btpde(model, matrices, gradient, solver; callbacks = [writer])
             @test isfile(joinpath(dir, "nested", "output", "solution.pvd"))
-            savefield(mesh, ξ, joinpath(dir, "field"))
+            save_field(joinpath(dir, "field"), mesh, u)
             @test isfile(joinpath(dir, "field.vtm"))
         end
     end

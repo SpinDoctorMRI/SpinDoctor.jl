@@ -1,32 +1,31 @@
-"""
-    compute_adc_sta(model)
+# Apparent diffusion coefficients (ADC)
 
-Compute the ADC for each compartment in the short diffusion time regime.
+"""
+    compute_adc_sta(model, gradient)
+
+Compute the ADC of each compartment in the short diffusion time approximation (STA), for
+the direction of the scalar gradient `gradient`.
 """
 function compute_adc_sta(model::Model{T}, gradient::ScalarGradient) where {T}
-    ncompartment = length(model.mesh.points)
+    (; mesh, D) = model
+    d = gradient.dir
+    t = diffusion_time_sta(gradient.profile)
 
-    adcs = zeros(T, ncompartment)
-    for icmpt = 1:ncompartment
-        points = model.mesh.points[icmpt]
-        elements = model.mesh.elements[icmpt]
-        facets = reduce(hcat, model.mesh.facets[icmpt, :])
+    adcs = zeros(T, length(mesh.points))
+    for icmpt in eachindex(mesh.points)
+        points = mesh.points[icmpt]
+        facets = reduce(hcat, mesh.facets[icmpt, :])
+        volume = sum(first(element_geometry(points, mesh.elements[icmpt])))
+        areas, _, normals = facet_geometry(points, facets)
+        D0 = d' * D[icmpt] * d
 
-        volumes, = get_mesh_volumes(points, elements)
-        v = sum(volumes)
-        areas, _, normals = get_mesh_surface(points, facets)
-        d = gradient.dir
-        D₀ = d' * model.D[icmpt] * d
+        # Surface area projected onto the plane orthogonal to the gradient direction
+        area = sum((d' * normals)' .^ 2 .* areas)
 
-        # Project surface areas onto plane orthogonal to gradient direction
-        # (result is 1×1 matrix, extract scalar component)
-        SAu = ((d'normals) .^ 2*areas)[1]
-
-        t = diffusion_time_sta(gradient.profile)
-        adcs[icmpt] = D₀ * (1 - 4 / 3 * √(D₀ / π) * SAu / v * √t)
+        adcs[icmpt] = D0 * (1 - 4 / 3 * sqrt(D0 / pi) * area / volume * sqrt(t))
     end
 
-    all(≥(0), adcs) ||
+    all(>=(0), adcs) ||
         @warn "Obtained negative STA ADC, STA approximation does not hold" filter(
             <(0),
             adcs,
@@ -42,7 +41,7 @@ Compute the ADC of each compartment using the homogenized ADC model (HADC). This
 currently only implemented for scalar gradients.
 
 The HADC model assumes impermeable compartment boundaries: permeabilities, initial spin
-densities and T₂ relaxation are not taken into account. The ADC of a sample may be
+densities and T2 relaxation are not taken into account. The ADC of a sample may be
 estimated by weighting the compartment ADCs with [`compartment_weights`](@ref).
 """
 function solve_hadc(
@@ -64,25 +63,25 @@ function solve_hadc(
     ncompartment = length(D)
 
     # Initial conditions
-    ω₀ = zeros.(size.(mesh.points, 2))
+    omega0 = zeros.(size.(mesh.points, 2))
 
     # Time dependent ODE function
-    function Mdω!(dω, ω, p, t)
+    function Mdomega!(domega, omega, p, t)
         (; mS, f, surfint) = p
-        mul!(dω, mS, ω)
-        dω .+= integral(f, t) .* surfint
+        mul!(domega, mS, omega)
+        domega .+= integral(f, t) .* surfint
     end
 
     # Create ODE function and Jacobian from matrices
-    jac!(J, ω, p, t) = (J .= p.mS)
+    jac!(J, omega, p, t) = (J .= p.mS)
 
     # Allocate output array
-    adc = zeros(ncompartment)
+    adc = zeros(eltype(volumes), ncompartment)
 
     # Iterate over compartments and gradient sequences and directions
     for icmpt = 1:ncompartment
         # Free diffusivity in gradient direction
-        D₀ = dir' * D[icmpt] * dir
+        D0 = dir' * D[icmpt] * dir
 
         # Surface integrals in gradient direction
         surfint = G[icmpt] * (D[icmpt] * dir)
@@ -90,12 +89,12 @@ function solve_hadc(
         p = (; mS = -S_cmpts[icmpt], f, surfint)
 
         odefunction = ODEFunction(
-            Mdω!;
+            Mdomega!;
             jac = jac!,
             jac_prototype = p.mS,
             mass_matrix = M_cmpts[icmpt],
         )
-        odeproblem = ODEProblem(odefunction, ω₀[icmpt], (0, TE), p)
+        odeproblem = ODEProblem(odefunction, omega0[icmpt], (0, TE), p)
 
         # Solve ODE, keep all time steps (for integral)
         sol = SciMLBase.solve(
@@ -110,7 +109,7 @@ function solve_hadc(
         a, = quadgk(t -> integral(f, t) * (surfint' * sol(t)), 0, TE)
 
         # HADC (free diffusivity minus correction)
-        adc[icmpt] = D₀ - a / volumes[icmpt] / int_F²(f)
+        adc[icmpt] = D0 - a / volumes[icmpt] / int_F2(f)
     end
 
     adc

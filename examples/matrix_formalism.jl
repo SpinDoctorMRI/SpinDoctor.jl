@@ -37,15 +37,15 @@ nlayer = length(setup.layersizes)
 coeffs = coefficients(
     setup;
     D = (; cell = [0.001 * I(2) for _ = 1:nlayer], ecs = 0.002 * I(2)),
-    T₂ = (; cell = fill(Inf, nlayer), ecs = Inf),
-    ρ = (; cell = fill(1.0, nlayer), ecs = 1.0),
-    κ = (;
+    T2 = (; cell = fill(Inf, nlayer), ecs = Inf),
+    rho = (; cell = fill(1.0, nlayer), ecs = 1.0),
+    kappa = (;
         cell_interfaces = fill(1e-4, nlayer - 1),
         cell_boundaries = fill(0.0, nlayer),
         cell_ecs = 1e-5,
         ecs = 0.0,
     ),
-    γ = 2.67513e-4,
+    gamma = 2.67513e-4,
 )
 
 # We then proceed to build the geometry and finite element mesh.
@@ -63,7 +63,7 @@ matrices = assemble_matrices(model);
 # We may also compute some useful quantities, including a scalar diffusion
 # coefficient from the diffusion tensors.
 
-volumes = get_cmpt_volumes(model.mesh)
+volumes = compartment_volumes(model.mesh)
 D_avg = 1 / 2 * tr.(model.D)' * volumes / sum(volumes)
 
 # The eigenfunctions of the diffusive part of the Bloch-Torrey operator forms
@@ -82,11 +82,11 @@ length_scales = eig2length.(lap_eig.values, D_avg)
 # skipping features below a threshold length scale of 3 micrometers.
 
 length_scale = 1.0
-λ_max = length2eig(length_scale, D_avg)
-lap_eig = limit_lengthscale(lap_eig, λ_max)
+lambda_max = length2eig(length_scale, D_avg)
+lap_eig = limit_lengthscale(lap_eig, lambda_max)
 
 # Each of the resulting eigenfunctions is represented in the same way as the initial
-# magnetization field `ρ`.
+# magnetization field `rho`.
 
 ## eiginds = [2, 3, 5, 10, 15, 20, 30, 40, 50, 100, 150, 200]
 ncompartment = length(mesh.points)
@@ -94,13 +94,13 @@ fig = Figure()
 for i = 1:3, j = 1:4
     ieig = 1 + 4(i - 1) + j
     ## ieig = eiginds[4(i - 1) + j]
-    ϕ_cmpts = split_field(mesh, lap_eig.funcs[:, ieig])
+    phi_cmpts = split_field(mesh, lap_eig.funcs[:, ieig])
     ax = Axis(fig[i, j]; title = @sprintf("n = %d, ℓ = %.1f", ieig, length_scales[ieig]))
     ax.aspect = DataAspect()
-    for icmpt ∈ 1:ncompartment
+    for icmpt = 1:ncompartment
         f = mesh.elements[icmpt]
         p = mesh.points[icmpt]
-        mesh!(ax, p', f'; color = ϕ_cmpts[icmpt], shading = false)
+        mesh!(ax, p', f'; color = phi_cmpts[icmpt], shading = false)
     end
 end
 fig
@@ -112,15 +112,14 @@ fig
 dir = [1.0, 0.0]
 profile = CosOGSE(5000.0, 5000.0, 2)
 b = 1000
-g = √(b / int_F²(profile)) / coeffs.γ
-gradient = ScalarGradient(dir, profile, g)
+gradient = ScalarGradient(dir, profile; bvalue = b, gamma = coeffs.gamma)
 
 # The matrix formalism magnetization is computed with [`solve_mf`](@ref), similarly to
 # [`solve_btpde`](@ref). The time profile is approximated on 500 points, since it is
 # non-constant.
 
-ξ = solve_mf(model, matrices, lap_eig, gradient; ninterval = 500)
+u = solve_mf(model, matrices, lap_eig, gradient; ninterval = 500)
 
 # The resulting magnetization field may be plotted.
 
-plot_field(model.mesh, ξ)
+plot_field(model.mesh, u)

@@ -1,3 +1,19 @@
+# Finite element meshes split into compartments
+
+"""
+    FEMesh(; point_map, points, facets, elements)
+
+Finite element mesh split into compartments, with one P1 (linear) simplex mesh per
+compartment:
+
+- `points[i]`: coordinates of the points of compartment `i` (size `dim`, `npoint`);
+- `elements[i]`: point indices of its elements (size `dim + 1`, `nelement`);
+- `facets[i, j]`: point indices of the facets of compartment `i` on boundary `j`
+  (size `dim`, `nfacet`, empty if compartment `i` does not touch boundary `j`);
+- `point_map[i]`: indices of the points of compartment `i` in the global mesh (sorted).
+
+Points on an interface are duplicated, one copy for each compartment.
+"""
 struct FEMesh{T,dim}
     point_map::Vector{Vector{Int}}
     points::Vector{Matrix{T}}
@@ -14,55 +30,51 @@ end
 """
     split_mesh(mesh_all)
 
-Split global mesh into compartments.
+Split a global mesh into compartments. The global mesh is a named tuple with `points`,
+`facets` and `facetmarkers` (boundary number of each facet), and `elements` and
+`elementmarkers` (compartment number of each element), as returned by
+[`create_mesh`](@ref).
 """
 function split_mesh(mesh_all)
-    # Extract mesh_all in global numbering system (tag: "all")
-    points_all = mesh_all.points
-    facets_all = mesh_all.facets
-    facetmarkers_all = mesh_all.facetmarkers
-    elements_all = mesh_all.elements
-    elementmarkers_all = mesh_all.elementmarkers
-
+    (; facetmarkers, elementmarkers) = mesh_all
     dim, npoint = size(mesh_all.points)
-    ncompartment = maximum(elementmarkers_all)
-    nboundary = maximum(facetmarkers_all)
-    elements = [elements_all[:, elementmarkers_all .== icmpt] for icmpt = 1:ncompartment]
+    ncompartment = maximum(elementmarkers)
+    nboundary = maximum(facetmarkers)
+    elements = [mesh_all.elements[:, elementmarkers .== i] for i = 1:ncompartment]
 
     # Map global to local points
     point_map = sort.(unique.(elements))
-    points = [points_all[:, point_map[icmpt]] for icmpt = 1:ncompartment]
+    points = [mesh_all.points[:, point_map[i]] for i = 1:ncompartment]
 
     # Assign each boundary facet to the compartments that have it as an element face
     # (an interface belongs to both of its compartments), and renumber locally
     facets = [zeros(Int, dim, 0) for _ = 1:ncompartment, _ = 1:nboundary]
-    point_map_inv = zeros(Int, npoint)
-    for icmpt = 1:ncompartment
-        point_map_inv[point_map[icmpt]] = 1:length(point_map[icmpt])
-        inside = facet_elements(elements[icmpt], facets_all) .> 0
-        for iboundary = 1:nboundary
-            sel = inside .& (facetmarkers_all .== iboundary)
+    global2local = zeros(Int, npoint)
+    for i = 1:ncompartment
+        global2local[point_map[i]] = 1:length(point_map[i])
+        inside = facet_elements(elements[i], mesh_all.facets) .> 0
+        for j = 1:nboundary
+            sel = inside .& (facetmarkers .== j)
             if any(sel)
-                facets[icmpt, iboundary] = point_map_inv[facets_all[:, sel]]
+                facets[i, j] = global2local[mesh_all.facets[:, sel]]
             end
         end
-        elements[icmpt] = point_map_inv[elements[icmpt]]
-        point_map_inv[point_map[icmpt]] .= 0
+        elements[i] = global2local[elements[i]]
+        global2local[point_map[i]] .= 0
     end
 
     FEMesh(; point_map, points, facets, elements)
 end
 
 """
-    split_field(mesh, ξ)
+    split_field(mesh, u)
 
-Split the field `ξ` into a vector containing a `view` of each compartment. 
+Split the field `u` (with values at all the points of `mesh`) into a vector with a view of
+the values of each compartment.
 """
-function split_field(mesh, ξ)
-    ncompartment = length(mesh.points)
-    npoint_cmpts = size.(mesh.points, 2)
-    inds = [0; cumsum(npoint_cmpts[1:end])]
-    [@view(ξ[(1+inds[i]):inds[i+1]]) for i = 1:ncompartment]
+function split_field(mesh, u)
+    inds = [0; cumsum(size.(mesh.points, 2))]
+    [@view(u[(inds[i]+1):inds[i+1]]) for i in eachindex(mesh.points)]
 end
 
 """
@@ -108,10 +120,10 @@ function box_faces(
     isnothing(atol) && (atol = 1e-8 * norm(pmax - pmin))
 
     onplane(f, d, value) =
-        all(a -> abs(points[d, facets[a, f]] - value) ≤ atol, axes(facets, 1))
-    face(d, value) = facets[:, [f for f ∈ axes(facets, 2) if onplane(f, d, value)]]
+        all(a -> abs(points[d, facets[a, f]] - value) <= atol, axes(facets, 1))
+    face(d, value) = facets[:, [f for f in axes(facets, 2) if onplane(f, d, value)]]
 
-    names = (:xmin, :xmax, :ymin, :ymax, :zmin, :zmax)[1:2dim]
+    names = (:xmin, :xmax, :ymin, :ymax, :zmin, :zmax)[1:(2dim)]
     faces = [face(d, side == 1 ? pmin[d] : pmax[d]) for d = 1:dim for side = 1:2]
     NamedTuple{names}(faces)
 end
@@ -129,16 +141,16 @@ function facet_elements(elements, facets, ::Val{d}) where {d}
     face(f, j) = sort(SVector{d}(ntuple(k -> f[k, j], Val(d))))
 
     # Look up the faces of all elements (drop one vertex at a time) among the facets
-    lookup = Dict(face(facets, j) => j for j ∈ axes(facets, 2))
+    lookup = Dict(face(facets, j) => j for j in axes(facets, 2))
     ielements = zeros(Int, size(facets, 2))
-    for e ∈ axes(elements, 2), skip = 1:nbasis
+    for e in axes(elements, 2), skip = 1:nbasis
         f = sort(SVector{d}(ntuple(k -> elements[k < skip ? k : k + 1, e], Val(d))))
         j = get(lookup, f, 0)
         j > 0 && (ielements[j] = e)
     end
 
     # Repeated facets share the element of the one in the lookup table
-    for j ∈ axes(facets, 2)
+    for j in axes(facets, 2)
         ielements[j] = ielements[lookup[face(facets, j)]]
     end
 
@@ -146,40 +158,41 @@ function facet_elements(elements, facets, ::Val{d}) where {d}
 end
 
 """
-    get_cmpt_volumes(mesh)
+    compartment_volumes(mesh)
 
-Get compartment volumes.
+Volumes (areas in 2D) of the compartments of `mesh`.
 """
-function get_cmpt_volumes(mesh)
-    map((p, e) -> sum(get_mesh_volumes(p, e)[1]), mesh.points, mesh.elements)
-end
+compartment_volumes(mesh) =
+    map((p, e) -> sum(first(element_geometry(p, e))), mesh.points, mesh.elements)
 
 """
-    get_mesh_volumes(points, elements)
+    volumes, centers = element_geometry(points, elements)
 
-Get the volumes and centers of the elements of a mesh.
+Volumes (areas in 2D) and centers of the `elements` of a mesh with `points`.
 """
-function get_mesh_volumes(points, elements)
+function element_geometry(points, elements)
     dim = size(points, 1)
     n = size(elements, 1)
-    volumes = _element_measures(points, elements, Val(dim), Val(n))
+    volumes = element_measures(points, elements, Val(dim), Val(n))
     centers = reshape(mean(reshape(points[:, elements], dim, n, :); dims = 2), dim, :)
     volumes, centers
 end
 
-_element_measures(points, elements, dim, n) =
-    [simplex_measure(simplex(points, elements, e, dim, n)) for e ∈ axes(elements, 2)]
+element_measures(points, elements, dim, n) =
+    [simplex_measure(simplex(points, elements, e, dim, n)) for e in axes(elements, 2)]
 
 """
-    get_mesh_surface(points, facets)
+    areas, centers, normals = facet_geometry(points, facets)
+    areas, centers, normals = facet_geometry(points, facets, elements)
 
-Compute surface areas, centers and unit normals for each facet. The orientation of the
-normals is given by the order of the facet points (see
-[`get_mesh_surfacenormals`](@ref) for outward normals).
+Areas (lengths in 2D), centers and unit normals of the `facets` of a mesh with `points`.
+The orientation of the normals is given by the order of the facet points, unless the
+`elements` of a compartment with the facets on its boundary are given: then the normals
+point out of the compartment.
 """
-get_mesh_surface(points, facets) = _get_mesh_surface(points, facets, Val(size(points, 1)))
+facet_geometry(points, facets) = facet_geometry(points, facets, Val(size(points, 1)))
 
-function _get_mesh_surface(points::AbstractMatrix{T}, facets, ::Val{dim}) where {T,dim}
+function facet_geometry(points::AbstractMatrix{T}, facets, ::Val{dim}) where {T,dim}
     nfacet = size(facets, 2)
     areas = zeros(T, nfacet)
     centers = zeros(T, dim, nfacet)
@@ -190,7 +203,7 @@ function _get_mesh_surface(points::AbstractMatrix{T}, facets, ::Val{dim}) where 
             v = x[:, 1] - x[:, 2]
             n = SVector(v[2], -v[1])
         else
-            n = (x[:, 1] - x[:, 2]) × (x[:, 3] - x[:, 2]) / 2
+            n = cross(x[:, 1] - x[:, 2], x[:, 3] - x[:, 2]) / 2
         end
         areas[f] = norm(n)
         normals[:, f] = n / areas[f]
@@ -199,15 +212,9 @@ function _get_mesh_surface(points::AbstractMatrix{T}, facets, ::Val{dim}) where 
     areas, centers, normals
 end
 
-"""
-    get_mesh_surfacenormals(points, elements, facets)
-
-Compute areas, centers and outward unit normals of the boundary `facets` of a mesh
-compartment with `points` and `elements`.
-"""
-function get_mesh_surfacenormals(points, elements, facets)
+function facet_geometry(points, facets, elements::AbstractMatrix)
     dim = size(points, 1)
-    areas, facet_centers, normals = get_mesh_surface(points, facets)
+    areas, facet_centers, normals = facet_geometry(points, facets)
 
     # The element of each facet lies on the inner side of the facet
     ielements = facet_elements(elements, facets)
@@ -216,7 +223,5 @@ function get_mesh_surfacenormals(points, elements, facets)
 
     # Orient the normals from the element center towards the facet center
     orientations = sign.(sum((facet_centers - element_centers) .* normals; dims = 1))
-    normals = orientations .* normals
-
-    areas, facet_centers, normals
+    areas, facet_centers, orientations .* normals
 end

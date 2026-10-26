@@ -10,10 +10,10 @@ function get_coeffs(setup::PlateSetup)
     coefficients(
         setup;
         D = [0.002 * I(2) for _ = 1:nlayer],
-        T₂ = fill(Inf, nlayer),
-        ρ = fill(1.0, nlayer),
-        κ = (; interfaces = fill(1e-4, nlayer), boundaries = fill(0.0, nlayer)),
-        γ = 2.67513e-4,
+        T2 = fill(Inf, nlayer),
+        rho = fill(1.0, nlayer),
+        kappa = (; interfaces = fill(1e-4, nlayer), boundaries = fill(0.0, nlayer)),
+        gamma = 2.67513e-4,
     )
 end
 
@@ -22,10 +22,10 @@ function get_coeffs(setup::SlabSetup)
     coefficients(
         setup;
         D = [0.002 * I(3) for _ = 1:nlayer],
-        T₂ = fill(Inf, nlayer),
-        ρ = fill(1.0, nlayer),
-        κ = (; interfaces = fill(1e-4, nlayer), boundaries = fill(0.0, nlayer)),
-        γ = 2.67513e-4,
+        T2 = fill(Inf, nlayer),
+        rho = fill(1.0, nlayer),
+        kappa = (; interfaces = fill(1e-4, nlayer), boundaries = fill(0.0, nlayer)),
+        gamma = 2.67513e-4,
     )
 end
 
@@ -34,15 +34,15 @@ function get_coeffs(setup::DiskSetup)
     coefficients(
         setup;
         D = (; cell = [0.002 * I(2) for _ = 1:nlayer], ecs = 0.002 * I(2)),
-        T₂ = (; cell = fill(Inf, nlayer), ecs = Inf),
-        ρ = (; cell = fill(1.0, nlayer), ecs = 1.0),
-        κ = (;
+        T2 = (; cell = fill(Inf, nlayer), ecs = Inf),
+        rho = (; cell = fill(1.0, nlayer), ecs = 1.0),
+        kappa = (;
             cell_interfaces = fill(1e-4, nlayer - 1),
             cell_boundaries = fill(0, nlayer),
             cell_ecs = 1e-4,
             ecs = 0,
         ),
-        γ = 2.67513e-4,
+        gamma = 2.67513e-4,
     )
 end
 
@@ -51,15 +51,15 @@ function get_coeffs(setup::CylinderSetup)
     coefficients(
         setup;
         D = (; cell = [0.002 * I(3) for _ = 1:nlayer], ecs = 0.002 * I(3)),
-        T₂ = (; cell = fill(Inf, nlayer), ecs = Inf),
-        ρ = (; cell = fill(1.0, nlayer), ecs = 1.0),
-        κ = (;
+        T2 = (; cell = fill(Inf, nlayer), ecs = Inf),
+        rho = (; cell = fill(1.0, nlayer), ecs = 1.0),
+        kappa = (;
             cell_interfaces = fill(1e-4, nlayer - 1),
             cell_boundaries = fill(0, nlayer),
             cell_ecs = 1e-4,
             ecs = 0,
         ),
-        γ = 2.67513e-4,
+        gamma = 2.67513e-4,
     )
 end
 
@@ -68,23 +68,23 @@ function get_coeffs(setup::SphereSetup)
     coefficients(
         setup;
         D = (; cell = [0.002 * I(3) for _ = 1:nlayer], ecs = 0.002 * I(3)),
-        T₂ = (; cell = fill(Inf, nlayer), ecs = Inf),
-        ρ = (; cell = fill(1.0, nlayer), ecs = 1.0),
-        κ = (;
+        T2 = (; cell = fill(Inf, nlayer), ecs = Inf),
+        rho = (; cell = fill(1.0, nlayer), ecs = 1.0),
+        kappa = (;
             cell_interfaces = fill(1e-4, nlayer - 1),
             cell_boundaries = fill(0, nlayer),
             cell_ecs = 1e-4,
             ecs = 0,
         ),
-        γ = 2.67513e-4,
+        gamma = 2.67513e-4,
     )
 end
 
 get_coeffs(setup::NeuronSetup) = coefficients(
     setup;
     D = (; neuron = 0.002 * I(3), ecs = 0.002 * I(3)),
-    T₂ = (; neuron = Inf, ecs = Inf),
-    ρ = (; n = 1.0, neuron = 1.0, ecs = 1.0),
-    κ = (; neuron_ecs = 1e-4, neuron = 0.0, ecs = 0.0),
-    γ = 2.67513e-4,
+    T2 = (; neuron = Inf, ecs = Inf),
+    rho = (; n = 1.0, neuron = 1.0, ecs = 1.0),
+    kappa = (; neuron_ecs = 1e-4, neuron = 0.0, ecs = 0.0),
+    gamma = 2.67513e-4,
 )

@@ -1,8 +1,15 @@
+# Mesh generation (TetGen and Triangle), convex hulls and deformations
+
 """
     create_mesh(surfaces, refinement)
 
-Create mesh from surface geometry. A refinement is applied if `refinement < Inf`.
-For 3D, TetGen is called. For 2D, Triangle is called.
+Create a global finite element mesh of the regions enclosed by the surface triangulation
+`surfaces` (see [`create_surfaces`](@ref)), with TetGen in 3D and Triangle in 2D. The
+elements have quality constraints, and a maximum volume (area in 2D) `refinement` if it is
+finite.
+
+Returns a named tuple with `points`, `facets` and `facetmarkers` (boundary numbers), and
+`elements` and `elementmarkers` (region numbers).
 """
 function create_mesh(surfaces, refinement)
     (; points, facets, facetmarkers, regions) = surfaces
@@ -70,7 +77,7 @@ function convexhull2(p)
         points[:, j] = tmp
     end
 
-    isclock(u, v) = u[2]v[1] - u[1]v[2] ≥ 0
+    isclock(u, v) = u[2]v[1] - u[1]v[2] >= 0
 
     npoint = size(p, 2)
 
@@ -95,7 +102,7 @@ function convexhull2(p)
         swap!(p, i + 1, jnext)
         u = p[:, i] - p[:, i+1]
 
-        if done || (i ≥ 2 && isclock(u, p[:, i] - p[:, 1]))
+        if done || (i >= 2 && isclock(u, p[:, i] - p[:, 1]))
             p = p[:, 1:i]
             break
         end
@@ -115,24 +122,27 @@ https://github.com/rileyborgard/convex-hull-3d/blob/master/convexhull3d.cpp
 """
 function convexhull3(points)
     n = size(points, 2)
-    @assert n ≥ 4
+    @assert n >= 4
 
     points = SVector{3}.(eachcol(points))
-    ϵ = 1e-10
+    epsilon = 1e-10
 
     tet = [1]
     for i = 2:n
         length(tet) < 4 || break
-        a = length(tet) == 1 && norm(points[tet[1]] - points[i]) > ϵ
+        a = length(tet) == 1 && norm(points[tet[1]] - points[i]) > epsilon
         b =
             length(tet) == 2 &&
-            norm((points[tet[2]] - points[tet[1]]) × (points[i] - points[tet[1]])) > ϵ
+            norm(cross(points[tet[2]] - points[tet[1]], points[i] - points[tet[1]])) >
+            epsilon
         c =
             length(tet) == 3 &&
             abs(
-                (points[i] - points[tet[1]]) ⋅
-                cross(points[tet[2]] - points[tet[1]], points[tet[3]] - points[tet[1]]),
-            ) > ϵ
+                dot(
+                    points[i] - points[tet[1]],
+                    cross(points[tet[2]] - points[tet[1]], points[tet[3]] - points[tet[1]]),
+                ),
+            ) > epsilon
         if a || b || c
             push!(tet, i)
         end
@@ -155,18 +165,18 @@ function convexhull3(points)
 
     for i = 4:n
         faces2 = SVector{3,Int}[]
-        for f ∈ faces
+        for f in faces
             a, b, c = f[1], f[2], f[3]
-            n = (points[b] - points[a]) × (points[c] - points[a])
+            n = cross(points[b] - points[a], points[c] - points[a])
             n /= norm(n)
-            if (points[i] - points[a]) ⋅ n > ϵ
+            if dot(points[i] - points[a], n) > epsilon
                 dead[a, b] = dead[b, c] = dead[c, a] = true
             else
                 push!(faces2, f)
             end
         end
         empty!(faces)
-        for f ∈ faces2
+        for f in faces2
             a, b, c = f[1], f[2], f[3]
             dead[b, a] && addface(b, a, i)
             dead[c, b] && addface(c, b, i)
@@ -200,29 +210,18 @@ function convexhull(points)
     e, p
 end
 
-# # 2D
-# a = rand(2, 100)
-# e, p = convexhull(a)
-# pl = scatter(a[1, :], a[2, :])
-# scatter!(pl, p[1, :], p[2, :], color = :red)
-# for i = 1:size(e, 2)
-#     plot!(pl, p[1, e[:, i]], p[2, e[:, i]])
-#     display(pl)
-#     sleep(0.5)
-# end
+"""
+    deform_domain!(points, bend, twist)
 
-# # 3D
-# points = randn(3, 1000)
-# e, p = convexhull3(points)
-# poly(p', e'; color = p[3, :], transparency = true, strokewidth = 1, shading = false)
-# scatter!(points)
-
-# Deform domain by bending and twisting.
+Bend the `points` of a 3D mesh in the x-direction (a parabola in z, with a deflection of
+`30 * bend` times the width at the top and bottom), and twist them around the z-axis by a
+total angle `twist` over the height.
+"""
 function deform_domain!(points, bend, twist)
     height = maximum(points[3, :]) - minimum(points[3, :])
     width = maximum(points[1, :]) - minimum(points[1, :])
 
-    # Ben points in x-direction as a percentage of height.
+    # Bend points in the x-direction
     zcenter = (maximum(points[3, :]) + minimum(points[3, :])) / 2
     @. points[1, :] += bend * 30.0 * width * ((points[3, :] - zcenter) / height)^2.0
 
@@ -238,7 +237,6 @@ function deform_domain!(points, bend, twist)
         sin.(thvec) .* points[[1], :] .+ cos.(thvec) .* points[[2], :]
     ]
 
-    # points[1, :] = points[1, :] - rmax
     points[1:2, :] .+= center
 
     nothing

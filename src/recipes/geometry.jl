@@ -12,7 +12,7 @@ Create the cells, the surface triangulation and the finite element mesh of `setu
 
 Random cell configurations are drawn from `rng`. For disks, cylinders and spheres, a cell
 configuration `(; centers, radii)` (as returned by `create_cells`) may be given instead,
-with `centers` of size `dim × ncell` and `radii` of length `ncell`, e.g. from a packing
+with `centers` of size `(dim, ncell)` and `radii` of length `ncell`, e.g. from a packing
 algorithm.
 
 By default, no files are written. The geometry may be stored in one of two ways:
@@ -89,7 +89,7 @@ function create_geometry_text(setup, savedir; cells, rng, recreate)
         mesh_all = read_mesh(filename * ".1")
     else
         cells = setup_cells(setup, cells, rng)
-        isnothing(cells) || save_cells(cells, cellfile)
+        isnothing(cells) || save_cells(cellfile, cells)
         if setup isa NeuronSetup
             meshfile = isempty(setup.meshfile) ? filename * ".msh" : setup.meshfile
             surfaces = create_surfaces(setup, meshfile)
@@ -98,7 +98,7 @@ function create_geometry_text(setup, savedir; cells, rng, recreate)
         end
         save_surfaces(filename, surfaces)
         mesh_all = create_mesh(surfaces, setup.refinement)
-        save_mesh(mesh_all, filename * ".1")
+        save_mesh(filename * ".1", mesh_all)
         write(setupfile, repr(setup))
     end
 
@@ -107,7 +107,7 @@ end
 
 # Deform the global mesh, and split it into compartments
 function finalize_geometry(setup, mesh_all, surfaces, cells)
-    if isa(setup, ExtrusionSetup) && !(setup.bend ≈ 0 && setup.twist ≈ 0)
+    if setup isa ExtrusionSetup && !(iszero(setup.bend) && iszero(setup.twist))
         @debug "Deforming domain with bend $(setup.bend) and twist $(setup.twist)"
         deform_domain!(mesh_all.points, setup.bend, setup.twist)
     end
@@ -116,7 +116,7 @@ function finalize_geometry(setup, mesh_all, surfaces, cells)
 
     # Check that boundaries are correctly assigned
     ncompartment = length(mesh.points)
-    for i = 1:ncompartment, j ∈ [1:(i-1); (i+1):ncompartment]
+    for i = 1:ncompartment, j in [1:(i-1); (i+1):ncompartment]
         isempty(mesh.facets[i, end-ncompartment+j]) || @warn("""
              Outer boundary of compartment $i is registered as
              an interface to compartment $j, this is not intended.

@@ -53,8 +53,8 @@ function compare(key, a, b; scale = 0.0)
             haskey(a, "re") && haskey(a, "im") || return "re/im missing", false
             err = relerr([a["re"]; a["im"]], [b["re"]; b["im"]])
             push!(msgs, "signal: $(round(err; sigdigits = 2))")
-            ok &= err ≤ tolerance(key)
-            filter!(k -> k ∉ ("re", "im"), ks)
+            ok &= err <= tolerance(key)
+            filter!(k -> !(k in ("re", "im")), ks)
         end
         for k in ks
             haskey(a, k) || (push!(msgs, "$k missing"); ok = false; continue)
@@ -66,7 +66,7 @@ function compare(key, a, b; scale = 0.0)
     else
         err = relerr(a, b, scale)
         isinf(err) && return "different lengths", false
-        return string(round(err; sigdigits = 2)), err ≤ tolerance(key)
+        return string(round(err; sigdigits = 2)), err <= tolerance(key)
     end
 end
 
@@ -97,7 +97,7 @@ for case in sort(collect(keys(ref)))
         # The integral of the normal over a closed surface vanishes
         key == "G_sum" && (scale = sqrt(sum(abs2, ref[case]["G_xn"])))
         msg, ok = compare(key, new[case][key], ref[case][key]; scale)
-        println("  ", rpad(key, 22), ok ? "" : "✗ ", msg)
+        println("  ", rpad(key, 22), ok ? "" : "FAIL ", msg)
         global allok &= ok
     end
     for key in sort(collect(setdiff(keys(new[case]), keys(ref[case]))))

@@ -1,38 +1,76 @@
+# Callbacks for the BTPDE time stepping
+
 """
     AbstractCallback
 
-Callback to be performed after every time step when solving the BTPDE. The callback is
-initialized before time stepping using the `initialize!` function, updated after every step
-using `update!`, and finalized after time stepping using `finalize!`.
+Callback to be performed during the time stepping of the BTPDE. The callback is initialized
+before time stepping with `initialize!(callback, problem, gradient, u, t)`, updated after
+every step with `update!(callback, problem, gradient, u, t)`, and finalized after time
+stepping with `finalize!(callback)`, where `problem = (; model, matrices)` and `u` is the
+magnetization at time `t`.
 """
 abstract type AbstractCallback end
 
 """
-    Printer(; nupdate = 1)
+    Printer(; nupdate = 1, verbosity = 2)
 
-Print time stepping information to the console.
+Print time stepping information to the console every `nupdate` time step (if
+`verbosity >= 2`).
 """
 Base.@kwdef mutable struct Printer <: AbstractCallback
-    verbosity::Int = 2
     nupdate::Int = 1
+    verbosity::Int = 2
     n::Int = 1
 end
 
-"""
-    VTKWriter(; nupdate = 1, dir = "output", filename = "solution")
+initialize!(p::Printer, problem, gradient, u, t) =
+    p.verbosity >= 1 && @info "Solving the BTPDE" gradient
 
-Write magnetization field to a VTK file after every `nupdate` timestep. The files are stored in a
-ParaView data collection file (PVD). The magnetization time series may be visualized in
-ParaView by opening the file `"\$dir/\$filename.pvd"`. The compartments are labeled.
+function update!(p::Printer, problem, gradient, u, t)
+    p.verbosity >= 2 && p.n % p.nupdate == 0 && @info "t = $t"
+    p.n += 1
+end
+
+finalize!(::Printer) = nothing
+
+"""
+    VTKWriter(; nupdate = 1, dir = "output/time_stepping", filename = "solution")
+
+Write the magnetization to VTK files every `nupdate` time step. The files are collected in
+the ParaView data collection file `dir/filename.pvd`, which may be opened in ParaView. The
+compartments are separate blocks.
 """
 Base.@kwdef mutable struct VTKWriter <: AbstractCallback
     nupdate::Int = 1
-    n::Int = 1
-    ifile::Int = 1
     dir::String = "output/time_stepping"
     filename::String = "solution"
-    pvd::WriteVTK.CollectionFile = paraview_collection("")
+    n::Int = 1
+    ifile::Int = 1
+    pvd::Any = nothing
 end
+
+function initialize!(writer::VTKWriter, problem, gradient, u, t)
+    mkpath(writer.dir)
+    writer.n = 1
+    writer.ifile = 1
+    writer.pvd = paraview_collection(joinpath(writer.dir, writer.filename))
+    update!(writer, problem, gradient, u, t)
+end
+
+function update!(writer::VTKWriter, problem, gradient, u, t)
+    if writer.n % writer.nupdate == 0
+        (; dir, filename, ifile, pvd) = writer
+        vtm = vtk_multiblock(joinpath(dir, "$(filename)_$ifile"))
+        for vtk in add_vtk_field!(vtm, problem.model.mesh, u, "Magnetization")
+            vtk["Gradient", VTKFieldData()] = gradient(t)
+        end
+        pvd[t] = vtm
+        writer.ifile += 1
+    end
+    writer.n += 1
+end
+
+finalize!(writer::VTKWriter) = vtk_save(writer.pvd)
 
 """
     Plotter(; nupdate = 1)
@@ -47,61 +85,11 @@ Base.@kwdef mutable struct Plotter <: AbstractCallback
     nupdate::Int = 1
     n::Int = 1
     t::Any = nothing
-    ξ::Any = nothing
+    u::Any = nothing
     fig::Any = nothing
 end
 
-function initialize!(p::Printer, problem, gradient, ξ, t)
-    @info "Solving the BTPDE" gradient
-end
-
-function initialize!(writer::VTKWriter, problem, gradient, ξ, t)
-    (; dir, filename) = writer
-    mkpath(dir)
-    writer.pvd = paraview_collection(joinpath(dir, filename))
-    update!(writer, problem, gradient, ξ, t)
-end
-
-initialize!(p::Plotter, problem, gradient, ξ, t) =
-    initialize_plotter!(p, problem, gradient, ξ, t)
-
-update!(p::Printer, problem, gradient, ξ, t) = p.verbosity ≥ 2 && @info "t = $t"
-
-function update!(writer::VTKWriter, problem, gradient, ξ, t)
-    if writer.n % writer.nupdate == 0
-        (; pvd, dir, filename, ifile) = writer
-        (; model) = problem
-
-        ncompartment = length(model.mesh.points)
-        npoint_cmpts = size.(model.mesh.points, 2)
-        inds_cmpts = [0; cumsum(npoint_cmpts[1:end])]
-
-        vtmfile = vtk_multiblock("$dir/$(filename)_$ifile")
-
-        dim = size(model.mesh.points[1], 1)
-        celltype = dim == 2 ? VTKCellTypes.VTK_TRIANGLE : VTKCellTypes.VTK_TETRA
-
-        for icmpt = 1:ncompartment
-            points = model.mesh.points[icmpt]
-            elements = model.mesh.elements[icmpt]
-
-            cells = [MeshCell(celltype, elements[:, i]) for i = 1:size(elements, 2)]
-            ξ_cmpt = ξ[(1+inds_cmpts[icmpt]):inds_cmpts[icmpt+1]]
-
-            vtkfile = vtk_grid(vtmfile, points, cells)
-            vtkfile["Magnetization (real part)", VTKPointData()] = real(ξ_cmpt)
-            vtkfile["Magnetization (imaginary part)", VTKPointData()] = imag(ξ_cmpt)
-            vtkfile["Gradient", VTKFieldData()] = gradient(t)
-        end
-
-        pvd[t] = vtmfile
-        writer.ifile += 1
-    end
-    writer.n += 1
-end
-
-update!(p::Plotter, problem, gradient, ξ, t) = update_plotter!(p, problem, gradient, ξ, t)
-
-finalize!(::Printer) = nothing
+initialize!(p::Plotter, problem, gradient, u, t) =
+    initialize_plotter!(p, problem, gradient, u, t)
+update!(p::Plotter, problem, gradient, u, t) = update_plotter!(p, problem, gradient, u, t)
 finalize!(::Plotter) = nothing
-finalize!(writer::VTKWriter) = vtk_save(writer.pvd)

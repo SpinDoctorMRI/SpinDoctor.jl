@@ -31,11 +31,11 @@ ncell = 5
 setup = PlateSetup(; depth = 50.0, widths = fill(5.0, ncell), refinement = 1.0)
 coeffs = coefficients(
     setup;
-    D = [0.002 * I(2) for d ∈ 1:ncell],
-    T₂ = fill(Inf, ncell),
-    ρ = fill(1.0, ncell),
-    κ = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
-    γ = 2.67513e-4,
+    D = [0.002 * I(2) for d = 1:ncell],
+    T2 = fill(Inf, ncell),
+    rho = fill(1.0, ncell),
+    kappa = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
+    gamma = 2.67513e-4,
 )
 
 # We then proceed to build the geometry and finite element mesh.
@@ -52,7 +52,7 @@ matrices = assemble_matrices(model);
 # We may also compute some useful quantities, including a scalar diffusion coefficient from
 # the diffusion tensors.
 
-volumes = get_cmpt_volumes(model.mesh)
+volumes = compartment_volumes(model.mesh)
 D_avg = 1 / 2 * tr.(model.D)' * volumes / sum(volumes)
 ncompartment = length(model.mesh.points)
 
@@ -63,25 +63,26 @@ ncompartment = length(model.mesh.points)
 directions = unitcircle(100)[1:2, :]
 profile = PGSE(2500.0, 4000.0)
 b = 1000
-g = √(b / int_F²(profile)) / model.γ
-gradients = [ScalarGradient(d, profile, g) for d ∈ eachcol(directions)]
+gradients = [
+    ScalarGradient(d, profile; bvalue = b, gamma = model.gamma) for d in eachcol(directions)
+]
 
 # The signals are computed from the magnetization field through quadrature.
-ρ = initial_conditions(model)
-S₀ = abs(compute_signal(matrices.M, ρ))
+rho = initial_conditions(model)
+S0 = abs(compute_signal(matrices.M, rho))
 
 # We may solve the BTPDE for each gradient.
 
 solver = IntervalConstantSolver(; timestep = 10.0)
 signals = map(gradients) do grad
     @show grad.dir
-    ξ = solve_btpde(model, matrices, grad, solver)
-    abs(compute_signal(matrices.M, ξ))
+    u = solve_btpde(model, matrices, grad, solver)
+    abs(compute_signal(matrices.M, u))
 end
 
 # We may plot the directionalized signal attenuations.
 
-attenuations = signals ./ S₀
+attenuations = signals ./ S0
 plot_hardi(directions, attenuations)
 
 # The signal attenuates the most in the vertical direction, as that is where

@@ -4,53 +4,97 @@
 SpinDoctor
 ```
 
-## Gradients
+The main functions and types are exported. The building blocks listed under
+[Public, not exported](@ref) are used with the module name, e.g. `SpinDoctor.FEMesh`.
 
-These functions deal with gradient pulse sequences.
+## Setup recipes and geometry
+
+SpinDoctor comes with recipes for creating finite element meshes of plates, slabs, disks,
+cylinders, spheres and neurons, possibly immersed in an extracellular space (ECS).
 
 ```@docs
-GeneralGradient
-ScalarGradient
+PlateSetup
+SlabSetup
+DiskSetup
+CylinderSetup
+SphereSetup
+ExtrusionSetup
+NeuronSetup
+NoECS
+BoxECS
+ConvexHullECS
+create_geometry
+save_geometry
+load_geometry
+compartment_mesh
+box_faces
+compartment_volumes
+```
+
+## Model and matrices
+
+```@docs
+coefficients
+analytical_coefficients
+Model
+initial_conditions
+assemble_matrices
+```
+
+## Gradients
+
+```@docs
 PGSE
 DoublePGSE
 CosOGSE
 SinOGSE
-integral
-int_F²
-intervals
-isconstant
-echotime
+ScalarGradient
+GeneralGradient
+bvalue
+unitcircle
+unitsphere
 ```
 
-## Geometry and finite elements
+## Solvers
+
+SpinDoctor allows for considering a wide range of diffusion MRI problems, each with its own
+solver function.
 
 ```@docs
-create_geometry
-save_geometry
-load_geometry
-split_mesh
-split_field
-get_cmpt_volumes
-get_mesh_volumes
-get_mesh_surface
-get_mesh_surfacenormals
-compartment_mesh
-box_faces
-Model
-initial_conditions
-assemble_matrices
-assemble_mass_matrix
-assemble_stiffness_matrix
-```
-
-## Postprocessing
-
-```@docs
-savefield
+solve_btpde
+IntervalConstantSolver
+solve_hadc
 compute_adc_sta
+solve_karger
+solve_laplace
+solve_mf
+eig2length
+length2eig
+limit_lengthscale
+compute_mf_diffusion_tensor
+solve_analytical_laplace
+solve_analytical_mf
+```
+
+## Post-processing and output
+
+```@docs
+compute_signal
+split_field
+compartment_weights
 fit_adc
 fit_tensors
-compartment_weights
+save_field
+```
+
+## Callbacks
+
+Callbacks are called after every time step when solving the BTPDE.
+
+```@docs
+Printer
+VTKWriter
+Plotter
 ```
 
 ## Plotting
@@ -65,90 +109,58 @@ plot_field
 plot_hardi
 ```
 
-## Solvers
+## Public, not exported
 
-SpinDoctor allows for considering a wide range of diffusion MRI problems, each with its own
-solver function.
+### Meshes and finite elements
 
 ```@docs
-solve_btpde
-IntervalConstantSolver
-solve_hadc
-solve_karger
-solve_laplace
-solve_mf
-solve_analytical_laplace
-solve_analytical_mf
+SpinDoctor.FEMesh
+SpinDoctor.split_mesh
+SpinDoctor.facet_elements
+SpinDoctor.element_geometry
+SpinDoctor.facet_geometry
+SpinDoctor.assemble_mass_matrix
+SpinDoctor.assemble_stiffness_matrix
+SpinDoctor.assemble_flux_matrix
 ```
 
-## Matrix formalism
+### Geometry generation and files
 
 ```@docs
-length2eig
-eig2length
-limit_lengthscale
-compute_mf_diffusion_tensor
-```
-
-## Utils
-
-```@docs
-unitcircle
-unitsphere
-compute_signal
-```
-
-## Callbacks
-
-Callbacks are called after every time step when solving the BTPDE.
-
-```@docs
-Printer
-VTKWriter
-Plotter
-```
-
-## Recipes
-
-SpinDoctor comes with pre-configures recipes for creating finite element meshes of plates,
-cylinders, spheres, and neurons.
-
-```@docs
-PlateSetup
-DiskSetup
-ExtrusionSetup
-CylinderSetup
-SlabSetup
-SphereSetup
-NeuronSetup
-NoECS
-BoxECS
-ConvexHullECS
-coefficients
-analytical_coefficients
-```
-
-## Internals
-
-These functions are not exported.
-
-```@docs
-SpinDoctor.AbstractTimeProfile
-SpinDoctor.AbstractCallback
 SpinDoctor.AbstractSetup
+SpinDoctor.AbstractECS
 SpinDoctor.create_cells
 SpinDoctor.create_surfaces
 SpinDoctor.create_mesh
-SpinDoctor.couple_flux_matrix
-SpinDoctor.facet_elements
+SpinDoctor.deform_domain!
+SpinDoctor.radial_dimension
+SpinDoctor.fibonacci_sphere
 SpinDoctor.read_gmsh
-SpinDoctor.read_mesh
-SpinDoctor.read_surfaces
 SpinDoctor.read_cells
-SpinDoctor.save_mesh
-SpinDoctor.save_surfaces
 SpinDoctor.save_cells
+SpinDoctor.read_surfaces
+SpinDoctor.save_surfaces
+SpinDoctor.read_mesh
+SpinDoctor.save_mesh
+```
+
+### Gradient sequences
+
+```@docs
+SpinDoctor.AbstractTimeProfile
+SpinDoctor.AbstractGradient
+SpinDoctor.integral
+SpinDoctor.int_F2
+SpinDoctor.intervals
+SpinDoctor.echotime
+SpinDoctor.isconstant
 SpinDoctor.diffusion_time
 SpinDoctor.diffusion_time_sta
 SpinDoctor.j_integral
+```
+
+### Callbacks
+
+```@docs
+SpinDoctor.AbstractCallback
 ```

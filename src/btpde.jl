@@ -1,11 +1,15 @@
-"""
-    IntervalConstantSolver(; θ = 0.5, timestep)
+# Bloch-Torrey PDE solvers
 
-BTPDE solver specialized on intervalwise constant `ScalarGradient`s, e.g [`PGSE`](@ref),
-[`DoublePGSE`](@ref). Raises an error for other gradients.
+"""
+    IntervalConstantSolver(; theta = 0.5, timestep)
+
+Time stepping for the BTPDE with interval-wise constant scalar gradients, e.g.
+[`PGSE`](@ref) and [`DoublePGSE`](@ref): a theta-scheme with steps of at most `timestep`
+in each interval (`theta = 0.5`: Crank-Nicolson, `theta = 1`: implicit Euler). See
+[`solve_btpde`](@ref).
 """
 Base.@kwdef struct IntervalConstantSolver{T}
-    θ::T = 0.5
+    theta::T = 0.5
     timestep::T
 end
 
@@ -36,31 +40,30 @@ function solve_btpde(
     callbacks = AbstractCallback[],
 ) where {T,dim}
     problem = (; model, matrices)
-    (; γ) = model
+    (; gamma) = model
     (; M, S, R, Mx, Q) = matrices
 
-    ρ = initial_conditions(model)
+    xi0 = initial_conditions(model)
 
-    # Time dependent Jacobian of ODE function with respect to the state `ξ`
-    function jac!(J, ξ, p, t)
+    # Time dependent Jacobian of ODE function with respect to the state `xi`
+    function jac!(J, xi, p, t)
         (; S, Q, R, gradient) = p
-        # println(t)
         g = gradient(t)
         if dim == 2
-            @. J = -(S + Q + R + im * γ * (g[1] * Mx[1] + g[2] * Mx[2]))
+            @. J = -(S + Q + R + im * gamma * (g[1] * Mx[1] + g[2] * Mx[2]))
         elseif dim == 3
-            @. J = -(S + Q + R + im * γ * (g[1] * Mx[1] + g[2] * Mx[2] + g[3] * Mx[3]))
+            @. J = -(S + Q + R + im * gamma * (g[1] * Mx[1] + g[2] * Mx[2] + g[3] * Mx[3]))
         end
     end
 
     # Time dependent ODE function
-    function Mdξ!(dξ, ξ, p, t)
-        jac!(p.J, ξ, p, t)
-        mul!(dξ, p.J, ξ)
+    function Mdxi!(dxi, xi, p, t)
+        jac!(p.J, xi, p, t)
+        mul!(dxi, p.J, xi)
     end
 
     function func(u, t, integrator)
-        for cb ∈ callbacks
+        for cb in callbacks
             update!(cb, problem, gradient, u, t)
         end
     end
@@ -73,12 +76,12 @@ function solve_btpde(
     p = (; J, S, Q, R, gradient)
     TE = echotime(gradient)
 
-    for cb ∈ callbacks
-        initialize!(cb, problem, gradient, ρ, 0.0)
+    for cb in callbacks
+        initialize!(cb, problem, gradient, xi0, zero(T))
     end
 
-    odefunction = ODEFunction(Mdξ!; jac = jac!, mass_matrix = M, jac_prototype)
-    odeproblem = ODEProblem(odefunction, ρ, (0, TE), p)
+    odefunction = ODEFunction(Mdxi!; jac = jac!, mass_matrix = M, jac_prototype)
+    odeproblem = ODEProblem(odefunction, xi0, (0, TE), p)
 
     callback = FunctionCallingCallback(func; func_start = false)
 
@@ -107,15 +110,9 @@ end
         callbacks = [],
     )
 
-Solve the Bloch-Torrey partial differential equation using P1 finite elements in space and a
-theta-rule in time.
-This time stepping scheme requires a degree of
-implicitness `θ` and a time step `Δt`:
-
-  - `θ = 0.5`: Crank-Nicolson (second order)
-  - `θ = 1.0`: Implicit Euler (first order)
-
-The function only works for interval-wise constant `ScalarGradient`s, and errors otherwise.
+Solve the Bloch-Torrey partial differential equation using P1 finite elements in space and
+the theta-scheme of `solver` in time. The time profile of the gradient must be interval-wise
+constant.
 """
 function solve_btpde(
     model::Model{T,dim},
@@ -125,40 +122,36 @@ function solve_btpde(
     callbacks = AbstractCallback[],
 ) where {T,dim}
     problem = (; model, matrices)
-    (; θ, timestep) = solver
-    (; γ) = model
+    (; theta, timestep) = solver
+    (; gamma) = model
     (; M, S, R, Mx, Q) = matrices
 
     isconstant(gradient.profile) || error("Time profile must be interval-wise constant")
     ivals = intervals(gradient.profile)
 
-    ρ = initial_conditions(model)
-
     function jac!(J, g)
         if dim == 2
-            @.(J = -(S + Q + R + im * γ * (g[1] * Mx[1] + g[2] * Mx[2])))
+            @.(J = -(S + Q + R + im * gamma * (g[1] * Mx[1] + g[2] * Mx[2])))
         elseif dim == 3
-            @.(J = -(S + Q + R + im * γ * (g[1] * Mx[1] + g[2] * Mx[2] + g[3] * Mx[3])))
+            @.(J = -(S + Q + R + im * gamma * (g[1] * Mx[1] + g[2] * Mx[2] + g[3] * Mx[3])))
         end
     end
 
-    t = 0.0
-    ξ = copy(ρ)
-    Ey = copy(ξ)
+    t = zero(T)
+    xi = initial_conditions(model)
+    Ey = copy(xi)
     J = -(S + Q + im * sum(Mx)) # Allocate sparsity pattern
 
-    for cb ∈ callbacks
-        initialize!(cb, problem, gradient, ξ, t)
+    for cb in callbacks
+        initialize!(cb, problem, gradient, xi, t)
     end
 
-    # Crank-Nicolson time stepping
+    # Theta-scheme time stepping
     for i = 1:(length(ivals)-1)
-        @debug "Solving for interval [%g, %g]\n" ivals[i] ivals[i+1]
-
-        # Adjust time step to divide interval uniformly
+        # Divide the interval into steps of at most `timestep`
         ival_length = ivals[i+1] - ivals[i]
-        nt = round(Int, ival_length / timestep)
-        Δt = ival_length / nt
+        nt = max(1, ceil(Int, ival_length / timestep))
+        dt = ival_length / nt
 
         # Compute gradient at midpoint of interval
         tmid = (ivals[i] + ivals[i+1]) / 2
@@ -166,22 +159,21 @@ function solve_btpde(
 
         # Build matrices for interval
         jac!(J, g)
-        F = lu(M .- Δt .* θ .* J)
-        # F = factorize(M .- Δt .* θ .* J)
-        E = @. complex(M) + Δt * (1 - θ) * J
+        F = lu(M .- dt .* theta .* J)
+        E = @. complex(M) + dt * (1 - theta) * J
 
         # Step to end of interval
         for _ = 1:nt
-            mul!(Ey, E, ξ)
-            ldiv!(ξ, F, Ey)
-            t += Δt
-            for cb ∈ callbacks
-                update!(cb, problem, gradient, ξ, t)
+            mul!(Ey, E, xi)
+            ldiv!(xi, F, Ey)
+            t += dt
+            for cb in callbacks
+                update!(cb, problem, gradient, xi, t)
             end
         end
     end
 
     finalize!.(callbacks)
 
-    ξ
+    xi
 end

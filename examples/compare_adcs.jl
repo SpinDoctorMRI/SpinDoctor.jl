@@ -43,18 +43,18 @@ setup = SlabSetup(;
     widths = fill(5.0, ncell),
     height = 50.0,
     bend = 0.0,
-    twist = π / 6,
+    twist = pi / 6,
     refinement = 10.0,
 )
 d = fill(0.002, ncell)
 d[2] = 0.005
 coeffs = coefficients(
     setup;
-    D = [d * I(3) for d ∈ d],
-    T₂ = fill(Inf, ncell),
-    ρ = fill(1.0, ncell),
-    κ = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
-    γ = 2.67513e-4,
+    D = [d * I(3) for d in d],
+    T2 = fill(Inf, ncell),
+    rho = fill(1.0, ncell),
+    kappa = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
+    gamma = 2.67513e-4,
 )
 
 # We then proceed to build the geometry and finite element mesh.
@@ -71,7 +71,7 @@ matrices = assemble_matrices(model);
 # We may also compute some useful quantities, including a scalar diffusion coefficient from
 # the diffusion tensors.
 
-volumes = get_cmpt_volumes(model.mesh)
+volumes = compartment_volumes(model.mesh)
 D_avg = 1 / 3 * tr.(model.D)' * volumes / sum(volumes)
 ncompartment = length(model.mesh.points)
 
@@ -83,8 +83,7 @@ ncompartment = length(model.mesh.points)
 dir = [1.0, 0.0, 1.0]
 profile = PGSE(2500.0, 4000.0)
 b = 1000
-g = √(b / int_F²(profile)) / model.γ
-gradient = ScalarGradient(dir, profile, g)
+gradient = ScalarGradient(dir, profile; bvalue = b, gamma = model.gamma)
 
 # ## Computing the ADC using different methods
 
@@ -101,17 +100,17 @@ adc_sta = volumes'adc_sta_cmpts / sum(volumes)
 # is however more computationally expensive. We start by building a set of gradients.
 
 bvalues = 0:400:4000
-gvalues = map(b -> √(b / int_F²(profile)) / coeffs.γ, bvalues)
-gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues]
+gradients =
+    [ScalarGradient(dir, profile; bvalue = b, gamma = coeffs.gamma) for b in bvalues]
 
 # We compute the magnetization for each gradient. Since the gradients are
 # interval-wise constant, we can use a specialized solver.
 
-solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
+solver = IntervalConstantSolver(; theta = 0.5, timestep = 5.0)
 signals_cmpts = map(gradients) do grad
     @show grad.amplitude
-    ξ = solve_btpde(model, matrices, grad, solver)
-    compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
+    u = solve_btpde(model, matrices, grad, solver)
+    compute_signal.(matrices.M_cmpts, split_field(model.mesh, u))
 end
 signals = sum.(signals_cmpts)
 
@@ -119,7 +118,7 @@ signals = sum.(signals_cmpts)
 
 adc_fit = fit_adc(bvalues, signals)
 adc_fit_cmpts =
-    [fit_adc(bvalues, [s[icmpt] for s ∈ signals_cmpts]) for icmpt = 1:ncompartment]
+    [fit_adc(bvalues, [s[icmpt] for s in signals_cmpts]) for icmpt = 1:ncompartment]
 
 # ### Homogenized ADC model
 

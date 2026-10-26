@@ -32,19 +32,19 @@ setup = CylinderSetup(;
     ecs = ConvexHullECS(; margin = 2.0),
     height = 40.0,
     bend = 0.0,
-    twist = π / 4,
+    twist = pi / 4,
 )
 
 # We also define parameters for the cell compartments and ECS. The required
 # parameters are:
 #
 # - 3D Diffusion tensors `D` (we here use an isotropic coefficient)
-# - T2-relaxation times `T₂`
-# - Initial spin densities `ρ`
-# - Permeabilities `κ`
+# - T2-relaxation times `T2`
+# - Initial spin densities `rho`
+# - Permeabilities `kappa`
 #
-# The parameters `D`, `T₂`, and `ρ` are defined for each compartment, while
-# `κ` is defined for each interface and outer boundary. The `DiskSetup` allows
+# The parameters `D`, `T2`, and `rho` are defined for each compartment, while
+# `kappa` is defined for each interface and outer boundary. The `DiskSetup` allows
 # for multiple layers in each cell (here `nlayer = 1`), so `cell` and
 # `cell_boundaries` are arrays of length `nlayer = 1`, while `cell_interfaces`
 # is of length `nlayer - 1 = 0`.
@@ -52,10 +52,15 @@ setup = CylinderSetup(;
 coeffs = coefficients(
     setup;
     D = (; cell = [0.002 * I(3)], ecs = 0.002 * I(3)),
-    T₂ = (; cell = [Inf], out = Inf, ecs = Inf),
-    ρ = (; cell = [1.0], out = 1.0, ecs = 1.0),
-    κ = (; cell_interfaces = zeros(0), cell_boundaries = [0.0], cell_ecs = 1e-4, ecs = 0.0),
-    γ = 2.67513e-4,
+    T2 = (; cell = [Inf], out = Inf, ecs = Inf),
+    rho = (; cell = [1.0], out = 1.0, ecs = 1.0),
+    kappa = (;
+        cell_interfaces = zeros(0),
+        cell_boundaries = [0.0],
+        cell_ecs = 1e-4,
+        ecs = 0.0,
+    ),
+    gamma = 2.67513e-4,
 )
 
 # The following line creates a random cell configuration for our cylinder
@@ -81,29 +86,28 @@ matrices = assemble_matrices(model)
 dir = [1.0, 0.0, 0.0]
 profile = PGSE(2000.0, 6000.0)
 b = 1000
-g = √(b / int_F²(profile)) / coeffs.γ
-gradient = ScalarGradient(dir, profile, g)
+gradient = ScalarGradient(dir, profile; bvalue = b, gamma = coeffs.gamma)
 
 # The BTPDE is solved with [`solve_btpde`](@ref), which takes the model, the matrices and
 # the gradient sequence, and returns the magnetization at the echo time.
 
-ξ = solve_btpde(model, matrices, gradient)
+u = solve_btpde(model, matrices, gradient)
 
-# Here, `ξ` is a vector containing the complex-valued magnetization at all degrees of freedom
+# Here, `u` is a vector containing the complex-valued magnetization at all degrees of freedom
 # at the echo time `TE`. We may compute the resulting signal as follows:
 
-compute_signal(matrices.M, ξ)
+compute_signal(matrices.M, u)
 
 # The global mass matrix `M` is used to compute the integral. We may however be interested in
 # the compartment-wise signals. This requires splitting the magnetization field into the
 # respective compartments. The compartment mass matrices are also available.
 
-ξ_cmpts = split_field(mesh, ξ)
-compute_signal.(matrices.M_cmpts, ξ_cmpts)
+u_cmpts = split_field(mesh, u)
+compute_signal.(matrices.M_cmpts, u_cmpts)
 
 # The final magnetization can be visualized using the [`plot_field`](@ref) function.
 
-plot_field(mesh, ξ)
+plot_field(mesh, u)
 
 # In this example, we have computed the complex transverse water proton magnetization field
 # using the finite element method. The measured diffusion MRI signal is the integral of this

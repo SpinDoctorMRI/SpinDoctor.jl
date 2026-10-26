@@ -2,7 +2,7 @@ function plot_mesh(femesh::FEMesh{T,2}, compartments = 1:length(femesh.points)) 
     fig = Figure()
     ax = Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
     ax.aspect = DataAspect()
-    for (i, icmpt) ∈ enumerate(compartments)
+    for (i, icmpt) in enumerate(compartments)
         points = femesh.points[icmpt]
         elements = femesh.elements[icmpt]
         poly!(
@@ -24,7 +24,7 @@ function plot_mesh(
 ) where {T}
     scene = Figure()
     first = true
-    for icmpt ∈ compartments, iboundary ∈ boundaries
+    for icmpt in compartments, iboundary in boundaries
         facets = femesh.facets[icmpt, iboundary]
         if !isempty(facets)
             points = femesh.points[icmpt]

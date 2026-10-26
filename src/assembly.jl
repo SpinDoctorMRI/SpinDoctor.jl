@@ -18,13 +18,13 @@ Vertices of element `e` as the columns of a static matrix.
     ::Val{n},
 ) where {T,dim,n}
     SMatrix{dim,n,T}(
-        ntuple(i -> points[(i-1)%dim+1, elements[(i-1)÷dim+1, e]], Val(dim * n)),
+        ntuple(i -> points[mod1(i, dim), elements[div(i-1, dim)+1, e]], Val(dim * n)),
     )
 end
 
 # Edge vectors from the first vertex
 @inline edgevectors(x::SMatrix{dim,n,T}) where {dim,n,T} = SMatrix{dim,n - 1,T}(
-    ntuple(i -> x[(i-1)%dim+1, (i-1)÷dim+2] - x[(i-1)%dim+1, 1], Val(dim * (n - 1))),
+    ntuple(i -> x[mod1(i, dim), div(i-1, dim)+2] - x[mod1(i, dim), 1], Val(dim * (n - 1))),
 )
 
 """
@@ -46,7 +46,8 @@ end
 """
     local_mass(x)
 
-P1 mass matrix of the simplex `x`: `|K| (1 + δᵢⱼ) / (n (n + 1))` for `n` vertices.
+P1 mass matrix of the simplex `x` with `n` vertices and measure ``|K|``:
+``M_{ij} = |K| (1 + \\delta_{ij}) / (n (n + 1))``.
 """
 @inline function local_mass(x::SMatrix{dim,n,T}) where {dim,n,T}
     simplex_measure(x) / (n * (n + 1)) * (ones(SMatrix{n,n,T}) + I)
@@ -55,15 +56,15 @@ end
 """
     local_mass(x, w)
 
-P1 mass matrix of the simplex `x` weighted by the P1 function with nodal values `w`:
-`∫ w φᵢ φⱼ = |K| (n - 1)! / (n + 2)! (2W + 4wᵢ if i = j, else W + wᵢ + wⱼ)`, where `W =
-∑ wₗ`.
+P1 mass matrix of the simplex `x` with `n` vertices weighted by the P1 function with nodal
+values `w`: ``M_{ij} = \\int_K w \\varphi_i \\varphi_j = |K| \\frac{(n - 1)!}{(n + 2)!}
+(1 + \\delta_{ij}) (W + w_i + w_j)``, where ``W = \\sum_l w_l``.
 """
 @inline function local_mass(x::SMatrix{dim,n,T}, w::SVector{n}) where {dim,n,T}
     W = sum(w)
     c = simplex_measure(x) * factorial(n - 1) / factorial(n + 2)
     SMatrix{n,n,T}(ntuple(Val(n * n)) do k
-        i, j = (k - 1) % n + 1, (k - 1) ÷ n + 1
+        i, j = mod1(k, n), div(k - 1, n) + 1
         c * (i == j ? 2W + 4w[i] : W + w[i] + w[j])
     end)
 end
@@ -71,16 +72,16 @@ end
 """
     local_stiffness(x, D)
 
-P1 stiffness matrix `∫ ∇φᵢ ⋅ D ∇φⱼ` of the simplex `x` (of full dimension) with constant
-diffusion tensor `D`.
+P1 stiffness matrix ``S_{ij} = \\int_K \\nabla \\varphi_i \\cdot D \\nabla \\varphi_j`` of the
+simplex `x` (of full dimension) with constant diffusion tensor `D`.
 """
 @inline function local_stiffness(x::SMatrix{dim,n,T}, D) where {dim,n,T}
     E = edgevectors(x)
     B = inv(E)
 
     # Gradients of the barycentric coordinates (columns)
-    ∇λ = hcat(-sum(B'; dims = 2), B')
-    K = abs(det(E)) / factorial(dim) * (∇λ' * D * ∇λ)
+    grad_lambda = hcat(-sum(B'; dims = 2), B')
+    K = abs(det(E)) / factorial(dim) * (grad_lambda' * D * grad_lambda)
     (K + K') / 2
 end
 
@@ -106,7 +107,7 @@ function FEPattern(elements, nnode)
 
     # Node-to-element incidence, in increasing element order
     ptr = zeros(Int, nnode + 1)
-    for i ∈ elements
+    for i in elements
         ptr[i+1] += 1
     end
     ptr[1] = 1
@@ -142,8 +143,8 @@ end
 """
     assemble(localmatrix, pattern, elements, ::Val{nbasis})
 
-Assemble the sparse matrix with the element contributions `localmatrix(e)` (static
-`nbasis × nbasis` matrices).
+Assemble the sparse matrix with the element contributions `localmatrix(e)` (static matrices
+of size `nbasis`).
 """
 function assemble(
     localmatrix::F,
@@ -212,8 +213,8 @@ end
 """
     assemble_stiffness_matrix(elements, points, D = I[, pattern])
 
-Assemble the P1 stiffness matrix `∫ ∇φᵢ ⋅ D ∇φⱼ` of the simplices `elements` with `points`,
-for a constant diffusion tensor `D`.
+Assemble the P1 stiffness matrix ``S_{ij} = \\int \\nabla \\varphi_i \\cdot D \\nabla
+\\varphi_j`` of the simplices `elements` with `points`, for a constant diffusion tensor `D`.
 """
 function assemble_stiffness_matrix(
     elements,
@@ -233,27 +234,6 @@ function _stiffness(points, elements, D, pattern, ::Val{dim}) where {dim}
         elements,
         nb,
     )
-end
-
-"""
-    facet_integrals(points, facets)
-
-Integrals `∫ φᵢ dS` of the P1 basis functions over the boundary `facets` (simplices of one
-dimension lower than the points).
-"""
-function facet_integrals(points, facets)
-    w = zeros(eltype(points), size(points, 2))
-    _facet_integrals!(w, points, facets, Val(size(points, 1)), Val(size(facets, 1)))
-end
-
-function _facet_integrals!(w, points, facets, dim, ::Val{n}) where {n}
-    for f ∈ axes(facets, 2)
-        a = simplex_measure(simplex(points, facets, f, dim, Val(n))) / n
-        for i = 1:n
-            w[facets[i, f]] += a
-        end
-    end
-    w
 end
 
 """
@@ -290,7 +270,7 @@ function _facet_mass_triplets!(
     dim,
     ::Val{n},
 ) where {n}
-    for f ∈ axes(facets, 2)
+    for f in axes(facets, 2)
         K = local_mass(simplex(points, facets, f, dim, Val(n)))
         for b = 1:n, a = 1:n
             push!(I, rows[a, f])

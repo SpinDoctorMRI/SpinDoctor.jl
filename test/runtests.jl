@@ -6,6 +6,7 @@ if isdefined(@__MODULE__, :LanguageServer)
 end
 
 using SpinDoctor
+using SpinDoctor: integral, int_F2, intervals, echotime
 using LinearAlgebra
 using QuadGK
 using Test

@@ -1,14 +1,21 @@
+# Surface triangulations of the setup recipes and their extracellular spaces
+
 """
     create_surfaces(setup, cells)
 
-Create surface triangulation from a setup and cells.
+Create the surface triangulation of a setup with the cell configuration `cells` (for
+neurons: the file name of the volume mesh), to be meshed by [`create_mesh`](@ref).
 
 Returns a named tuple containing:
 
-  - `points` (size `dim × npoint`),
-  - `facets` (edges in 2D) (size `dim × nfacet`),
-  - `facetmarkers` (edge markers in 2D) (size `nfacet`),
-  - `regions` (one point inside each region) (size `dim × nregion`)
+- `points`: the points (size `dim`, `npoint`);
+- `facets`: the triangles (edges in 2D) (size `dim`, `nfacet`);
+- `facetmarkers`: the boundary number of each facet;
+- `regions`: one point inside each region (size `dim`, `nregion`).
+
+The boundaries between `n` regions are numbered with the interfaces between regions
+`i < j` first (row by row: 12, 13, ..., 1n, 23, ...), followed by the outer boundaries of
+the regions `1, ..., n`.
 """
 function create_surfaces end
 
@@ -38,21 +45,20 @@ function create_surfaces(setup::PlateSetup{T}, _) where {T}
         ]
     end
 
-    ninterface = (n - 1) * n ÷ 2
     edgemarkers = fill(0, 1 + 3n)
 
     # Left and first side walls
-    edgemarkers[1:3] .= ninterface + 1
+    edgemarkers[1:3] .= outer_boundary_index(1, n)
 
     # Interfaces and side walls after interface
     for i = 1:(n-1)
-        edgemarkers[3i+1] = (i - 1) * (2 * n - i) ÷ 2 + 1
-        edgemarkers[3i+2] = ninterface + 1 + i
-        edgemarkers[3i+3] = ninterface + 1 + i
+        edgemarkers[3i+1] = interface_index(i, i + 1, n)
+        edgemarkers[3i+2] = outer_boundary_index(i + 1, n)
+        edgemarkers[3i+3] = outer_boundary_index(i + 1, n)
     end
 
     # Right
-    edgemarkers[end] = ninterface + n
+    edgemarkers[end] = outer_boundary_index(n, n)
 
     regions = zeros(T, 2, n)
     regions[1, :] .= (x[1:(end-1)] .+ x[2:end]) ./ 2
@@ -84,12 +90,12 @@ function create_surfaces(setup::Union{DiskSetup,SphereSetup}, cells)
         r = layersizes[i] * radii[j]
         if dim == 2
             n = max(nside_min, round(Int, nsidewall * r / rmean))
-            angles = 2π * collect(0:(n-1)) / n
+            angles = 2pi * collect(0:(n-1)) / n
             cell_points[j, i] = r * [cos.(angles'); sin.(angles')] .+ centers[:, j]
             cell_facets[j, i] = [(1:(n-1))' n; (2:n)' 1]
         elseif dim == 3
             n = max(nside_min, round(Int, nsidewall * (r / rmean)^2))
-            cell_points[j, i] = centers[:, j] .+ r .* create_fibonacci_sphere(n)
+            cell_points[j, i] = centers[:, j] .+ r .* fibonacci_sphere(n)
             cell_facets[j, i] = convexhull(cell_points[j, i])[1]
         end
         if i == 1
@@ -122,37 +128,28 @@ function create_surfaces(setup::Union{DiskSetup,SphereSetup}, cells)
     ecs_surface.facets .+= nprevious
     facets = [reduce(hcat, reshape(cell_facets, :)) ecs_surface.facets]
 
-    # The boundaries are ordered as follows:
-    #   Number    Boundary
-    #      1       Γ_1_2 (we skip Γ_2_1)
-    #      2       Γ_1_3 (we skip Γ_3_1)
-    #      ⋮         ⋮
-    #  (n-1)n/2    Γ_n_n
-    # (n-1)n/2+1    Γ_1
-    #                ⋮
-    # (n-1)n/2+n    Γ_n
-    facetnumber(i, j) = (i - 1) * (2 * nregion - i) ÷ 2 + (j - i)
+    # Boundary numbers: see `interface_index` and `outer_boundary_index`
     facetmarkers = Int[]
     k = 1
     for i = 1:nlayer, j = 1:ncell
         if i < nlayer
             # (i, j) is linked to (i + 1, j)
-            m = facetnumber(k, k + ncell)
+            m = interface_index(k, k + ncell, nregion)
         elseif !(ecs isa NoECS)
             # The outer layer is linked to the ECS (last region)
-            m = facetnumber(k, nregion)
+            m = interface_index(k, nregion, nregion)
         else
-            # The outer region k has an outer boundary Γ_k
-            m = (nregion - 1) * nregion ÷ 2 + k
+            # Outer boundary of the outer layer
+            m = outer_boundary_index(k, nregion)
         end
         append!(facetmarkers, fill(m, size(cell_facets[j, i], 2)))
         k += 1
     end
 
-    # ECS is last region, with outer boundary Γ_nregion
+    # The ECS is the last region
     append!(
         facetmarkers,
-        fill((nregion - 1) * nregion ÷ 2 + nregion, size(ecs_surface.facets, 2)),
+        fill(outer_boundary_index(nregion, nregion), size(ecs_surface.facets, 2)),
     )
 
     (; points, facets, facetmarkers, regions)
@@ -195,21 +192,14 @@ function create_surfaces(setup::ExtrusionSetup, cells)
         (ri .+ npoint) (le .+ npoint)
     ]
 
-    # The boundaries are ordered as follows:
-    #   Γ_1_2 (we skip Γ_2_1)
-    #   Γ_1_3 (we skip Γ_3_1)
-    #   ⋮
-    #   Γ_nregion_nregion
-    #   Γ_1
-    #   ⋮
-    #   Γ_nregion
+    # Boundary numbers: see `interface_index` and `outer_boundary_index`
     sidefacetmarkers = [edgemarkers; edgemarkers]
 
-    # Bottom facets, top facets and side facets
-    ninterface = (nregion - 1) * nregion ÷ 2
+    # Side facets, bottom facets and top facets. The bottom and top facets of a region are
+    # on its outer boundary.
     facets = [sidefacets facets (facets .+ npoint)]
-    facetmarkers =
-        [sidefacetmarkers; facetmarkers .+ ninterface; facetmarkers .+ ninterface]
+    top = outer_boundary_index.(facetmarkers, nregion)
+    facetmarkers = [sidefacetmarkers; top; top]
 
     # Put a point in the middle of each region (z = 0 is in the middle of
     # bottom and top layer)
@@ -226,13 +216,13 @@ function create_surfaces(setup::NeuronSetup, meshfile)
 
     # Boundary facets: the element faces that belong to one element only
     count = Dict{SVector{3,Int},Int}()
-    for e ∈ axes(elements, 2), skip = 1:4
+    for e in axes(elements, 2), skip = 1:4
         f = sort(SVector{3}(ntuple(k -> elements[k < skip ? k : k + 1, e], Val(3))))
         count[f] = get(count, f, 0) + 1
     end
-    facets = reduce(hcat, [Vector(f) for (f, c) ∈ count if c == 1])
+    facets = reduce(hcat, [Vector(f) for (f, c) in count if c == 1])
 
-    volumes, centers = get_mesh_volumes(points, elements)
+    volumes, centers = element_geometry(points, elements)
     centermass = centers * volumes / sum(volumes)
 
     facetmarkers = ones(Int, size(facets, 2))
@@ -307,7 +297,7 @@ function create_surfaces(ecs::ConvexHullECS, points)
     c = sum(points; dims = 2) / size(points, 2)
 
     # Get outward pointing normals
-    _, facet_centers, normals = get_mesh_surface(points, facets)
+    _, facet_centers, normals = facet_geometry(points, facets)
     o = sum((c .- facet_centers) .* normals; dims = 1)
     orientations = 1 .- 2 .* (o .> 0)
     normals .*= orientations
@@ -323,9 +313,9 @@ function create_surfaces(ecs::ConvexHullECS, points)
                 a = points[:, f[2]] - points[:, f[1]]
                 b = points[:, f[3]] - points[:, f[1]]
                 c = points[:, f[3]] - points[:, f[2]]
-                α = acos(dot(a, b) / norm(a) / norm(b))
-                β = acos(dot(a, c) / norm(a) / norm(c))
-                if abs(α) < threshold || abs(β) < threshold
+                alpha = acos(dot(a, b) / norm(a) / norm(b))
+                beta = acos(dot(a, c) / norm(a) / norm(c))
+                if abs(alpha) < threshold || abs(beta) < threshold
                     iadd[i] = true
                 end
             end
@@ -341,7 +331,7 @@ function create_surfaces(ecs::ConvexHullECS, points)
             c = sum(points; dims = 2) / size(points, 2)
 
             # Get outward pointing normals
-            _, facet_centers, normals = get_mesh_surface(points, facets)
+            _, facet_centers, normals = facet_geometry(points, facets)
             o = sum((c .- facet_centers) .* normals; dims = 1)
             orientations = 1 .- 2 .* (o .> 0)
             normals .*= orientations
@@ -357,7 +347,7 @@ function create_surfaces(ecs::ConvexHullECS, points)
         # dirs[:, facets[:, i]] .+= normals[:, i]
         @views dirs[:, facets[:, i]] .+= normals[:, i]
     end
-    ihull = map(c -> any(!≈(0), c), eachcol(dirs))
+    ihull = map(!iszero, eachcol(dirs))
     points[:, ihull] .+=
         margin .* dirs[:, ihull] ./ sqrt.(sum(abs2, dirs[:, ihull]; dims = 1))
 

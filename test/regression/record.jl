@@ -12,25 +12,25 @@ using Random
 using TOML
 
 outfile = ARGS[1]
-generate = length(ARGS) ≥ 2 && ARGS[2] == "generate"
+generate = length(ARGS) >= 2 && ARGS[2] == "generate"
 meshdir = joinpath(@__DIR__, "meshes")
 
-const γ = 2.67513e-4
+const gamma = 2.67513e-4
 const D0 = 0.002
 
 function cellcoeffs(setup, nlayer, dim)
     coefficients(
         setup;
         D = (; cell = [D0 * I(dim) for _ = 1:nlayer], ecs = D0 * I(dim)),
-        T₂ = (; cell = fill(Inf, nlayer), ecs = Inf),
-        ρ = (; cell = fill(1.0, nlayer), ecs = 1.0),
-        κ = (;
+        T2 = (; cell = fill(Inf, nlayer), ecs = Inf),
+        rho = (; cell = fill(1.0, nlayer), ecs = 1.0),
+        kappa = (;
             cell_interfaces = fill(1e-4, nlayer - 1),
             cell_boundaries = fill(0, nlayer),
             cell_ecs = 1e-4,
             ecs = 0,
         ),
-        γ,
+        gamma,
     )
 end
 
@@ -38,20 +38,20 @@ function platecoeffs(setup, n, dim)
     coefficients(
         setup;
         D = [D0 * I(dim) for _ = 1:n],
-        T₂ = fill(Inf, n),
-        ρ = fill(1.0, n),
-        κ = (; interfaces = fill(1e-4, n - 1), boundaries = fill(0.0, n)),
-        γ,
+        T2 = fill(Inf, n),
+        rho = fill(1.0, n),
+        kappa = (; interfaces = fill(1e-4, n - 1), boundaries = fill(0.0, n)),
+        gamma,
     )
 end
 
 neuroncoeffs(setup) = coefficients(
     setup;
     D = (; neuron = D0 * I(3), ecs = D0 * I(3)),
-    T₂ = (; neuron = Inf, ecs = Inf),
-    ρ = (; neuron = 1.0, ecs = 1.0),
-    κ = (; neuron_ecs = 1e-4, neuron = 0.0, ecs = 0.0),
-    γ,
+    T2 = (; neuron = Inf, ecs = Inf),
+    rho = (; neuron = 1.0, ecs = 1.0),
+    kappa = (; neuron_ecs = 1e-4, neuron = 0.0, ecs = 0.0),
+    gamma,
 )
 
 # name => (seed, setup, coeffs, analytical)
@@ -95,7 +95,7 @@ cases = [
             ecs = ConvexHullECS(; margin = 1.0),
             height = 10.0,
             bend = 0.02,
-            twist = π / 4,
+            twist = pi / 4,
         )
         (4, s, cellcoeffs(s, 1, 3), false)
     end,
@@ -108,7 +108,7 @@ cases = [
             ecs = ConvexHullECS(; margin = 1.0),
             height = 10.0,
             bend = 0.02,
-            twist = π / 4,
+            twist = pi / 4,
         )
         (4, s, cellcoeffs(s, 2, 3), false)
     end,
@@ -135,8 +135,7 @@ re(z) = real.(z)
 im_(z) = imag.(z)
 
 function gradient_for(profile, dir, b)
-    g = √(b / int_F²(profile)) / γ
-    ScalarGradient(dir, profile, g)
+    ScalarGradient(dir, profile; bvalue = b, gamma)
 end
 
 directions(dim) =
@@ -175,7 +174,7 @@ for (name, (seed, setup, coeffs, analytical)) in cases
 
     out["npoint"] = size.(mesh.points, 2)
     out["nelement"] = size.(mesh.elements, 2)
-    out["volumes"] = get_cmpt_volumes(mesh)
+    out["volumes"] = compartment_volumes(mesh)
 
     matrices = nothing
     t = @elapsed try
@@ -224,8 +223,8 @@ for (name, (seed, setup, coeffs, analytical)) in cases
         out,
         "btpde_qndf",
         () -> begin
-            ξ = solve_btpde(model, matrices, grad)
-            s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
+            u = solve_btpde(model, matrices, grad)
+            s = compute_signal.(matrices.M_cmpts, split_field(mesh, u))
             Dict("re" => re(s), "im" => im_(s))
         end,
     )
@@ -233,9 +232,9 @@ for (name, (seed, setup, coeffs, analytical)) in cases
         out,
         "btpde_cn",
         () -> begin
-            solver = IntervalConstantSolver(; θ = 0.5, timestep = 20.0)
-            ξ = solve_btpde(model, matrices, grad, solver)
-            s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
+            solver = IntervalConstantSolver(; theta = 0.5, timestep = 20.0)
+            u = solve_btpde(model, matrices, grad, solver)
+            s = compute_signal.(matrices.M_cmpts, split_field(mesh, u))
             s0 = compute_signal.(
                 matrices.M_cmpts,
                 split_field(mesh, initial_conditions(model)),
@@ -249,16 +248,16 @@ for (name, (seed, setup, coeffs, analytical)) in cases
     )
     if name == "slabs"
         TE = 5000.0
-        φ = -π / 6
-        Rot = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
-        gvec(t) = 1.0 * Rot * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
+        phi = -pi / 6
+        Rot = [cos(phi) sin(phi) 0; -sin(phi) cos(phi) 0; 0 0 1]
+        gvec(t) = 1.0 * Rot * [sin(2pi * t / TE), sin(20pi * t / TE) / 5, cos(2pi * t / TE)]
         general = GeneralGradient(; gvec, TE)
         tryrecord!(
             out,
             "btpde_general",
             () -> begin
-                ξ = solve_btpde(model, matrices, general)
-                s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
+                u = solve_btpde(model, matrices, general)
+                s = compute_signal.(matrices.M_cmpts, split_field(mesh, u))
                 Dict("re" => re(s), "im" => im_(s))
             end,
         )
@@ -271,8 +270,8 @@ for (name, (seed, setup, coeffs, analytical)) in cases
         "laplace_mf",
         () -> begin
             lap_eig = solve_laplace(model, matrices; neig_max = 30)
-            ξ = solve_mf(model, matrices, lap_eig, grad)
-            s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
+            u = solve_mf(model, matrices, lap_eig, grad)
+            s = compute_signal.(matrices.M_cmpts, split_field(mesh, u))
             Dict("eigenvalues" => lap_eig.values, "re" => re(s), "im" => im_(s))
         end,
     )
@@ -300,7 +299,7 @@ for (name, (seed, setup, coeffs, analytical)) in cases
             out,
             "analytical",
             () -> begin
-                volumes = get_cmpt_volumes(mesh)
+                volumes = compartment_volumes(mesh)
                 D_avg = 1 / dim * tr.(model.D)' * volumes / sum(volumes)
                 eiglim = length2eig(1.0, D_avg)
                 acoeffs = analytical_coefficients(setup, coeffs)

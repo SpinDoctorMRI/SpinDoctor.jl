@@ -27,21 +27,20 @@ setup = CylinderSetup(;
 coeffs = coefficients(
     setup;
     D = (; cell = [0.002 * I(3)], ecs = 0.002 * I(3)),
-    T₂ = (; cell = [Inf], ecs = Inf),
-    ρ = (; cell = [1.0], ecs = 1.0),
-    κ = (; cell_interfaces = Float64[], cell_boundaries = [0.0], cell_ecs = 1e-4, ecs = 0.0),
-    γ = 2.67513e-4,
+    T2 = (; cell = [Inf], ecs = Inf),
+    rho = (; cell = [1.0], ecs = 1.0),
+    kappa = (; cell_interfaces = Float64[], cell_boundaries = [0.0], cell_ecs = 1e-4, ecs = 0.0),
+    gamma = 2.67513e-4,
 )
 mesh, surfaces, cells = create_geometry(setup)
 model = Model(; mesh, coeffs...)
 matrices = assemble_matrices(model)
 
 # PGSE sequence with b = 1000 s/mm²
-profile = PGSE(2000.0, 6000.0)
-gradient = ScalarGradient([1.0, 0.0, 0.0], profile, √(1000 / int_F²(profile)) / coeffs.γ)
+gradient = ScalarGradient([1.0, 0.0, 0.0], PGSE(2000, 6000); bvalue = 1000, gamma = coeffs.gamma)
 
-ξ = solve_btpde(model, matrices, gradient)  # Magnetization at echo time
-signal = compute_signal(matrices.M, ξ)
+u = solve_btpde(model, matrices, gradient)  # Magnetization at echo time
+signal = compute_signal(matrices.M, u)
 adcs = solve_hadc(model, matrices, gradient)  # ADC of each compartment
 ```
 
@@ -57,6 +56,9 @@ Optional packages extend SpinDoctor:
 - `using JLD2` for storing geometries (`create_geometry(setup; cache = "geometry.jld2")`).
 
 The matrix assembly uses all Julia threads (start Julia with `--threads=auto`).
+
+The main functions and types are exported. Lower level building blocks, such as the mesh
+type `SpinDoctor.FEMesh` or `SpinDoctor.assemble_mass_matrix`, are public but not exported.
 
 More:
 

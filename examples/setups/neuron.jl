@@ -120,8 +120,8 @@ setup = NeuronSetup(;
 coeffs = coefficients(
     setup;
     D = (; neuron = 0.002 * I(3), ecs = 0.002 * I(3)),
-    T₂ = (; neuron = Inf, ecs = Inf),
-    ρ = (; neuron = 1.0, ecs = 1.0),
-    κ = (; neuron_ecs = 1e-4, in = 0.0, neuron = 0.0, ecs = 0.0),
-    γ = 2.67513e-4,
+    T2 = (; neuron = Inf, ecs = Inf),
+    rho = (; neuron = 1.0, ecs = 1.0),
+    kappa = (; neuron_ecs = 1e-4, in = 0.0, neuron = 0.0, ecs = 0.0),
+    gamma = 2.67513e-4,
 )

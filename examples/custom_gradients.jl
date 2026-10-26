@@ -25,15 +25,15 @@ nlayer = length(setup.layersizes)
 coeffs = coefficients(
     setup;
     D = (; cell = [0.002 * I(3) for _ = 1:nlayer], ecs = 0.002 * I(3)),
-    T₂ = (; cell = fill(Inf, nlayer), ecs = Inf),
-    ρ = (; cell = fill(1.0, nlayer), ecs = 1.0),
-    κ = (;
+    T2 = (; cell = fill(Inf, nlayer), ecs = Inf),
+    rho = (; cell = fill(1.0, nlayer), ecs = 1.0),
+    kappa = (;
         cell_interfaces = fill(1e-4, nlayer - 1),
         cell_boundaries = fill(0, nlayer),
         cell_ecs = 1e-4,
         ecs = 0,
     ),
-    γ = 2.67513e-4,
+    gamma = 2.67513e-4,
 )
 
 # We then proceed to build the geometry and finite element mesh.
@@ -53,9 +53,9 @@ matrices = assemble_matrices(model)
 
 ## Magnetic field gradient
 TE = 5000.0
-φ = -π / 12
-R = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
-gvec(t) = 1.0 * R * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
+phi = -pi / 12
+R = [cos(phi) sin(phi) 0; -sin(phi) cos(phi) 0; 0 0 1]
+gvec(t) = 1.0 * R * [sin(2pi * t / TE), sin(20pi * t / TE) / 5, cos(2pi * t / TE)]
 gradient = GeneralGradient(; gvec, TE)
 
 # In order to follow the evolution of the solution during time stepping, we add a
@@ -67,7 +67,7 @@ plotter = Plotter()
 
 # We may then define the problem and solve for our gradient (with the callback).
 
-ξ = solve_btpde(model, matrices, gradient; callbacks = [plotter])
+u = solve_btpde(model, matrices, gradient; callbacks = [plotter])
 plotter.fig
 
 # [`solve_mf`](@ref) also accepts [`GeneralGradient`](@ref)s. However, the ADC methods

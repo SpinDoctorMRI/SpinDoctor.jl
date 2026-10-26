@@ -1,28 +1,31 @@
-"""
-    eig2length(λ, D)
+# Matrix formalism: Laplace eigendecomposition and magnetization in the eigenfunction basis
 
-Convert Laplace eigenvalue to length scale.
 """
-eig2length(λ, D) = λ > 0 ? π * √(D / λ) : Inf
+    eig2length(lambda, D)
+
+Convert a Laplace eigenvalue to a length scale, for the diffusivity `D`.
+"""
+eig2length(lambda, D) = lambda > 0 ? pi * sqrt(D / lambda) : Inf
 
 """
     length2eig(length, D)
 
-Convert length scale to Laplace eigenvalue.
+Convert a length scale to a Laplace eigenvalue, for the diffusivity `D`.
 """
-length2eig(length, D) = D * (π / length)^2
+length2eig(length, D) = D * (pi / length)^2
 
 """
-    limit_lengthscale(lap_eig, λ_max)
+    limit_lengthscale(lap_eig, lambda_max)
 
-Only keep modes with length scales larger than minimum
+Keep the Laplace eigenmodes with eigenvalues up to `lambda_max` (length scales of at least
+`eig2length(lambda_max, D)`).
 """
-function limit_lengthscale(lap_eig, λ_max)
+function limit_lengthscale(lap_eig, lambda_max)
     (; values, funcs, moments, massrelax) = lap_eig
-    inds = values .≤ λ_max
+    inds = values .<= lambda_max
     values = values[inds]
     funcs = funcs[:, inds]
-    moments = [m[inds, inds] for m ∈ moments]
+    moments = [m[inds, inds] for m in moments]
     massrelax = massrelax[inds, inds]
     (; values, funcs, moments, massrelax)
 end
@@ -40,78 +43,68 @@ function solve_laplace(model::Model{T,dim}, matrices; neig_max) where {T,dim}
     (; M, S, R, Mx, Q) = matrices
 
     # Compute at most all eigenvalues in the given domain
-    neig = Int(min(neig_max, size(M, 1)))
+    neig = min(neig_max, size(M, 1))
+    @info "Solving the Laplace eigenvalue problem for $neig eigenvalues ($(size(M, 1)) points)"
 
-    @info join(
-        [
-            "Solving Laplace eigenvalue problem, computing $neig eigenvalues.",
-            "Problem size: $(size(M, 1)) points.",
-        ],
-        "\n",
-    )
-
-    λ, ϕ = smallest_eigenpairs(S + Q, M, neig)
+    lambda, phi = smallest_eigenpairs(S + Q, M, neig)
 
     # All Laplace eigenvalues are nonnegative (up to round-off)
-    all(≥(-√eps(real(eltype(λ))) * maximum(abs, λ)), real.(λ)) ||
-        @warn "Obtained negative eigenvalues for Laplace operator." findall(λ .< 0) λ[λ .< 0]
+    all(>=(-sqrt(eps(real(eltype(lambda)))) * maximum(abs, lambda)), real.(lambda)) ||
+        @warn "Obtained negative eigenvalues for Laplace operator." findall(lambda .< 0) lambda[lambda .< 0]
 
     # Normalize eigenfunctions with mass weighting
-    ϕ ./= sqrt.(sum(ϕ .* (M * ϕ), dims = 1))
+    phi ./= sqrt.(sum(phi .* (M * phi), dims = 1))
 
     # Compute first order moments of product of pairs of eigenfunctions
-    moments = [ϕ' * Mx[d] * ϕ for d = 1:dim]
+    moments = [phi' * Mx[d] * phi for d = 1:dim]
 
     # Compute Laplace relaxation matrix
-    massrelax = ϕ' * R * ϕ
+    massrelax = phi' * R * phi
 
-    values = λ
-    funcs = ϕ
-
-    (; values, funcs, moments, massrelax)
+    (; values = lambda, funcs = phi, moments, massrelax)
 end
 
 """
-    λ, ϕ = smallest_eigenpairs(A, M, n)
+    lambda, phi = smallest_eigenpairs(A, M, n)
 
-Compute the `n` smallest eigenvalues `λ` and the corresponding `M`-orthonormal
-eigenvectors `ϕ` of the generalized eigenproblem `A ϕ = λ M ϕ`, where `M` is symmetric
+Compute the `n` smallest eigenvalues `lambda` and the corresponding `M`-orthonormal
+eigenvectors `phi` of the generalized eigenproblem `A phi = lambda M phi`, where `M` is symmetric
 positive definite and `A` positive semi-definite.
 
-The eigenvalues closest to a small negative shift `σ` (below the spectrum) are found with
-Krylov iterations on the shift-and-invert operator `(A - σM)⁻¹ M`, which is self-adjoint in
-the `M`-inner product when `A` is symmetric.
+The eigenvalues closest to a small negative shift `sigma` (below the spectrum) are found with
+Krylov iterations on the shift-and-invert operator `(A - sigma M)^(-1) M`, which is
+self-adjoint in the `M`-inner product when `A` is symmetric.
 """
 function smallest_eigenpairs(A, M, n)
     N = size(M, 1)
-    if N ≤ 1000 || n ≥ N ÷ 4
+    if N <= 1000 || n >= div(N, 4)
         # Small problem: dense decomposition
         Ad, Md = Matrix(A), Matrix(M)
-        λ, ϕ = issymmetric(Ad) ? eigen(Symmetric(Ad), Symmetric(Md)) : eigen(Ad, Md)
-        p = sortperm(real.(λ))[1:n]
-        return λ[p], ϕ[:, p]
+        lambda, phi = issymmetric(Ad) ? eigen(Symmetric(Ad), Symmetric(Md)) : eigen(Ad, Md)
+        p = sortperm(real.(lambda))[1:n]
+        return lambda[p], phi[:, p]
     end
     hermitian = issymmetric(A)
-    σ = -1e-3 * tr(A) / tr(M)
-    F = hermitian ? cholesky(Symmetric(A - σ * M)) : lu(A - σ * M)
+    sigma = -1e-3 * tr(A) / tr(M)
+    F = hermitian ? cholesky(Symmetric(A - sigma * M)) : lu(A - sigma * M)
     inner(x, y) = dot(x, M * y)
     op(v) = InnerProductVec(F \ (M * v.vec), inner)
-    x₀ = InnerProductVec(1 .+ sin.(1:N), inner)
-    ν, vecs, info = KrylovKit.eigsolve(
+    x0 = InnerProductVec(1 .+ sin.(1:N), inner)
+    nu, vecs, info = KrylovKit.eigsolve(
         op,
-        x₀,
+        x0,
         n,
         :LR;
         ishermitian = hermitian,
         krylovdim = max(30, 2n + 10),
         tol = 1e-12,
     )
-    info.converged ≥ n || @warn "Only $(info.converged) of $n eigenpairs converged"
-    hermitian || (ν = real.(ν))
-    λ = σ .+ 1 ./ ν[1:n]
-    ϕ = reduce(hcat, [real.(v.vec) for v ∈ vecs[1:n]])
-    p = sortperm(λ)
-    λ[p], ϕ[:, p]
+    info.converged >= n || @warn "Only $(info.converged) of $n eigenpairs converged"
+    hermitian || (nu = real.(nu))
+    lambda = sigma .+ 1 ./ nu[1:n]
+    phi = reduce(hcat, [real.(v.vec) for v in vecs[1:n]])
+    p = sortperm(lambda)
+    lambda[p], phi[:, p]
 end
 
 """
@@ -124,73 +117,73 @@ interval-wise constant are approximated by `ninterval` constant intervals.
 See [Li2020](@cite), [Agdestein2021](@cite).
 """
 function solve_mf(
-    model::Model{TT,dim},
+    model::Model{T,dim},
     matrices,
     lap_eig,
     gradient;
     ninterval = 500,
-) where {TT,dim}
-    (; γ) = model
+) where {T,dim}
+    (; gamma) = model
     (; M) = matrices
 
     # Laplace eigenmodes
-    λ = lap_eig.values
-    ϕ = lap_eig.funcs
+    lambda = lap_eig.values
+    phi = lap_eig.funcs
     Ax = lap_eig.moments
-    T = lap_eig.massrelax
-    neig = length(λ)
+    relax = lap_eig.massrelax
+    neig = length(lambda)
 
-    ρ = initial_conditions(model)
-
-    # Project initial spin density onto Laplace eigenfunction basis
-    ν = ϕ' * (M * ρ)
+    # Project the initial spin density onto the Laplace eigenfunction basis
+    xi0 = initial_conditions(model)
+    nu = phi' * (M * xi0)
 
     # Laplace operator in Laplace eigenfunction basis
-    L = diagm(λ)
+    L = diagm(lambda)
 
     # Bloch-Torrey operator in Laplace eigenfunction basis for given gradient
     function K!(K, g)
         if dim == 2
-            @. K = L + T + im * γ * (g[1] * Ax[1] + g[2] * Ax[2])
+            @. K = L + relax + im * gamma * (g[1] * Ax[1] + g[2] * Ax[2])
         elseif dim == 3
-            @. K = L + T + im * γ * (g[1] * Ax[1] + g[2] * Ax[2] + g[3] * Ax[3])
+            @. K = L + relax + im * gamma * (g[1] * Ax[1] + g[2] * Ax[2] + g[3] * Ax[3])
         end
     end
 
-    K = zeros(eltype(ρ), neig, neig)
+    K = zeros(eltype(xi0), neig, neig)
 
     if isa(gradient, ScalarGradient) && isconstant(gradient.profile)
         # The gradient is constant on each interval
         t = intervals(gradient.profile)
         for i = 1:(length(t)-1)
-            δᵢ = t[i+1] - t[i]
-            tᵢ = (t[i+1] + t[i]) / 2
-            K!(K, gradient(tᵢ))
-            expmv!(-δᵢ, K, ν)
+            dt = t[i+1] - t[i]
+            t_i = (t[i+1] + t[i]) / 2
+            K!(K, gradient(t_i))
+            expmv!(-dt, K, nu)
         end
     else
         t = LinRange(0, echotime(gradient), ninterval + 1)
         for i = 1:ninterval
-            δᵢ = t[i+1] - t[i]
-            gᵢ = (gradient(t[i+1]) + gradient(t[i])) / 2
-            K!(K, gᵢ)
-            expmv!(-δᵢ, K, ν)
+            dt = t[i+1] - t[i]
+            g_i = (gradient(t[i+1]) + gradient(t[i])) / 2
+            K!(K, g_i)
+            expmv!(-dt, K, nu)
         end
     end
 
     # Final magnetization coefficients in finite element nodal basis
-    ϕ * ν
+    phi * nu
 end
 
 """
     compute_mf_diffusion_tensor(mesh, M, lap_eig, gradient::ScalarGradient)
 
-Compute effective diffusion tensors using the matrix formalism.
+Compute the effective diffusion tensor of the sample using the matrix formalism, from the
+mass matrix `M` and the Laplace eigendecomposition `lap_eig`.
 """
 function compute_mf_diffusion_tensor(mesh, M, lap_eig, gradient::ScalarGradient)
-    volumes = get_cmpt_volumes(mesh)
+    volumes = compartment_volumes(mesh)
     p = reduce(hcat, mesh.points)
     a = p * M * lap_eig.funcs
     j = j_integral.(gradient.profile, lap_eig.values)
-    D = a * Diagonal(j) * a' / sum(volumes)
+    a * Diagonal(j) * a' / sum(volumes)
 end

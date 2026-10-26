@@ -22,6 +22,18 @@ extension, split OrdinaryDiffEq packages).
 - `NeuronSetup` takes the Gmsh volume mesh as `meshfile`.
 - `assemble_mass_matrix` takes `elementweights` or `nodeweights` as keywords.
 - `TightWrapECS`, which was not implemented, is removed.
+- ASCII names in the API: the coefficients and model fields are `rho`, `D`, `T2`, `kappa`
+  and `gamma`, the time profiles have the fields `delta` and `Delta`, `int_F²` is
+  `int_F2`, the analytical permeabilities `W` are `kappa`, and `IntervalConstantSolver`
+  takes `theta`.
+- Renamed: `get_cmpt_volumes` → `compartment_volumes`, `get_mesh_volumes` →
+  `element_geometry`, `get_mesh_surface` and `get_mesh_surfacenormals` → `facet_geometry`
+  (outward normals when the elements are given), `couple_flux_matrix` →
+  `assemble_flux_matrix`, `savefield(mesh, u, filename)` → `save_field(filename, mesh, u)`,
+  `create_fibonacci_sphere` → `fibonacci_sphere`. The text geometry writers take the file
+  name first (`save_cells`, `save_surfaces`, `save_mesh`).
+- Only the main API is exported. Building blocks (e.g. `FEMesh`, `assemble_mass_matrix`,
+  `integral`, `int_F2`, `intervals`, `echotime`) are public but not exported.
 
 ### Fixed
 
@@ -35,7 +47,9 @@ extension, split OrdinaryDiffEq packages).
 - The Laplace eigenproblem did not converge for many eigenvalues; it now uses
   shift-and-invert Lanczos iterations (KrylovKit instead of Arpack).
 - 2D VTK output, ignored keywords of `unitsphere`, the precision of the text geometry files,
-  and the quadratic-time extraction of neuron boundaries.
+  the quadratic-time extraction of neuron boundaries, `Printer` ignoring `nupdate`, a
+  division by zero in `IntervalConstantSolver` for intervals shorter than half a time step,
+  and `ScalarGradient` and `GeneralGradient` not being `AbstractGradient`s.
 
 ### Added
 
@@ -44,5 +58,8 @@ extension, split OrdinaryDiffEq packages).
 - `compartment_mesh`, `box_faces`, `compartment_weights`, given cell configurations
   (`create_geometry(setup; cells)`), random number generators (`rng`), and
   `save_geometry`/`load_geometry`.
+- `ScalarGradient(dir, profile; bvalue, gamma)` and `bvalue(gradient, gamma)`; time
+  profiles accept integer arguments.
+- `fit_adc(bvalues, signals; degree)`.
 - Value-based tests (analytical solutions, exact identities), and regression outputs of
   v0.1.0 in `test/regression`.

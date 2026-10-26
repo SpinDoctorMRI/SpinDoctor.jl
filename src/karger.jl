@@ -1,84 +1,52 @@
+# Finite pulse Karger model
+
 """
     solve_karger(model, difftensors, gradient; timestep)
 
 Solve the finite pulse Karger model (FPK) using precomputed effective diffusion tensors
 `difftensors` (one per compartment), and return the compartment signals.
 
-The compartment signals are integrated with a fourth order Magnus method, with steps of at
-most `timestep` within each characteristic interval of the gradient sequence.
+The compartments exchange magnetization through their interfaces with rates given by the
+permeabilities, interface areas and volumes. The compartment signals are integrated with a
+fourth order Magnus method, with steps of at most `timestep` within each characteristic
+interval of the gradient sequence.
 """
 function solve_karger(model, difftensors, gradient::ScalarGradient; timestep)
-    (; mesh, T₂, ρ, κ, γ) = model
-
-    dt = timestep
-    f = gradient.profile
-    d = gradient.dir
-    g = gradient.amplitude
-    TE = echotime(f)
-
-    # Deduce sizes
+    (; mesh, T2, rho, kappa, gamma) = model
+    (; dir, profile, amplitude) = gradient
     ncompartment, nboundary = size(mesh.facets)
+    volumes = compartment_volumes(mesh)
 
-    # Volumes
-    volumes = get_cmpt_volumes(mesh)
-
-    # Compute surface areas
-    surface_areas = spzeros(ncompartment, nboundary)
-    for icmpt = 1:ncompartment
-        # Finite elements
-        points = mesh.points[icmpt]
-        facets = mesh.facets[icmpt, :]
-
-        # Surface area
-        for iboundary = 1:nboundary
-            if !isempty(facets[iboundary])
-                areas = first(get_mesh_surface(points, facets[iboundary]))
-                surface_areas[icmpt, iboundary] = sum(areas)
-            end
-        end
-    end
-
-    # Associate surface areas to the compartment interfaces they measure
-    tau_inv = spzeros(ncompartment, ncompartment)
+    # Exchange rates: an interface of area A and permeability kappa between compartments
+    # i and j exchanges kappa A (m_j - m_i), with m = S / V the mean magnetization
+    exchange = zeros(ncompartment, ncompartment)
     for iboundary = 1:nboundary
-        inds = surface_areas[:, iboundary].nzind
-        if length(inds) == 2
-            i₁ = inds[1]
-            i₂ = inds[2]
-            tmp = κ[iboundary] * surface_areas[i₁, iboundary]
-            tau_inv[i₁, i₂] = tmp
-            tau_inv[i₂, i₁] = tmp
-        end
+        cmpts = findall(!isempty, mesh.facets[:, iboundary])
+        length(cmpts) == 2 || continue
+        i, j = cmpts
+        area = sum(first(facet_geometry(mesh.points[i], mesh.facets[i, iboundary])))
+        exchange[i, j] = exchange[j, i] = kappa[iboundary] * area
     end
-    tau_inv = tau_inv ./ volumes'
-    A = tau_inv - spdiagm((tau_inv * volumes) ./ volumes)
+    A = exchange ./ volumes' - Diagonal(vec(sum(exchange; dims = 2)) ./ volumes)
 
-    # Relaxation tensor
-    R = spdiagm(1 ./ T₂)
-
-    # Initial signal
-    S₀ = volumes .* ρ
-
-    ADC_diag = Diagonal([d' * D * d for D ∈ difftensors])
-
-    # Linear ODE dS/dt = J(t) S with J(t) = A - (γ g F(t))² ADC - R
-    A = Matrix(A)
-    R = Matrix(R)
-    J(t) = A - (γ * g * integral(f, t))^2 * ADC_diag - R
+    # Linear ODE dS/dt = J(t) S with J(t) = A - (gamma g F(t))^2 ADC - R
+    adcs = Diagonal([dir' * D * dir for D in difftensors])
+    R = Diagonal(1 ./ T2)
+    J(t) = A - (gamma * amplitude * integral(profile, t))^2 * adcs - R
 
     # Fourth order Magnus method (two Gauss-Legendre points per step)
-    c₁, c₂ = 1 / 2 - √3 / 6, 1 / 2 + √3 / 6
-    S = complex(S₀)
+    c1, c2 = 1 / 2 - sqrt(3) / 6, 1 / 2 + sqrt(3) / 6
+    S = complex(volumes .* rho)
     ivals = intervals(gradient)
     for i = 1:(length(ivals)-1)
-        nstep = max(1, ceil(Int, (ivals[i+1] - ivals[i]) / dt))
+        nstep = max(1, ceil(Int, (ivals[i+1] - ivals[i]) / timestep))
         h = (ivals[i+1] - ivals[i]) / nstep
         for istep = 1:nstep
             t = ivals[i] + (istep - 1) * h
-            J₁ = J(t + c₁ * h)
-            J₂ = J(t + c₂ * h)
-            Ω = h / 2 * (J₁ + J₂) + √3 / 12 * h^2 * (J₂ * J₁ - J₁ * J₂)
-            S = exp(Ω) * S
+            J1 = J(t + c1 * h)
+            J2 = J(t + c2 * h)
+            Omega = h / 2 * (J1 + J2) + sqrt(3) / 12 * h^2 * (J2 * J1 - J1 * J2)
+            S = exp(Omega) * S
         end
     end
 

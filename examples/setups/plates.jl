@@ -14,8 +14,8 @@ ncell = length(setup.widths)
 coeffs = coefficients(
     setup;
     D = [0.002 * I(2) for _ = 1:ncell],
-    T₂ = fill(Inf, ncell),
-    ρ = fill(1.0, ncell),
-    κ = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
-    γ = 2.67513e-4,
+    T2 = fill(Inf, ncell),
+    rho = fill(1.0, ncell),
+    kappa = (; interfaces = fill(1e-4, ncell - 1), boundaries = fill(0.0, ncell)),
+    gamma = 2.67513e-4,
 )

@@ -1,17 +1,24 @@
+# Finite element matrices of a model
+
 """
     assemble_matrices(model)
 
-Assemble finite element matrices.
+Assemble the finite element matrices of `model`.
 
-Returns a named tuple with the global (block diagonal) mass matrix `M`, stiffness matrix
-`S`, relaxation matrix `R` (`M` divided by `T₂`), first order moment matrices `Mx`
-(`∫ xᵢ φⱼ φₖ`, one per axis) and flux matrix `Q` (permeable interfaces and outer
-boundaries), the compartment blocks `M_cmpts`, `S_cmpts` and `Mx_cmpts`, the surface
-integrals `G` (`∫_Γ φᵢ n dS` over the boundary `Γ` of each compartment, one row per point and
-one column per axis) and the compartment `volumes`.
+Returns a named tuple with
+
+- the global (block diagonal) mass matrix `M`, stiffness matrix `S` (with the diffusion
+  tensors), relaxation matrix `R` (`M` divided by `T2`), first order moment matrices `Mx`
+  (``\\int x_d \\varphi_i \\varphi_j``, one per axis `d`) and flux matrix `Q` (permeable
+  interfaces and outer boundaries, see [`assemble_flux_matrix`](@ref));
+- the compartment blocks `M_cmpts`, `S_cmpts` and `Mx_cmpts`;
+- the surface integrals `G`, one matrix per compartment with the integrals
+  ``\\int_{\\partial \\Omega} \\varphi_i n_d \\, \\mathrm{d}s`` over the boundary of the
+  compartment with outward normal `n` (one row per point, one column per axis);
+- the compartment `volumes`.
 """
 function assemble_matrices(model::Model{T,dim}) where {T,dim}
-    (; mesh, D, T₂) = model
+    (; mesh, D, T2) = model
     ncompartment = length(mesh.points)
 
     M_cmpts = SparseMatrixCSC{T,Int}[]
@@ -23,7 +30,7 @@ function assemble_matrices(model::Model{T,dim}) where {T,dim}
         points = mesh.points[icmpt]
         elements = mesh.elements[icmpt]
         pattern = FEPattern(elements, size(points, 2))
-        volumes[icmpt] = sum(first(get_mesh_volumes(points, elements)))
+        volumes[icmpt] = sum(first(element_geometry(points, elements)))
 
         push!(M_cmpts, assemble_mass_matrix(elements, points; pattern))
         push!(S_cmpts, assemble_stiffness_matrix(elements, points, D[icmpt]; pattern))
@@ -32,39 +39,39 @@ function assemble_matrices(model::Model{T,dim}) where {T,dim}
             push!(Mx_cmpts[d], Mx)
         end
 
-        # Surface integrals ∫ φᵢ n dS with outward normals n
+        # Surface integrals of the basis functions times the outward normal
         facets = reduce(hcat, mesh.facets[icmpt, :])
-        areas, _, normals = get_mesh_surfacenormals(points, elements, facets)
-        Gᵢ = zeros(T, size(points, 2), dim)
-        for f ∈ axes(facets, 2), a ∈ axes(facets, 1), d = 1:dim
-            Gᵢ[facets[a, f], d] += areas[f] / size(facets, 1) * normals[d, f]
+        areas, _, normals = facet_geometry(points, facets, elements)
+        G_i = zeros(T, size(points, 2), dim)
+        for f in axes(facets, 2), a in axes(facets, 1), d = 1:dim
+            G_i[facets[a, f], d] += areas[f] / size(facets, 1) * normals[d, f]
         end
-        push!(G, Gᵢ)
+        push!(G, G_i)
     end
 
     # Assemble global finite element matrices
     M = blockdiag(M_cmpts...)
     S = blockdiag(S_cmpts...)
-    R = blockdiag((M_cmpts ./ T₂)...)
+    R = blockdiag((M_cmpts ./ T2)...)
     Mx = [blockdiag(Mx_cmpts[d]...) for d = 1:dim]
-    Q = couple_flux_matrix(model)
+    Q = assemble_flux_matrix(model)
 
     (; M, S, R, Mx, Q, M_cmpts, S_cmpts, Mx_cmpts, G, volumes)
 end
 
 """
-    couple_flux_matrix(model[, symmetrical])
+    assemble_flux_matrix(model; symmetrical = false)
 
 Assemble the global flux matrix `Q` of the permeable interfaces between compartments and of
 the relaxing outer boundaries.
 
-At an interface with permeability `κ`, the coupling coefficients on each side are weighted
-by the initial spin densities `ρ₁` and `ρ₂` (`2ρ₂ / (ρ₁ + ρ₂) κ` and `2ρ₁ / (ρ₁ + ρ₂) κ`), so
-that the equilibrium magnetization `ρ` has no net flux. With `symmetrical = true`, `κ` is
-used on both sides.
+At an interface with permeability `kappa` between compartments with initial spin densities
+`rho1` and `rho2`, the coefficients on each side are `2 rho2 / (rho1 + rho2) kappa` and
+`2 rho1 / (rho1 + rho2) kappa`, so that the equilibrium magnetization has no net flux. With
+`symmetrical = true`, `kappa` is used on both sides.
 """
-function couple_flux_matrix(model, symmetrical = false)
-    (; mesh, ρ, κ) = model
+function assemble_flux_matrix(model; symmetrical = false)
+    (; mesh, rho, kappa) = model
     (; point_map, points, facets) = mesh
     ncompartment, nboundary = size(facets)
     offsets = cumsum([0; size.(points, 2)])
@@ -76,31 +83,32 @@ function couple_flux_matrix(model, symmetrical = false)
         if length(cmpts) == 1
             # Outer boundary, possibly with a boundary relaxation coefficient
             c = only(cmpts)
-            iszero(κ[iboundary]) && continue
+            iszero(kappa[iboundary]) && continue
             f = facets[c, iboundary]
             g = f .+ offsets[c]
-            facet_mass_triplets!(I, J, V, points[c], f, g, g, κ[iboundary])
+            facet_mass_triplets!(I, J, V, points[c], f, g, g, kappa[iboundary])
         elseif length(cmpts) == 2
             # Interface: the facets in the local numbering of both compartments
-            c₁, c₂ = cmpts
-            f₁ = facets[c₁, iboundary]
-            f₂ = local_indices(point_map[c₂], point_map[c₁][f₁])
-            g₁ = f₁ .+ offsets[c₁]
-            g₂ = f₂ .+ offsets[c₂]
+            c1, c2 = cmpts
+            f1 = facets[c1, iboundary]
+            f2 = local_indices(point_map[c2], point_map[c1][f1])
+            g1 = f1 .+ offsets[c1]
+            g2 = f2 .+ offsets[c2]
 
             if symmetrical
-                κ₁ = κ₂ = κ[iboundary]
+                kappa1 = kappa2 = kappa[iboundary]
             else
-                ρ₁, ρ₂ = ρ[c₁], ρ[c₂]
-                κ₁ = real(2ρ₂ / (ρ₁ + ρ₂)) * κ[iboundary]
-                κ₂ = real(2ρ₁ / (ρ₁ + ρ₂)) * κ[iboundary]
+                rho1, rho2 = rho[c1], rho[c2]
+                kappa1 = real(2rho2 / (rho1 + rho2)) * kappa[iboundary]
+                kappa2 = real(2rho1 / (rho1 + rho2)) * kappa[iboundary]
             end
 
-            # Q₁₁ += κ₁ M, Q₁₂ -= κ₂ M, Q₂₁ -= κ₁ M, Q₂₂ += κ₂ M (M: interface mass matrix)
-            facet_mass_triplets!(I, J, V, points[c₁], f₁, g₁, g₁, κ₁)
-            facet_mass_triplets!(I, J, V, points[c₁], f₁, g₁, g₂, -κ₂)
-            facet_mass_triplets!(I, J, V, points[c₁], f₁, g₂, g₁, -κ₁)
-            facet_mass_triplets!(I, J, V, points[c₁], f₁, g₂, g₂, κ₂)
+            # With the mass matrix M of the interface: Q11 += kappa1 M, Q12 -= kappa2 M,
+            # Q21 -= kappa1 M, Q22 += kappa2 M
+            facet_mass_triplets!(I, J, V, points[c1], f1, g1, g1, kappa1)
+            facet_mass_triplets!(I, J, V, points[c1], f1, g1, g2, -kappa2)
+            facet_mass_triplets!(I, J, V, points[c1], f1, g2, g1, -kappa1)
+            facet_mass_triplets!(I, J, V, points[c1], f1, g2, g2, kappa2)
         elseif length(cmpts) > 2
             error("Boundary $iboundary touches more than two compartments")
         end
@@ -118,7 +126,7 @@ function local_indices(point_map, globals)
     issorted(point_map) || error("The point map of the compartment must be sorted")
     map(globals) do g
         i = searchsortedfirst(point_map, g)
-        i ≤ length(point_map) && point_map[i] == g ||
+        i <= length(point_map) && point_map[i] == g ||
             error("Point $g is not in the compartment")
         i
     end

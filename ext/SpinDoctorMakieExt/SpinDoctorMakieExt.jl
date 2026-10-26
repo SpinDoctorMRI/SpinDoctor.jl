@@ -7,7 +7,7 @@ module SpinDoctorMakieExt
 using LinearAlgebra
 using Makie
 using SpinDoctor
-using SpinDoctor: FEMesh, Plotter, convexhull
+using SpinDoctor: FEMesh, Plotter, convexhull, echotime
 import SpinDoctor: plot_surfaces, plot_mesh, plot_field, plot_hardi
 import SpinDoctor: initialize_plotter!, update_plotter!
 

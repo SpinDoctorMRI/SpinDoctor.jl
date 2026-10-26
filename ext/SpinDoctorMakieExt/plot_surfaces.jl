@@ -5,11 +5,11 @@ function plot_surfaces(surfaces, boundaries = 1:maximum(surfaces.facetmarkers))
         fig = Figure()
         ax = Axis(fig[1, 1])
         i = 1
-        for b ∈ boundaries
+        for b in boundaries
             f = facets[:, facetmarkers .== b]
             if !isempty(f)
                 segs = [
-                    (Point2f(points[:, f[1]]), Point2f(points[:, f[2]])) for f ∈ eachcol(f)
+                    (Point2f(points[:, f[1]]), Point2f(points[:, f[2]])) for f in eachcol(f)
                 ]
                 linesegments!(ax, segs, color = Cycled(i))
                 i += 1
@@ -19,7 +19,7 @@ function plot_surfaces(surfaces, boundaries = 1:maximum(surfaces.facetmarkers))
     elseif dim == 3
         scene = Figure()
         first = true
-        for b ∈ boundaries
+        for b in boundaries
             f = facets[:, facetmarkers .== b]
             if !isempty(f)
                 color = points[3, :]

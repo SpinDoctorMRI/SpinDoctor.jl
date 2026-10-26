@@ -1,94 +1,96 @@
+# Time profiles and magnetic field gradient sequences
+
 """
-    AbstractTimeProfile
+    AbstractTimeProfile{T}
 
-General time profile type (gradient sequence).
+Time profile `f(t)` of a gradient sequence (normalized to a maximum of one).
 
-A `AbstractTimeProfile` should implement a calling method returning the value of the time
-profile at time `t`, and [`intervals`](@ref), returning the characteristic times at which
-the profile may be discontinuous (the last one being the echo time). It can optionally
-overwrite the [`echotime`](@ref), [`integral`](@ref), and [`int_F²`](@ref) methods, the
-first providing a default value and the latter two computing numerical approximation to the
-integral quantities if not overwritten.
+A time profile implements a calling method returning its value at time `t`, and
+[`intervals`](@ref), returning the characteristic times at which the profile may be
+discontinuous (the last one being the echo time). It can optionally implement
+[`integral`](@ref) and [`int_F2`](@ref), which are otherwise computed numerically.
 """
 abstract type AbstractTimeProfile{T} <: Function end
 
 """
-    f = PGSE(δ, Δ)
+    PGSE(delta, Delta)
 
-Pulsed Gradient Spin Echo sequence with pulse duration `δ` and time between
-pulses `Δ-δ`.
+Pulsed gradient spin echo (PGSE) time profile with pulse duration `delta` and time
+`Delta` between the starts of the two pulses.
 """
 struct PGSE{T} <: AbstractTimeProfile{T}
-    δ::T
-    Δ::T
-    function PGSE(δ::T, Δ::T) where {T}
-        δ ≤ Δ || error("δ > Δ")
-        new{T}(δ, Δ)
+    delta::T
+    Delta::T
+    function PGSE(delta::T, Delta::T) where {T<:AbstractFloat}
+        delta <= Delta || error("delta > Delta")
+        new{T}(delta, Delta)
     end
 end
+PGSE(delta, Delta) = PGSE(promote(float(delta), float(Delta))...)
 
 """
-    f = DoublePGSE(δ, Δ)
+    DoublePGSE(delta, Delta, tpause)
 
-Double Pulsed Gradient Spin Echo sequence with four pulses of duration `δ`,
-separated by pauses of duration `Δ-δ`, `0`, and `Δ-δ` repsectively.
+Double pulsed gradient spin echo time profile with four pulses of duration `delta`,
+separated by pauses of duration `Delta - delta`, `tpause`, and `Delta - delta`
+respectively.
 """
 struct DoublePGSE{T} <: AbstractTimeProfile{T}
-    δ::T
-    Δ::T
+    delta::T
+    Delta::T
     tpause::T
-    function DoublePGSE(δ::T, Δ::T, tpause::T) where {T}
-        δ ≤ Δ || error("δ > Δ")
-        tpause ≥ 0 || error("tpause < 0")
-        new{T}(δ, Δ, tpause)
+    function DoublePGSE(delta::T, Delta::T, tpause::T) where {T<:AbstractFloat}
+        delta <= Delta || error("delta > Delta")
+        tpause >= 0 || error("tpause < 0")
+        new{T}(delta, Delta, tpause)
     end
 end
+DoublePGSE(delta, Delta, tpause) =
+    DoublePGSE(promote(float(delta), float(Delta), float(tpause))...)
 
 """
-    f = CosOGSE(δ, Δ, nperiod)
+    CosOGSE(delta, Delta, nperiod)
 
-Oscillating Gradient Spin Echo sequence with two cos-pulses of duration `δ`
-separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
+Oscillating gradient spin echo time profile with two cosine pulses of duration `delta`,
+starting at times `0` and `Delta`, with `nperiod` periods per pulse.
 """
 struct CosOGSE{T} <: AbstractTimeProfile{T}
-    δ::T
-    Δ::T
+    delta::T
+    Delta::T
     nperiod::Int
-    function CosOGSE(δ::T, Δ::T, n) where {T}
-        δ ≤ Δ || error("δ > Δ")
-        n > 0 || error("nperiod ≤ 0")
-        new{T}(δ, Δ, n)
+    function CosOGSE(delta::T, Delta::T, nperiod) where {T<:AbstractFloat}
+        delta <= Delta || error("delta > Delta")
+        nperiod > 0 || error("nperiod <= 0")
+        new{T}(delta, Delta, nperiod)
     end
 end
+CosOGSE(delta, Delta, nperiod) = CosOGSE(promote(float(delta), float(Delta))..., nperiod)
 
 """
-    f = SinOGSE(δ, Δ, nperiod)
+    SinOGSE(delta, Delta, nperiod)
 
-Oscillating Gradient Spin Echo sequence with two sin-pulses of duration `δ`
-separated by a pause of duration `Δ-δ` for `nperiod` periods per pulse.
+Oscillating gradient spin echo time profile with two sine pulses of duration `delta`,
+starting at times `0` and `Delta`, with `nperiod` periods per pulse.
 """
 struct SinOGSE{T} <: AbstractTimeProfile{T}
-    δ::T
-    Δ::T
+    delta::T
+    Delta::T
     nperiod::Int
-    function SinOGSE(δ::T, Δ::T, n) where {T}
-        δ ≤ Δ || error("δ > Δ")
-        n > 0 || error("nperiod ≤ 0")
-        new{T}(δ, Δ, n)
+    function SinOGSE(delta::T, Delta::T, nperiod) where {T<:AbstractFloat}
+        delta <= Delta || error("delta > Delta")
+        nperiod > 0 || error("nperiod <= 0")
+        new{T}(delta, Delta, nperiod)
     end
 end
+SinOGSE(delta, Delta, nperiod) = SinOGSE(promote(float(delta), float(Delta))..., nperiod)
 
-"""
-    ft = (f::TimeProfile)(t)
-
-Return the time profile value at time `t`.
-"""
 (f::AbstractTimeProfile)(t) = error("Not implemented")
 
 function (f::PGSE)(t)
-    if 0 ≤ t < f.δ
+    (; delta, Delta) = f
+    if 0 <= t < delta
         one(t)
-    elseif f.Δ ≤ t < f.Δ + f.δ
+    elseif Delta <= t < Delta + delta
         -one(t)
     else
         zero(t)
@@ -96,14 +98,15 @@ function (f::PGSE)(t)
 end
 
 function (f::DoublePGSE)(t)
-    δ, Δ, p = f.δ, f.Δ, f.tpause
-    if 0 ≤ t < δ
+    (; delta, Delta, tpause) = f
+    tmid = tpause + Delta + delta
+    if 0 <= t < delta
         one(t)
-    elseif Δ ≤ t < Δ + δ
+    elseif Delta <= t < Delta + delta
         -one(t)
-    elseif 0 ≤ t - (p + Δ + δ) < δ
+    elseif 0 <= t - tmid < delta
         one(t)
-    elseif Δ ≤ t - (p + Δ + δ) < Δ + δ
+    elseif Delta <= t - tmid < Delta + delta
         -one(t)
     else
         zero(t)
@@ -111,128 +114,73 @@ function (f::DoublePGSE)(t)
 end
 
 function (f::CosOGSE)(t)
-    δ, Δ, n = f.δ, f.Δ, f.nperiod
-    if 0 ≤ t < δ
-        cos(2π * n * t / δ)
-    elseif Δ ≤ t < Δ + δ
-        -cos(2π * n * (t - Δ) / δ)
+    (; delta, Delta, nperiod) = f
+    if 0 <= t < delta
+        cos(2pi * nperiod * t / delta)
+    elseif Delta <= t < Delta + delta
+        -cos(2pi * nperiod * (t - Delta) / delta)
     else
         zero(t)
     end
 end
 
 function (f::SinOGSE)(t)
-    δ, Δ, n = f.δ, f.Δ, f.nperiod
-    if 0 ≤ t < δ
-        sin(2π * n * t / δ)
-    elseif Δ ≤ t < Δ + δ
-        -sin(2π * n * (t - Δ) / δ)
+    (; delta, Delta, nperiod) = f
+    if 0 <= t < delta
+        sin(2pi * nperiod * t / delta)
+    elseif Delta <= t < Delta + delta
+        -sin(2pi * nperiod * (t - Delta) / delta)
     else
         zero(t)
     end
 end
 
 """
-    AbstractGradient{T}
+    intervals(f)
 
-Magnetic field gradient ``\\vec{g}(t) \\in \\mathbb{R}^3``.
-"""
-abstract type AbstractGradient{T} end
-
-"""
-    GeneralGradient(gvec, TE)
-
-General gradient sequence ``\\vec{g}(t) \\in \\mathbb{R}^3``. The direction and amplitude may
-vary in time.
-"""
-Base.@kwdef struct GeneralGradient{T,F}
-    gvec::F
-    TE::T
-end
-
-"""
-    ScalarGradient(dir, profile, amplitude)
-
-Gradient sequence with amplitude `amplitude`, normal direction `dir` and scalar time profile
-`profile`.
-
-The direction is constant, while the amplitude is controlled by the time profile.
-
-The direction is normalized upon construction.
-"""
-struct ScalarGradient{T,P<:AbstractTimeProfile{T}}
-    dir::Vector{T}
-    profile::P
-    amplitude::T
-    ScalarGradient(dir, profile, amplitude) =
-        new{typeof(amplitude),typeof(profile)}(dir / norm(dir), profile, amplitude)
-end
-
-(g::GeneralGradient)(t) = g.gvec(t)
-(g::ScalarGradient)(t) = g.amplitude * g.profile(t) * g.dir
-
-"""
-    intervals(f::AbstractTimeProfile)
-
-Get characteristic intervals of the time profile `f`.
-
-    intervals(g::AbstractGradient)
-
-Get characteristic intervals of the time profile `f`.
+Characteristic times of the time profile (or gradient) `f`: the profile is smooth between
+two consecutive times. The first time is zero and the last one is the echo time.
 """
 function intervals end
 
 function intervals(f::Union{PGSE,CosOGSE,SinOGSE})
-    δ, Δ = f.δ, f.Δ
-    if δ < Δ
-        [zero(δ), δ, Δ, Δ + δ]
+    (; delta, Delta) = f
+    if delta < Delta
+        [zero(delta), delta, Delta, Delta + delta]
     else
         # No pause between pulses
-        [zero(δ), δ, 2f.δ]
+        [zero(delta), delta, 2delta]
     end
 end
 
 function intervals(f::DoublePGSE)
-    δ, Δ, p = f.δ, f.Δ, f.tpause
-    if δ < Δ
-        i = [zero(δ), δ, Δ, Δ + δ]
+    (; delta, Delta, tpause) = f
+    if delta < Delta
+        i = [zero(delta), delta, Delta, Delta + delta]
     else
         # No pause between pulses
-        i = [zero(δ), δ, 2f.δ, 3f.δ, 4f.δ]
+        i = [zero(delta), delta, 2delta, 3delta, 4delta]
     end
-    if p > zero(p)
-        [i; i .+ p .+ Δ .+ δ]
+    if tpause > 0
+        [i; i .+ tpause .+ Delta .+ delta]
     else
-        [i; i[2:end] .+ p .+ Δ .+ δ]
+        [i; i[2:end] .+ Delta .+ delta]
     end
 end
 
-intervals(g::ScalarGradient) = intervals(g.profile)
-intervals(g::GeneralGradient) = [0, g.TE]
-
 """
-    echotime(f::AbstractTimeProfile)
+    echotime(f)
 
-Get echo time ``TE`` of the time profile `f`, which is the end of the last characteristic
-interval.
-
-    echotime(grad::AbstractGradient)
-
-Get echo time ``TE`` of `gradient`.
+Echo time of the time profile (or gradient) `f`, which is the end of the last
+characteristic interval.
 """
-function echotime end
-
 echotime(f::AbstractTimeProfile) = intervals(f)[end]
-echotime(g::GeneralGradient) = g.TE
-echotime(g::ScalarGradient) = echotime(g.profile)
 
 """
-    isconstant(profile)
+    isconstant(f)
 
-Return `true` if the time profile `profile` is interval-wise constant.
+Return `true` if the time profile `f` is interval-wise constant.
 """
-function isconstant end
-
 isconstant(::AbstractTimeProfile) = false
 isconstant(::PGSE) = true
 isconstant(::DoublePGSE) = true
@@ -240,11 +188,10 @@ isconstant(::DoublePGSE) = true
 """
     integral(f, t = echotime(f))
 
-Integral of time profile `f` between `0` and `t`. Unless specified, the echotime
-is used as the upper integral limit.
+Integral `F(t)` of the time profile `f` between `0` and `t`.
 
-For the `PGSE`, `SinOGSE`, `CosOGSE` and `DoublePGSE` sequences, analytical
-expressions are available. Otherwise a numerical integral is computed.
+Closed forms are used for [`PGSE`](@ref), [`DoublePGSE`](@ref), [`CosOGSE`](@ref) and
+[`SinOGSE`](@ref). Otherwise the integral is computed numerically.
 """
 function integral(f::AbstractTimeProfile, t = echotime(f))
     # Split the integral at the characteristic times, where `f` may jump
@@ -253,67 +200,120 @@ function integral(f::AbstractTimeProfile, t = echotime(f))
 end
 
 function integral(f::PGSE, t = echotime(f))
-    δ, Δ = f.δ, f.Δ
-    (zero(t) ≤ t < δ) * t + (δ ≤ t < Δ + δ) * δ - (Δ ≤ t < Δ + δ) * (t - Δ)
+    (; delta, Delta) = f
+    (0 <= t < delta) * t + (delta <= t < Delta + delta) * delta -
+    (Delta <= t < Delta + delta) * (t - Delta)
 end
 
 function integral(f::DoublePGSE, t = echotime(f))
-    δ, Δ, p = f.δ, f.Δ, f.tpause
-    tmid = p + Δ + δ
-    if zero(t) ≤ t < δ
+    (; delta, Delta, tpause) = f
+    tmid = tpause + Delta + delta
+    if 0 <= t < delta
         t
-    elseif δ ≤ t < Δ
-        δ
-    elseif Δ ≤ t < Δ + δ
-        δ - (t - Δ)
-    elseif tmid ≤ t < tmid + δ
+    elseif delta <= t < Delta
+        delta
+    elseif Delta <= t < Delta + delta
+        delta - (t - Delta)
+    elseif tmid <= t < tmid + delta
         t - tmid
-    elseif tmid + δ ≤ t < tmid + Δ
-        δ
-    elseif tmid + Δ ≤ t < tmid + Δ + δ
-        δ - (t - Δ - tmid)
+    elseif tmid + delta <= t < tmid + Delta
+        delta
+    elseif tmid + Delta <= t < tmid + Delta + delta
+        delta - (t - Delta - tmid)
     else
         zero(t)
     end
 end
 
 function integral(f::CosOGSE, t = echotime(f))
-    δ, Δ, n = f.δ, f.Δ, f.nperiod
-    ((t < δ) * sin(2π * n * t / δ) - (Δ ≤ t) * sin(2π * n * (t - Δ) / δ)) * δ / (2π * n)
+    (; delta, Delta, nperiod) = f
+    a = 2pi * nperiod / delta
+    ((t < delta) * sin(a * t) - (Delta <= t) * sin(a * (t - Delta))) / a
 end
 
 function integral(f::SinOGSE, t = echotime(f))
-    δ, Δ, n = f.δ, f.Δ, f.nperiod
-    ((t < δ) * (1 - cos(2π * n * t / δ)) - (Δ ≤ t) * (1 - cos(2π * n * (t - Δ) / δ))) * δ /
-    (2π * n)
+    (; delta, Delta, nperiod) = f
+    a = 2pi * nperiod / delta
+    ((t < delta) * (1 - cos(a * t)) - (Delta <= t) * (1 - cos(a * (t - Delta)))) / a
 end
 
 """
-    int_F²(f)
+    int_F2(f)
 
-Compute the time profile contribution to the ``b``-value given the time profile `f`. The
-``b``-value is given by
-
-```julia
-b = γ^2 * g^2 * int_F²(f)
-```
-
-where `γ` is the gyromagnetic ratio of the water proton and `g` is the gradient amplitude.
+Integral ``\\int_0^{T_E} F(t)^2 \\, \\mathrm{d}t`` of the squared integral `F` of the time
+profile `f`.
+It relates the gradient amplitude `g` to the b-value: `b = gamma^2 * g^2 * int_F2(f)`.
 """
-int_F²(f::AbstractTimeProfile) = first(quadgk(s -> integral(f, s)^2, intervals(f)...))
-int_F²(f::PGSE) = f.δ^2 * (f.Δ - f.δ / 3)
-int_F²(f::DoublePGSE) = 2f.δ^2 * (f.Δ - f.δ / 3)
-int_F²(f::CosOGSE) = f.δ^3 / (2π * f.nperiod)^2
-int_F²(f::SinOGSE) = 3f.δ^3 / (2π * f.nperiod)^2
+int_F2(f::AbstractTimeProfile) = first(quadgk(s -> integral(f, s)^2, intervals(f)...))
+int_F2(f::PGSE) = f.delta^2 * (f.Delta - f.delta / 3)
+int_F2(f::DoublePGSE) = 2 * f.delta^2 * (f.Delta - f.delta / 3)
+int_F2(f::CosOGSE) = f.delta^3 / (2pi * f.nperiod)^2
+int_F2(f::SinOGSE) = 3 * f.delta^3 / (2pi * f.nperiod)^2
 
 """
     diffusion_time(f)
 
-Diffusion time of time profile `f`.
+Diffusion time of the time profile `f`.
 """
 function diffusion_time end
 
-diffusion_time(f::PGSE) = f.Δ - f.δ / 3
-diffusion_time(f::DoublePGSE) = 2(f.Δ - f.δ / 3)
-diffusion_time(f::CosOGSE) = 1 / 8 * f.δ / f.nperiod
-diffusion_time(f::SinOGSE) = 3 / 8 * f.δ / f.nperiod
+diffusion_time(f::PGSE) = f.Delta - f.delta / 3
+diffusion_time(f::DoublePGSE) = 2 * (f.Delta - f.delta / 3)
+diffusion_time(f::CosOGSE) = f.delta / f.nperiod / 8
+diffusion_time(f::SinOGSE) = 3 * f.delta / f.nperiod / 8
+
+"""
+    AbstractGradient{T}
+
+Magnetic field gradient sequence `g(t)` (a vector).
+"""
+abstract type AbstractGradient{T} end
+
+"""
+    ScalarGradient(dir, profile, amplitude)
+    ScalarGradient(dir, profile; bvalue, gamma)
+
+Gradient sequence `g(t) = amplitude * profile(t) * dir`, with a constant direction `dir`
+(normalized upon construction), a time profile `profile` and an amplitude `amplitude`.
+
+Instead of the amplitude, the b-value may be given together with the gyromagnetic ratio
+`gamma`.
+"""
+struct ScalarGradient{T,P<:AbstractTimeProfile{T}} <: AbstractGradient{T}
+    dir::Vector{T}
+    profile::P
+    amplitude::T
+    function ScalarGradient(dir, profile::AbstractTimeProfile{T}, amplitude) where {T}
+        new{T,typeof(profile)}(dir / norm(dir), profile, amplitude)
+    end
+end
+
+ScalarGradient(dir, profile; bvalue, gamma) =
+    ScalarGradient(dir, profile, sqrt(bvalue / int_F2(profile)) / gamma)
+
+"""
+    GeneralGradient(; gvec, TE)
+
+General gradient sequence `g(t) = gvec(t)`, whose direction and amplitude may vary in time,
+with echo time `TE`.
+"""
+Base.@kwdef struct GeneralGradient{T,F} <: AbstractGradient{T}
+    gvec::F
+    TE::T
+end
+
+(g::ScalarGradient)(t) = g.amplitude * g.profile(t) * g.dir
+(g::GeneralGradient)(t) = g.gvec(t)
+
+intervals(g::ScalarGradient) = intervals(g.profile)
+intervals(g::GeneralGradient) = [zero(g.TE), g.TE]
+
+echotime(g::ScalarGradient) = echotime(g.profile)
+echotime(g::GeneralGradient) = g.TE
+
+"""
+    bvalue(gradient, gamma)
+
+b-value of the scalar gradient sequence `gradient` for the gyromagnetic ratio `gamma`.
+"""
+bvalue(g::ScalarGradient, gamma) = (gamma * g.amplitude)^2 * int_F2(g.profile)

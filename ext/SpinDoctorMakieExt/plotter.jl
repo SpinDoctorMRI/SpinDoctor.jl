@@ -1,28 +1,28 @@
-function initialize_plotter!(p::Plotter, problem, gradient, ξ, t)
-    T = real(eltype(ξ))
+function initialize_plotter!(p::Plotter, problem, gradient, u, t)
+    T = real(eltype(u))
     p.n = 1
     tobs = Observable(t)
-    ξobs = Observable(ξ)
+    uobs = Observable(u)
 
     femesh = problem.model.mesh
     M = problem.matrices.M
     ncompartment, nboundary = size(femesh.facets)
     dim = size(femesh.points[1], 1)
 
-    ξmax = maximum(abs, ξ)
-    S₀ = abs(sum(M * ξ))
+    umax = maximum(abs, u)
+    S0 = abs(sum(M * u))
     TE = echotime(gradient)
 
     npoint_cmpts = size.(femesh.points, 2)
     inds = [0; cumsum(npoint_cmpts[1:end])]
-    ξ_cmpts = [@lift($ξobs[(1+inds[i]):inds[i+1]]) for i = 1:ncompartment]
+    u_cmpts = [@lift($uobs[(1+inds[i]):inds[i+1]]) for i = 1:ncompartment]
 
     fig = Figure()
 
     if gradient isa ScalarGradient
         _f = Point2f[]
         f = @lift push!(_f, Point2f($tobs, gradient.profile($tobs)))
-        ax = Axis(fig[1, 1]; xlabel = "t [μs]", title = "Time profile")
+        ax = Axis(fig[1, 1]; xlabel = "t [µs]", title = "Time profile")
         xlims!(ax, 0, TE)
         ylims!(ax, -1.1, 1.1)
         lines!(ax, f)
@@ -30,7 +30,7 @@ function initialize_plotter!(p::Plotter, problem, gradient, ξ, t)
         grads = mapreduce(gradient, hcat, LinRange(0, TE, 200))
         pmin = min.(minimum(grads; dims = 2), zero(T))
         pmax = max.(maximum(grads; dims = 2), zero(T))
-        i = pmin .≈ pmax
+        i = isapprox.(pmin, pmax)
         gmax = maximum(norm, eachcol(grads))
         pmin[i] .-= gmax / 2
         pmax[i] .+= gmax / 2
@@ -55,30 +55,30 @@ function initialize_plotter!(p::Plotter, problem, gradient, ξ, t)
         end
     end
 
-    # Note: `ξobs[]` must already be updated before `tobs`
+    # Note: `uobs[]` must already be updated before `tobs`
     _attenuation = Point2f[]
-    attenuation = @lift push!(_attenuation, Point2f($tobs, abs(sum(M * ξobs[])) / S₀))
+    attenuation = @lift push!(_attenuation, Point2f($tobs, abs(sum(M * uobs[])) / S0))
 
-    ax = Axis(fig[2, 1]; xlabel = "t [μs]", title = "Signal attenuation")
+    ax = Axis(fig[2, 1]; xlabel = "t [µs]", title = "Signal attenuation")
     xlims!(ax, 0, TE)
     ylims!(ax, 0, 1.1)
     lines!(ax, attenuation)
 
     gm = fig[1, 2] = GridLayout()
-    colorrange = (0, ξmax)
+    colorrange = (0, umax)
     if dim == 2
         ax = Axis(gm[1, 1]; title = "Magnetization (magnitude)")
         for icmpt = 1:ncompartment
             elements = femesh.elements[icmpt]
             points = femesh.points[icmpt]
-            color = @lift abs.($(ξ_cmpts[icmpt]))
+            color = @lift abs.($(u_cmpts[icmpt]))
             mesh!(ax, points', elements'; color, shading = NoShading, colorrange)
         end
     elseif dim == 3
         ax = Axis3(gm[1, 1]; title = "Magnetization (magnitude)")
         ax.aspect = :data
         for icmpt = 1:ncompartment
-            color = @lift abs.($(ξ_cmpts[icmpt]))
+            color = @lift abs.($(u_cmpts[icmpt]))
             points = femesh.points[icmpt]
             for iboundary = 1:nboundary
                 facets = femesh.facets[icmpt, iboundary]
@@ -92,11 +92,11 @@ function initialize_plotter!(p::Plotter, problem, gradient, ξ, t)
 
     gm = fig[2, 2] = GridLayout()
     colormap = :cyclic_mrybm_35_75_c68_n256
-    colorrange = (-π, π)
+    colorrange = (-pi, pi)
     if dim == 2
         ax = Axis(gm[1, 1]; title = "Magnetization (phase-shift)")
         for icmpt = 1:ncompartment
-            color = @lift angle.($(ξ_cmpts[icmpt]))
+            color = @lift angle.($(u_cmpts[icmpt]))
             elements = femesh.elements[icmpt]
             points = femesh.points[icmpt]
             mesh!(ax, points', elements'; color, shading = NoShading, colorrange, colormap)
@@ -105,7 +105,7 @@ function initialize_plotter!(p::Plotter, problem, gradient, ξ, t)
         ax = Axis3(gm[1, 1]; title = "Magnetization (phase-shift)")
         ax.aspect = :data
         for icmpt = 1:ncompartment
-            color = @lift angle.($(ξ_cmpts[icmpt]))
+            color = @lift angle.($(u_cmpts[icmpt]))
             points = femesh.points[icmpt]
             for iboundary = 1:nboundary
                 facets = femesh.facets[icmpt, iboundary]
@@ -126,17 +126,17 @@ function initialize_plotter!(p::Plotter, problem, gradient, ξ, t)
     Colorbar(gm[1, 2]; limits = colorrange, colormap)
 
     p.t = tobs
-    p.ξ = ξobs
+    p.u = uobs
     p.fig = fig
     display(fig)
 
     p
 end
 
-function update_plotter!(p::Plotter, problem, gradient, ξ, t)
+function update_plotter!(p::Plotter, problem, gradient, u, t)
     if p.n % p.nupdate == 0
-        # ξ updates first: important!
-        p.ξ[] = ξ
+        # u updates first: important!
+        p.u[] = u
         p.t[] = t
         sleep(0.01)
     end

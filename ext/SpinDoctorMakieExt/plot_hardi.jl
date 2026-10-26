@@ -2,11 +2,11 @@ function plot_hardi(directions, values)
     dim = size(directions, 1)
     if dim == 2
         facets, points = convexhull(directions)
-        for (i, v) ∈ enumerate(values)
+        for (i, v) in enumerate(values)
             points[:, i] .*= v
         end
         segs =
-            [(Point2f(points[:, f[1]]), Point2f(points[:, f[2]])) for f ∈ eachcol(facets)]
+            [(Point2f(points[:, f[1]]), Point2f(points[:, f[2]])) for f in eachcol(facets)]
         fig = Figure()
         ax = Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
         linesegments!(ax, segs)
@@ -15,7 +15,7 @@ function plot_hardi(directions, values)
         fig
     elseif dim == 3
         facets, points = convexhull(directions)
-        for (i, v) ∈ enumerate(values)
+        for (i, v) in enumerate(values)
             points[:, i] .*= v
         end
         poly(points', facets'; strokewidth = 1, color = values, shading = NoShading)

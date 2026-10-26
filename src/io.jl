@@ -1,3 +1,7 @@
+# Reading and writing geometries in text formats: Gmsh volume meshes, and the files of the
+# MATLAB version of SpinDoctor (cell configurations, and surface and volume meshes in the
+# TetGen format)
+
 """
     points, elements = read_gmsh(filename)
 
@@ -32,16 +36,13 @@ function read_gmsh(filename)
 end
 
 """
-    read_cells(cellfilename)
+    read_cells(filename)
 
-Read cell configuration (centers and radii).
+Read a cell configuration `(; centers, radii)`.
 """
-function read_cells(cellfilename)
-
-    # Read geometry from file
-    @info "Loading cell configuration from " * cellfilename
-
-    open(cellfilename, "r") do io
+function read_cells(filename)
+    @info "Loading cell configuration from " * filename
+    open(filename, "r") do io
         readline(io)
         ncell = parse(Int, readline(io))
         readline(io)
@@ -59,23 +60,16 @@ function read_cells(cellfilename)
 end
 
 """
-    save_cells(cells, cellfilename)
+    save_cells(filename, cells)
 
-Write geometrical cell configuration to file.
-The file contains the spatial dimension: 2 for cylinders, 3 for spheres.
+Save a cell configuration `(; centers, radii)`. The file contains the spatial dimension: 2
+for disks and cylinders, 3 for spheres.
 """
-function save_cells(cells, cellfilename)
-
-    # Extract cell parameters
+function save_cells(filename, cells)
     (; centers, radii) = cells
-
-    # Sizes
     d, ncell = size(centers)
-
-    # Save cell geometry to file
-    @info "Writing cell geometry to " * cellfilename
-
-    open(cellfilename, "w") do io
+    @info "Writing cell geometry to " * filename
+    open(filename, "w") do io
         write(io, "Number of cells:\n")
         write(io, "$ncell\n")
         write(io, "Dimension:\n")
@@ -101,7 +95,7 @@ end
 """
     read_surfaces(filename)
 
-Read surface triangulation from file.
+Read a surface triangulation from the files `filename.node` and `filename.poly`.
 """
 function read_surfaces(filename)
     @info "Loading surface triangulation from " * filename
@@ -164,8 +158,8 @@ end
 """
     save_surfaces(filename, surfaces)
 
-Save surface triangulation.
-The files may be passed to Tetgen with `filename`.node.
+Save a surface triangulation to the files `filename.node` and `filename.poly`, which may
+be passed to TetGen.
 """
 function save_surfaces(filename, surfaces)
     default_refinement = 0.1
@@ -250,11 +244,12 @@ end
 
 """
     read_mesh(filename)
-    
-Read mesh from Tetgen format file.
+
+Read a global mesh from the TetGen output files `filename.node`, `filename.face` and
+`filename.ele`.
 """
 function read_mesh(filename)
-    @info "Reading Tetgen FE mesh from " * filename
+    @info "Reading TetGen mesh from " * filename
 
     # Read points
     points, dim = open(filename * ".node", "r") do io
@@ -296,15 +291,16 @@ function read_mesh(filename)
 end
 
 """
-    save_mesh(mesh_all, filename)
+    save_mesh(filename, mesh_all)
 
-Save mesh in the Tetgen output format.
+Save a global mesh in the TetGen output format (`filename.node`, `filename.face` and
+`filename.ele`).
 """
-function save_mesh(mesh_all, filename)
+function save_mesh(filename, mesh_all)
     # Extract mesh
     (; points, facets, elements, facetmarkers, elementmarkers) = mesh_all
 
-    @info "Saving mesh in Tetgen output format at " * filename
+    @info "Saving mesh in the TetGen format at " * filename
 
     # Save points
     dim, npoint = size(points)
@@ -319,7 +315,7 @@ function save_mesh(mesh_all, filename)
         end
     end
 
-    # Read facets and their associated boundaries
+    # Save facets and their boundary numbers
     nfacet = size(facets, 2)
     open(filename * ".face", "w") do io
         write(io, "$nfacet 1\n")
@@ -332,7 +328,7 @@ function save_mesh(mesh_all, filename)
         end
     end
 
-    # Read elements and their associated compartments
+    # Save elements and their compartment numbers
     nelement = size(elements, 2)
     open(filename * ".ele", "w") do io
         write(io, "$nelement $(dim+1) 1\n")

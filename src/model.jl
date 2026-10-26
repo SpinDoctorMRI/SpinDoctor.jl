@@ -1,33 +1,42 @@
-"""
-    Model(; mesh, ρ, D, T₂, κ, γ)
+# Biological model: mesh and coefficients
 
-Finite element discretized biological model with initial spin densities `ρ`,
-diffusion tensors `D`, T₂-relaxation times `T₂`, wall permeabilities `κ`, and
-gyromagnetic ratio `γ`. The vectors `ρ`, `D`, `T₂`, are of length
-`ncompartment`, while `κ` is of length `nboundary`.
+"""
+    Model(; mesh, rho, D, T2, kappa, gamma)
+
+Finite element discretized biological model:
+
+- `mesh`: finite element mesh split into compartments ([`FEMesh`](@ref));
+- `rho`: initial spin density of each compartment;
+- `D`: diffusion tensor of each compartment (µm²/µs);
+- `T2`: T2 relaxation time of each compartment (µs);
+- `kappa`: permeability of each boundary (µm/µs), for interfaces between compartments and
+  for the outer boundaries (as a boundary relaxivity);
+- `gamma`: gyromagnetic ratio (rad / (µs µm T/m), `2.67513e-4` for water protons).
+
+The coefficients for a setup recipe may be created with [`coefficients`](@ref).
 """
 Base.@kwdef struct Model{T,dim}
     mesh::FEMesh{T,dim}
-    ρ::Vector{Complex{T}}
+    rho::Vector{Complex{T}}
     D::Vector{Matrix{T}}
-    T₂::Vector{T}
-    κ::Vector{T}
-    γ::T
+    T2::Vector{T}
+    kappa::Vector{T}
+    gamma::T
 end
 
 """
     initial_conditions(model)
 
-Get initial conditions at all degrees of freedom.
+Initial magnetization (the spin density) at all the points of the mesh.
 """
 initial_conditions(model) =
-    mapreduce((ρ, p) -> fill(ρ, size(p, 2)), vcat, model.ρ, model.mesh.points)
+    mapreduce((rho, p) -> fill(rho, size(p, 2)), vcat, model.rho, model.mesh.points)
 
 """
     compartment_weights(model; TE = 0)
 
 Relative contributions of the compartments to the signal at `b = 0`: the initial spin
-density times the volume, attenuated by T₂ relaxation at the echo time `TE`, and normalized
+density times the volume, attenuated by T2 relaxation at the echo time `TE`, and normalized
 to sum to one.
 
 The ADC of the whole sample in the low-`b` limit is the weighted average of the compartment
@@ -35,7 +44,7 @@ ADCs without exchange, e.g. `compartment_weights(model; TE)' * adcs` for compart
 from [`solve_hadc`](@ref).
 """
 function compartment_weights(model; TE = 0)
-    volumes = get_cmpt_volumes(model.mesh)
-    w = abs.(model.ρ) .* volumes .* exp.(-TE ./ model.T₂)
+    volumes = compartment_volumes(model.mesh)
+    w = abs.(model.rho) .* volumes .* exp.(-TE ./ model.T2)
     w / sum(w)
 end
