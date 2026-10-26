@@ -1,3 +1,4 @@
+using CairoMakie
 using Documenter
 using DocumenterCitations
 using Literate
@@ -22,11 +23,12 @@ for e ∈ examples
     # Literate.script(e, o)
 end
 
-bib = CitationBibliography(joinpath(@__DIR__, "references.bib"))
+bib = CitationBibliography(joinpath(@__DIR__, "references.bib"); style = :numeric)
 
-makedocs(
-    bib;
+makedocs(;
+    plugins = [bib],
     modules = [SpinDoctor],
+    checkdocs = :exports,
     authors = "Syver Døving Agdestein and contributors",
     repo = "https://github.com/SpinDoctorMRI/SpinDoctor.jl/blob/{commit}{path}#{line}",
     sitename = "SpinDoctor.jl",
@@ -52,4 +54,7 @@ makedocs(
     ],
 )
 
-deploydocs(; repo = "github.com/SpinDoctorMRI/SpinDoctor.jl", devbranch = "main")
+# Only deploy from continuous integration
+if get(ENV, "CI", "false") == "true"
+    deploydocs(; repo = "github.com/SpinDoctorMRI/SpinDoctor.jl", devbranch = "main")
+end

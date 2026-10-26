@@ -47,8 +47,8 @@ SpinDoctor also comes with a geometry generation module, allowing for
 
 1. spherical cells with a nucleus;
 2. cylindrical cells with a myelin layer;
-3. an extra-cellular space (ECS) enclosed in either a box, a convex hull, or a tight
-   wrapping around the cells;
+3. an extra-cellular space (ECS) enclosed in either a box or a convex hull around the
+   cells;
 4. deformation of canonical cells by bending and twisting.
 
 In addition, a variety of neuron meshes is available, whose surface geometries were

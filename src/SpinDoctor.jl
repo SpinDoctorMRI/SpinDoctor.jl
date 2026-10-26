@@ -29,7 +29,8 @@ using WriteVTK
 export PGSE, CosOGSE, SinOGSE, DoublePGSE, GeneralGradient, ScalarGradient
 export integral, int_F², intervals, isconstant, echotime
 
-export assemble_matrices
+export assemble_matrices, assemble_mass_matrix, assemble_stiffness_matrix
+export get_mesh_volumes, get_mesh_surface, get_mesh_surfacenormals
 export split_mesh
 export split_field
 export get_cmpt_volumes
