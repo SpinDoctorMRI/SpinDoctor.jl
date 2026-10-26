@@ -84,12 +84,10 @@ b = 1000
 g = √(b / int_F²(profile)) / coeffs.γ
 gradient = ScalarGradient(dir, profile, g)
 
-# SpinDoctor provides a [`solve`](@ref) function, which has the same base signature for all
-# diffusion MRI problems. The BTPDE is one such problem. They generally take a gradient
-# sequence as an input.
+# The BTPDE is solved with [`solve_btpde`](@ref), which takes the model, the matrices and
+# the gradient sequence, and returns the magnetization at the echo time.
 
-btpde = BTPDE(; model, matrices)
-ξ = solve(btpde, gradient)
+ξ = solve_btpde(model, matrices, gradient)
 
 # Here, `ξ` is a vector containing the complex-valued magnetization at all degrees of freedom
 # at the echo time `TE`. We may compute the resulting signal as follows:

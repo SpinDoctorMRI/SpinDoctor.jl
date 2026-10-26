@@ -71,8 +71,7 @@ D_avg = 1 / 2 * tr.(model.D)' * volumes / sum(volumes)
 # truncated at a certain level, thus reducing the number of degrees of
 # freedom. We here opt for 400 eigenfunctions.
 
-laplace = Laplace(; model, matrices, neig_max = 200)
-lap_eig = solve(laplace)
+lap_eig = solve_laplace(model, matrices; neig_max = 200)
 
 # The resulting eigenvalues may be represented as length scales, describing
 # the wavelength of the eigenfunctions.
@@ -116,12 +115,11 @@ b = 1000
 g = √(b / int_F²(profile)) / coeffs.γ
 gradient = ScalarGradient(dir, profile, g)
 
-# The matrix formalism problem is solved in the same way as the
-# [`BTPDE`](@ref). The time profile is approximated on 500 points, since it is
+# The matrix formalism magnetization is computed with [`solve_mf`](@ref), similarly to
+# [`solve_btpde`](@ref). The time profile is approximated on 500 points, since it is
 # non-constant.
 
-mf = MatrixFormalism(; model, matrices, lap_eig)
-ξ = solve(mf, gradient; ninterval = 500)
+ξ = solve_mf(model, matrices, lap_eig, gradient; ninterval = 500)
 
 # The resulting magnetization field may be plotted.
 

@@ -46,10 +46,9 @@ export fit_tensors
 export compartment_weights
 export plot_surfaces, plot_mesh, plot_field, plot_hardi
 
-export BTPDE, HADC, Karger
-export Laplace, MatrixFormalism, AnalyticalLaplace, AnalyticalMatrixFormalism
+export solve_btpde, solve_hadc, solve_karger, solve_laplace, solve_mf
+export solve_analytical_laplace, solve_analytical_mf
 export QNDF, IntervalConstantSolver
-export solve
 
 # Matrix formalism
 export length2eig, eig2length, limit_lengthscale, compute_mf_diffusion_tensor
@@ -95,10 +94,6 @@ include("gradients/j_integral.jl")
 # Datatypes
 include("datatypes/femesh.jl")
 include("datatypes/model.jl")
-
-# Problems
-include("problems/problems.jl")
-include("problems/solve.jl")
 
 # Geometry
 include("geometry/create_mesh.jl")

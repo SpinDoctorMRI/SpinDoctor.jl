@@ -64,8 +64,7 @@ solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
 solver = QNDF()
 
 # Solve BTPDE
-btpde = BTPDE(; model, matrices)
-ξ = @time solve(btpde, gradient, solver; callbacks)
+ξ = @time solve_btpde(model, matrices, gradient, solver; callbacks)
 
 ## Plot magnetization
 plot_field(model.mesh, ξ)
@@ -83,8 +82,7 @@ volumes = get_cmpt_volumes(model.mesh)
 D_avg = 1 / dim * tr.(model.D)' * volumes / sum(volumes)
 
 # Perform Laplace eigendecomposition
-laplace = Laplace(; model, matrices, neig_max = 400)
-lap_eig = @time solve(laplace)
+lap_eig = @time solve_laplace(model, matrices; neig_max = 400)
 length_scales = eig2length.(lap_eig.values, D_avg)
 
 # Truncate basis at minimum length scale
@@ -93,12 +91,10 @@ length_scale = 3
 lap_eig = limit_lengthscale(lap_eig, λ_max)
 
 # Compute magnetization using the matrix formalism reduced order model
-mf = MatrixFormalism(; model, matrices, lap_eig)
-ξ = @time solve(mf, gradient; ninterval = 500)
+ξ = @time solve_mf(model, matrices, lap_eig, gradient; ninterval = 500)
 
 ## Solve HADC
-hadc = HADC(; model, matrices)
-adc_cmpts = @time solve(hadc, gradient)
+adc_cmpts = @time solve_hadc(model, matrices, gradient)
 
 ## Solve Karger model
 
@@ -112,17 +108,15 @@ gradients = [
     ScalarGradient(collect(d), gradient.profile, gradient.amplitude) for
     d ∈ eachcol(directions)
 ]
-hadc = HADC(; model, matrices)
 adcs = Vector{eltype(directions)}[]
 @time for grad ∈ gradients
     @show grad.dir
-    push!(adcs, solve(hadc, grad))
+    push!(adcs, solve_hadc(model, matrices, grad))
 end
 difftensors = fit_tensors(directions, adcs)
 
 # Solve Karger
-karger = Karger(; model, difftensors)
-signal = @time solve(karger, gradient; timestep = 5.0)
+signal = @time solve_karger(model, difftensors, gradient; timestep = 5.0)
 
 ## Solve analytical model
 # Compute analytical Laplace eigenfunctions
@@ -130,10 +124,8 @@ length_scale = 0.3
 eigstep = 1e-8
 eiglim = length2eig(length_scale, D_avg)
 analytical_coeffs = analytical_coefficients(setup, coeffs)
-analytical_laplace = AnalyticalLaplace(; analytical_coeffs..., eiglim, eigstep)
-lap_mat = @time solve(analytical_laplace)
+laplace = @time solve_analytical_laplace(; analytical_coeffs..., eiglim, eigstep)
 
 # Compute analytical matrix formalism signal truncation
 volumes = get_cmpt_volumes(model.mesh)
-analytical_mf = AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
-signal = solve(analytical_mf, gradient)
+signal = solve_analytical_mf(laplace, volumes, gradient)

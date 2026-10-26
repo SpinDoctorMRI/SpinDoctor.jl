@@ -1,8 +1,9 @@
 """
-    function solve(
-        problem::BTPDE,
+    solve_btpde(
+        model,
+        matrices,
         gradient::ScalarGradient,
-        odesolver::IntervalConstantSolver;
+        solver::IntervalConstantSolver;
         callbacks = [],
     )
 
@@ -16,14 +17,15 @@ implicitness `θ` and a time step `Δt`:
 
 The function only works for interval-wise constant `ScalarGradient`s, and errors otherwise.
 """
-function solve(
-    problem::BTPDE{T,dim},
+function solve_btpde(
+    model::Model{T,dim},
+    matrices,
     gradient::ScalarGradient,
-    odesolver::IntervalConstantSolver{T};
+    solver::IntervalConstantSolver{T};
     callbacks = AbstractCallback[],
 ) where {T,dim}
-    (; model, matrices) = problem
-    (; θ, timestep) = odesolver
+    problem = (; model, matrices)
+    (; θ, timestep) = solver
     (; γ) = model
     (; M, S, R, Mx, Q) = matrices
 

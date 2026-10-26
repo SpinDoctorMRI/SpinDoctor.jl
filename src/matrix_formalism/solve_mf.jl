@@ -1,12 +1,13 @@
 """
-    solve(problem::MatrixFormalism, gradient; ninterval = 500)
+    solve_mf(model, matrices, lap_eig, gradient; ninterval = 500)
 
-Solve for magnetization using Matrix Formalism.
+Compute the magnetization at the echo time using the matrix formalism, in the basis of the
+Laplace eigenfunctions `lap_eig` (see [`solve_laplace`](@ref)). Gradients that are not
+interval-wise constant are approximated by `ninterval` constant intervals.
 
 See [Li2020](@cite), [Agdestein2021](@cite).
 """
-function solve(problem::MatrixFormalism{TT,dim}, gradient; ninterval = 500) where {TT,dim}
-    (; model, matrices, lap_eig) = problem
+function solve_mf(model::Model{TT,dim}, matrices, lap_eig, gradient; ninterval = 500) where {TT,dim}
     (; γ) = model
     (; M) = matrices
 

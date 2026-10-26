@@ -1,23 +1,21 @@
 """
-    solve(
-        problem::HADC,
-        gradient::ScalarGradient,
-        odesolver = QNDF();
-        abstol = 1e-6,
-        reltol = 1e-4,
-    )
+    solve_hadc(model, matrices, gradient, odesolver = QNDF(); abstol = 1e-6, reltol = 1e-4)
 
-Compute the ADC using a homogenized ADC model (HADC). This is currently only
-implemented for scalar gradients.
+Compute the ADC of each compartment using the homogenized ADC model (HADC). This is
+currently only implemented for scalar gradients.
+
+The HADC model assumes impermeable compartment boundaries: permeabilities, initial spin
+densities and T₂ relaxation are not taken into account. The ADC of a sample may be
+estimated by weighting the compartment ADCs with [`compartment_weights`](@ref).
 """
-function solve(
-    problem::HADC,
+function solve_hadc(
+    model,
+    matrices,
     gradient::ScalarGradient,
     odesolver = QNDF();
     abstol = 1e-6,
     reltol = 1e-4,
 )
-    (; model, matrices) = problem
     (; mesh, D) = model
     (; M_cmpts, S_cmpts, G, volumes) = matrices
 

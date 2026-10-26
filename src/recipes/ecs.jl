@@ -1,12 +1,31 @@
 abstract type AbstractECS end
 
+"""
+    NoECS()
+
+No extracellular space: the cells are the only compartments.
+"""
 struct NoECS <: AbstractECS end
 
+"""
+    BoxECS(; margin = 1.0)
+
+Extracellular space filling the axis-aligned bounding box of the cells, extended by
+`margin` on each side. The cells do not touch the faces of the box, so the ECS contains a
+free layer of thickness `margin` along the faces.
+"""
 @with_kw struct BoxECS{T} <: AbstractECS
     margin::T = 1.0
     @assert margin > 0
 end
 
+"""
+    ConvexHullECS(; margin = 1.0, threshold = π / 20, maxiter = 10)
+
+Extracellular space filling the convex hull of the cells, moved outwards by `margin`.
+Facets of the hull with angles below `threshold` are refined for up to `maxiter` iterations
+(3D only).
+"""
 @with_kw struct ConvexHullECS{T} <: AbstractECS
     margin::T = 1.0
     @assert margin > 0

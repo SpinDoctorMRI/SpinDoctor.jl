@@ -135,21 +135,16 @@ end
         dim = size(mesh.points[1], 1)
         dir = [1.0; zeros(dim - 1)]
         gradient = ScalarGradient(dir, profile, √(1000 / int_F²(profile)) / γ)
-        ξ = solve(
-            BTPDE(; model, matrices),
-            gradient,
-            IntervalConstantSolver(; timestep = 5.0),
-        )
+        ξ = solve_btpde(model, matrices, gradient, IntervalConstantSolver(; timestep = 5.0))
         volumes = get_cmpt_volumes(mesh)
         signal = compute_signal(matrices.M, ξ) / sum(volumes)
         acoeffs = analytical_coefficients(setup, coeffs)
-        laplace = AnalyticalLaplace(; acoeffs..., eiglim = length2eig(0.3, 0.002), eigstep = 1e-8)
-        amf = AnalyticalMatrixFormalism(;
-            analytical_laplace = laplace,
-            lap_mat = solve(laplace),
-            volumes,
+        laplace = solve_analytical_laplace(;
+            acoeffs...,
+            eiglim = length2eig(0.3, 0.002),
+            eigstep = 1e-8,
         )
-        signal_analytical = solve(amf, gradient) / sum(volumes)
+        signal_analytical = solve_analytical_mf(laplace, volumes, gradient) / sum(volumes)
         @test real(signal) ≈ real(signal_analytical) rtol = 1e-2
     end
 end
@@ -242,7 +237,7 @@ end
         mktempdir() do dir
             writer = VTKWriter(; dir = joinpath(dir, "nested", "output"), nupdate = 2)
             solver = IntervalConstantSolver(; timestep = 5.0)
-            ξ = solve(BTPDE(; model, matrices), gradient, solver; callbacks = [writer])
+            ξ = solve_btpde(model, matrices, gradient, solver; callbacks = [writer])
             @test isfile(joinpath(dir, "nested", "output", "solution.pvd"))
             savefield(mesh, ξ, joinpath(dir, "field"))
             @test isfile(joinpath(dir, "field.vtm"))

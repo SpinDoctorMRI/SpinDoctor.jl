@@ -67,8 +67,7 @@ plotter = Plotter()
 
 # We may then define the problem and solve for our gradient (with the callback).
 
-btpde = BTPDE(; model, matrices)
-ξ = solve(btpde, gradient; callbacks = [plotter])
+ξ = solve_btpde(model, matrices, gradient; callbacks = [plotter])
 plotter.fig
 
 # [`MatrixFormalism`](@ref) also accepts [`GeneralGradient`](@ref)s. However, the ADC methods

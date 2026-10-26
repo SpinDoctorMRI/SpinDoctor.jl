@@ -1,25 +1,30 @@
 """
-    solve(
-        problem::BTPDE,
+    solve_btpde(
+        model,
+        matrices,
         gradient,
         odesolver = QNDF();
         abstol = 1e-6,
         reltol = 1e-4,
-        callbacks = [].
+        callbacks = [],
     )
 
 Solve the Bloch-Torrey partial differential equation using P1 finite elements in space and
-`odesolver` in time.
+the ODE algorithm `odesolver` in time. Return the magnetization at the echo time.
+
+For interval-wise constant gradients, an [`IntervalConstantSolver`](@ref) may be used
+instead of an ODE algorithm.
 """
-function solve(
-    problem::BTPDE{T,dim},
+function solve_btpde(
+    model::Model{T,dim},
+    matrices,
     gradient,
     odesolver::AbstractODEAlgorithm = QNDF();
     abstol = 1e-6,
     reltol = 1e-4,
     callbacks = AbstractCallback[],
 ) where {T,dim}
-    (; model, matrices) = problem
+    problem = (; model, matrices)
     (; γ) = model
     (; M, S, R, Mx, Q) = matrices
 

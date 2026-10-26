@@ -72,11 +72,10 @@ S₀ = abs(compute_signal(matrices.M, ρ))
 
 # We may solve the BTPDE for each gradient.
 
-btpde = BTPDE(; model, matrices)
 solver = IntervalConstantSolver(; timestep = 10.0)
 signals = map(gradients) do grad
     @show grad.dir
-    ξ = solve(btpde, grad, solver)
+    ξ = solve_btpde(model, matrices, grad, solver)
     abs(compute_signal(matrices.M, ξ))
 end
 

@@ -8,8 +8,10 @@ refactoring does not change results unintentionally.
 - `meshes/` holds the geometries, read back by `record.jl` so that every
   version starts from identical meshes.
 - `baseline.toml` holds the outputs of SpinDoctor v0.1.0 (commit `f824161`,
-  January 2023), run on Julia 1.8.5 with the Manifest of that time. It is
-  never changed.
+  January 2023), run on Julia 1.8.5 with the environment in `baseline-env/`.
+  It was recorded with the version of `record.jl` from commit `7cf8805`,
+  which uses the API of that time (`solve(BTPDE(; model, matrices), ...)`).
+  It is never changed.
 - `reference.toml` holds the currently accepted outputs. It starts as a copy
   of the baseline. When a bug fix changes outputs on purpose, it is
   regenerated and the change is listed below.

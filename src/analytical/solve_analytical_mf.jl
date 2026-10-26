@@ -1,17 +1,17 @@
 """
-    solve(problem::AnalyticalMatrixFormalism, gradient)
+    solve_analytical_mf(laplace, volumes, gradient)
 
-Compute the signal in a multilayered cylinder or sphere using an analytical
-matrix formalism solution.
+Compute the signal in multilayered plates, cylinders or spheres using an analytical matrix
+formalism solution, from the eigendecomposition `laplace` of
+[`solve_analytical_laplace`](@ref) and the compartment `volumes`. Only implemented for
+[`PGSE`](@ref) sequences.
 
 This function is based on the following articles and corresponding code:
     [1] [Grebenkov2007](@cite)
     [2] [Grebenkov2010a](@cite)
 """
-function solve(problem::AnalyticalMatrixFormalism, gradient::ScalarGradient)
-    (; analytical_laplace, lap_mat, volumes) = problem
-    (; r, ρ, γ) = analytical_laplace
-    (; Λ, Br, B, U) = lap_mat
+function solve_analytical_mf(laplace, volumes, gradient::ScalarGradient)
+    (; r, ρ, γ, Λ, Br, B, U) = laplace
 
     gradient.profile isa PGSE || error("Only implemeted for PGSE")
 

@@ -1,12 +1,13 @@
 """
-    solve(problem::Laplace)
+    solve_laplace(model, matrices; neig_max)
 
-Compute the Laplace eigenvalues, eigenfunctions and first order moments of products of pairs of eigenfunctions.
+Compute the `neig_max` smallest Laplace eigenvalues `values`, the eigenfunctions `funcs`,
+the first order moments of products of pairs of eigenfunctions `moments` and the
+relaxation matrix `massrelax` in the eigenfunction basis.
 
 See [Li2020](@cite), [Agdestein2021](@cite).
 """
-function solve(laplace::Laplace{T,dim}) where {T,dim}
-    (; matrices, neig_max) = laplace
+function solve_laplace(model::Model{T,dim}, matrices; neig_max) where {T,dim}
     (; M, S, R, Mx, Q) = matrices
 
     # Compute at most all eigenvalues in the given domain

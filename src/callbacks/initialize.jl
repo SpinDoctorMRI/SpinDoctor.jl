@@ -1,5 +1,5 @@
 function initialize!(p::Printer, problem, gradient, ξ, t)
-    @info "Solving for" typeof(problem) gradient
+    @info "Solving the BTPDE" gradient
 end
 
 function initialize!(writer::VTKWriter, problem, gradient, ξ, t)

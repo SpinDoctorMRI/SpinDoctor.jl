@@ -1,10 +1,13 @@
 """
-    solve(problem::AnalyticalLaplace)
+    solve_analytical_laplace(; ρ, r, D, W, T₂, γ, dim, eiglim, eigstep)
 
-Solve analytical Laplace eigenvalue problem for symmetrical geometries.
+Solve the analytical radial Laplace eigenvalue problem of multilayered plates (`dim = 1`),
+cylinders (`dim = 2`) or spheres (`dim = 3`), with the coefficients of
+[`analytical_coefficients`](@ref), for eigenvalues up to `eiglim`, searched with steps
+`eigstep`. Return the coefficients together with the eigendecomposition.
 """
-function solve(laplace::AnalyticalLaplace)
-    (; D, T₂, dim, eiglim, eigstep) = laplace
+function solve_analytical_laplace(; ρ, r, D, W, T₂, γ, dim, eiglim, eigstep)
+    laplace = (; ρ, r, D, W, T₂, γ, dim, eiglim, eigstep)
 
     # TODO: Add support for dim = 1 (PlateSetup)
     L = length(D)
@@ -78,5 +81,5 @@ function solve(laplace::AnalyticalLaplace)
         Br .+= Bri[:, :, i] / T₂[i]
     end
 
-    (; Λ, β, U, B, Bri, Br, α, n)
+    merge(laplace, (; Λ, β, U, B, Bri, Br, α, n))
 end

@@ -1,14 +1,13 @@
 """
-    solve(problem::Karger, gradient; timestep)
+    solve_karger(model, difftensors, gradient; timestep)
 
 Solve the finite pulse Karger model (FPK) using precomputed effective diffusion tensors
-`difftensors`.
+`difftensors` (one per compartment), and return the compartment signals.
 
 The compartment signals are integrated with a fourth order Magnus method, with steps of at
 most `timestep` within each characteristic interval of the gradient sequence.
 """
-function solve(problem::Karger, gradient::ScalarGradient; timestep)
-    (; model, difftensors) = problem
+function solve_karger(model, difftensors, gradient::ScalarGradient; timestep)
     (; mesh, T₂, ρ, κ, γ) = model
 
     dt = timestep

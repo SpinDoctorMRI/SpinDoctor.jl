@@ -107,11 +107,10 @@ gradients = [ScalarGradient(gradient.dir, gradient.profile, g) for g ∈ gvalues
 # We compute the magnetization for each gradient. Since the gradients are
 # interval-wise constant, we can use a specialized solver.
 
-btpde = BTPDE(; model, matrices)
 solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
 signals_cmpts = map(gradients) do grad
     @show grad.amplitude
-    ξ = solve(btpde, grad, solver)
+    ξ = solve_btpde(model, matrices, grad, solver)
     compute_signal.(matrices.M_cmpts, split_field(model.mesh, ξ))
 end
 signals = sum.(signals_cmpts)
@@ -124,11 +123,10 @@ adc_fit_cmpts =
 
 # ### Homogenized ADC model
 
-# The [HADC](@ref)-model uses homogenization and assumes negligible permeability between the
-# compartments. This does require solving an ODE involving all the degrees of freedom.
+# The homogenized ADC model ([`solve_hadc`](@ref)) assumes negligible permeability between
+# the compartments. This does require solving an ODE involving all the degrees of freedom.
 
-hadc = HADC(; model, matrices)
-adc_homogenized_cmpts = solve(hadc, gradient)
+adc_homogenized_cmpts = solve_hadc(model, matrices, gradient)
 adc_homogenized = volumes'adc_homogenized_cmpts / sum(volumes)
 
 # ### Matrix Formalism
@@ -136,8 +134,7 @@ adc_homogenized = volumes'adc_homogenized_cmpts / sum(volumes)
 # If a Laplace eigendecomposition is available, the HADC can be approximated with little
 # additional computational expense.
 
-laplace = Laplace(; model, matrices, neig_max = 400)
-lap_eig = solve(laplace)
+lap_eig = solve_laplace(model, matrices; neig_max = 400)
 
 # An effective diffusion tensor can be computed.
 

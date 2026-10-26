@@ -95,20 +95,18 @@ end
 end
 
 @testset "HADC" begin
-    hadc = HADC(; model, matrices)
-    @test_throws MethodError solve(hadc, general_gradient)
-    @test solve(hadc, pgse_gradient) isa Vector{T}
-    @test solve(hadc, ogse_gradient) isa Vector{T}
+    @test_throws MethodError solve_hadc(model, matrices, general_gradient)
+    @test solve_hadc(model, matrices, pgse_gradient) isa Vector{T}
+    @test solve_hadc(model, matrices, ogse_gradient) isa Vector{T}
 end
 
 @testset "BTPDE" begin
-    btpde = BTPDE(; model, matrices)
-    @test solve(btpde, general_gradient) isa Vector{Complex{T}}
-    @test solve(btpde, ogse_gradient) isa Vector{Complex{T}}
+    @test solve_btpde(model, matrices, general_gradient) isa Vector{Complex{T}}
+    @test solve_btpde(model, matrices, ogse_gradient) isa Vector{Complex{T}}
     solver = IntervalConstantSolver(; θ = 0.5, timestep = 5.0)
-    @test_throws MethodError solve(btpde, general_gradient, solver) isa Vector{Complex{T}}
-    @test_throws ErrorException solve(btpde, ogse_gradient, solver) isa Vector{Complex{T}}
-    @test solve(btpde, pgse_gradient, solver) isa Vector{Complex{T}}
+    @test_throws MethodError solve_btpde(model, matrices, general_gradient, solver)
+    @test_throws ErrorException solve_btpde(model, matrices, ogse_gradient, solver)
+    @test solve_btpde(model, matrices, pgse_gradient, solver) isa Vector{Complex{T}}
 end
 
 @testset "Karger" begin
@@ -117,25 +115,22 @@ end
         ScalarGradient(collect(d), pgse_gradient.profile, pgse_gradient.amplitude) for
         d ∈ eachcol(directions)
     ]
-    hadc = HADC(; model, matrices)
-    adcs = [solve(hadc, grad) for grad ∈ gradients]
+    adcs = [solve_hadc(model, matrices, grad) for grad ∈ gradients]
     difftensors = fit_tensors(directions, adcs)
-    karger = Karger(; model, difftensors)
-    signal = solve(karger, pgse_gradient; timestep = 5.0)
+    signal = solve_karger(model, difftensors, pgse_gradient; timestep = 5.0)
+    @test signal isa Vector{Complex{T}}
 end
 
 @testset "Matrix formalism" begin
-    laplace = Laplace(; model, matrices, neig_max = 400)
-    lap_eig = solve(laplace)
+    lap_eig = solve_laplace(model, matrices; neig_max = 400)
     length_scales = eig2length.(lap_eig.values, D_avg)
     length_scale = 3
     λ_max = length2eig(length_scale, D_avg)
     lap_eig = limit_lengthscale(lap_eig, λ_max)
     @test all(λ -> eig2length(λ, D_avg) ≥ length_scale, lap_eig.values)
-    mf = MatrixFormalism(; model, matrices, lap_eig)
-    @test solve(mf, general_gradient) isa Vector{Complex{T}}
-    @test solve(mf, pgse_gradient) isa Vector{Complex{T}}
-    @test solve(mf, ogse_gradient) isa Vector{Complex{T}}
+    @test solve_mf(model, matrices, lap_eig, general_gradient) isa Vector{Complex{T}}
+    @test solve_mf(model, matrices, lap_eig, pgse_gradient) isa Vector{Complex{T}}
+    @test solve_mf(model, matrices, lap_eig, ogse_gradient) isa Vector{Complex{T}}
 end
 
 @testset "Analytical" begin
@@ -143,10 +138,8 @@ end
     eigstep = 1e-8
     eiglim = length2eig(length_scale, D_avg)
     analytical_coeffs = analytical_coefficients(setup, coeffs)
-    analytical_laplace = AnalyticalLaplace(; analytical_coeffs..., eiglim, eigstep)
-    lap_mat = solve(analytical_laplace)
-    analytical_mf = AnalyticalMatrixFormalism(; analytical_laplace, lap_mat, volumes)
-    @test_throws MethodError solve(analytical_mf, general_gradient)
-    @test_throws ErrorException solve(analytical_mf, ogse_gradient)
-    @test solve(analytical_mf, pgse_gradient) isa Complex{T}
+    laplace = solve_analytical_laplace(; analytical_coeffs..., eiglim, eigstep)
+    @test_throws MethodError solve_analytical_mf(laplace, volumes, general_gradient)
+    @test_throws ErrorException solve_analytical_mf(laplace, volumes, ogse_gradient)
+    @test solve_analytical_mf(laplace, volumes, pgse_gradient) isa Complex{T}
 end

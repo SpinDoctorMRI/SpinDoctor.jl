@@ -25,6 +25,8 @@ assemble_matrices
 split_mesh
 split_field
 get_cmpt_volumes
+compartment_mesh
+box_faces
 Model
 initial_conditions
 ```
@@ -36,25 +38,35 @@ savefield
 compute_adc_sta
 fit_adc
 fit_tensors
-plot_mesh
-plot_field
+compartment_weights
 ```
 
-## Problems
+## Plotting
 
-SpinDoctor allows for considering a wide range of diffusion MRI problems. These can be
-solved for using the [`solve`](@ref) function.
+The plotting functions require a Makie backend, e.g. `using CairoMakie` or
+`using GLMakie`.
 
 ```@docs
-BTPDE
-HADC
-Karger
-Laplace
-MatrixFormalism
-AnalyticalLaplace
-AnalyticalMatrixFormalism
+plot_surfaces
+plot_mesh
+plot_field
+plot_hardi
+```
+
+## Solvers
+
+SpinDoctor allows for considering a wide range of diffusion MRI problems, each with its own
+solver function.
+
+```@docs
+solve_btpde
 IntervalConstantSolver
-solve
+solve_hadc
+solve_karger
+solve_laplace
+solve_mf
+solve_analytical_laplace
+solve_analytical_mf
 ```
 
 ## Matrix formalism
@@ -93,8 +105,13 @@ cylinders, spheres, and neurons.
 PlateSetup
 DiskSetup
 ExtrusionSetup
+CylinderSetup
+SlabSetup
 SphereSetup
 NeuronSetup
+NoECS
+BoxECS
+ConvexHullECS
 coefficients
 analytical_coefficients
 create_geometry
