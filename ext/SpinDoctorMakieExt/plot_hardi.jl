@@ -35,12 +35,13 @@ function plot_hardi(
     values;
     title = "",
     label = "",
+    decorations = true,
     size = (600, 500),
     kwargs...,
 )
     dim = Base.size(directions, 1)
     fig = Figure(; size)
-    ax = mesh_axis(fig[1, 1], dim; title)
+    ax = mesh_axis(fig[1, 1], dim; title, decorations)
     p = plot_hardi!(ax, directions, values; kwargs...)
     dim == 3 && Colorbar(fig[1, 2], p; label)
     fig

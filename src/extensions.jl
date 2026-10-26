@@ -58,7 +58,7 @@ Returns the plot (e.g. for `Colorbar(position, plot)`).
 function plot_field! end
 
 """
-    plot_hardi(directions, values; title = "", label = "", size, colormap = :viridis)
+    plot_hardi(directions, values; title = "", label = "", decorations = true, size, colormap)
     plot_hardi!(ax, directions, values; colormap = :viridis, colorrange)
 
 Plot `values` (e.g. signals or ADCs) in the given `directions` (columns of unit vectors) as

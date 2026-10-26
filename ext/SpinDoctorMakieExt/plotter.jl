@@ -72,10 +72,10 @@ function initialize_plotter!(p::Plotter, problem, gradient, u, t)
     p.u = uobs
     p.fig = fig
 
-    # The figure is shown in a window with interactive backends only (other backends, such
-    # as CairoMakie, would open a static image in a viewer)
+    # The figure is shown in a window with GLMakie only (other backends, such as
+    # CairoMakie, would open a static image in a viewer)
     backend = Makie.current_backend()
-    backend isa Module && nameof(backend) in (:GLMakie, :WGLMakie) && display(fig)
+    backend isa Module && nameof(backend) == :GLMakie && display(fig)
 
     p
 end

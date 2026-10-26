@@ -80,7 +80,7 @@ plotting backend (`using GLMakie` for an interactive window, or `using CairoMaki
 plot is updated every `nupdate` time step. The resulting figure contains a plot of the time
 profile, total signal attenuation, and magnetization field (complex magnitude and phase
 shift), and is available as `plotter.fig` after solving. It is shown in a window during the
-time stepping with interactive backends (GLMakie, WGLMakie) only.
+time stepping with GLMakie.
 """
 Base.@kwdef mutable struct Plotter <: AbstractCallback
     nupdate::Int = 1
