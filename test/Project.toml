@@ -1,0 +1,18 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
+QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SpinDoctor = "56cc2822-f090-446c-a2af-a0f45c3009e4"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+SpinDoctor = {path = ".."}
+
+[compat]
+Aqua = "0.8"
+JLD2 = "0.6"
+OrdinaryDiffEqBDF = "2"
+QuadGK = "2"

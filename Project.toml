@@ -31,12 +31,10 @@ SpinDoctorMakieExt = "Makie"
 SpinDoctorSciMLExt = "SciMLBase"
 
 [compat]
-Aqua = "0.8"
 JLD2 = "0.6"
 KrylovKit = "0.10"
 LinearAlgebra = "1"
 Makie = "0.24"
-OrdinaryDiffEqBDF = "2"
 Parameters = "0.13"
 Polynomials = "4"
 Printf = "1"
@@ -48,17 +46,7 @@ SparseArrays = "1"
 SpecialFunctions = "2"
 StaticArrays = "1"
 Statistics = "1"
-Test = "1"
 TetGen = "3"
 Triangulate = "3"
 WriteVTK = "1"
 julia = "1.10"
-
-[extras]
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
-OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Aqua", "JLD2", "OrdinaryDiffEqBDF", "Test"]

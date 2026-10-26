@@ -2,13 +2,6 @@
 #
 # In this example we will consider the matrix formalism approach for a geometry of cylinders.
 
-# LSP indexing solution                                                          #src
-# https://github.com/julia-vscode/julia-vscode/issues/800#issuecomment-650085983 #src
-if isdefined(@__MODULE__, :LanguageServer)                                       #src
-    include("../src/SpinDoctor.jl")                                              #src
-    using .SpinDoctor                                                            #src
-end                                                                              #src
-
 using SpinDoctor
 using LinearAlgebra
 using Printf
