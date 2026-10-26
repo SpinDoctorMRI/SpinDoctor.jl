@@ -26,7 +26,7 @@ function assemble_mass_matrix(elements, nodes, weights = 1)
     if nweight == 1 || nweight == nelement
         # P0 weights
         if nbasis == 2
-            b = (ones(2, 2) + I(2)) / 3
+            b = (ones(2, 2) + I(2)) / 6
         elseif nbasis == 3
             b = (ones(3, 3) + I(3)) / 12
         elseif nbasis == 4

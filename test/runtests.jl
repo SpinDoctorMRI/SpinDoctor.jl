@@ -19,6 +19,10 @@ include("testutils.jl")
         include("datatypes/sequences.jl")
     end
 
+    @testset "Checks" begin
+        include("checks.jl")
+    end
+
     # Run through typical workflow
     @testset "Workflow" begin
         include("workflow.jl")
