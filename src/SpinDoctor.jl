@@ -5,9 +5,9 @@ Diffusion MRI simulation toolbox.
 """
 module SpinDoctor
 
-using Arpack: eigs
 using DiffEqCallbacks: FunctionCallingCallback
 using Expokit: expmv!
+using KrylovKit: KrylovKit, InnerProductVec
 using LinearAlgebra
 using OrdinaryDiffEqBDF: QNDF
 using Parameters
