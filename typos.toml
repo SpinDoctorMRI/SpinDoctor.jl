@@ -1,0 +1,6 @@
+[files]
+extend-exclude = ["docs/references.bib", "CITATION.md", "*.toml"]
+
+[default.extend-words]
+# J. Magn. Reson. (journal abbreviation)
+Reson = "Reson"

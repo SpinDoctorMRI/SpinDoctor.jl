@@ -340,8 +340,8 @@ function create_surfaces(ecs::ConvexHullECS, points)
                 end
             end
 
-            padd = facet_centers[:, iadd] .+ 0.05 .* margin .* normals[:, iadd]
-            points = [points padd]
+            added = facet_centers[:, iadd] .+ 0.05 .* margin .* normals[:, iadd]
+            points = [points added]
 
             facets, points = convexhull(points)
             nfacet = size(facets, 2)
@@ -454,12 +454,12 @@ function create_surfaces(setup::DiskSetup{T,<:PeriodicBoxECS}, cells) where {T}
             else
                 # Ring piece (possibly in several parts): move inwards from the middle of
                 # each membrane edge
-                rin = layersizes[i-1] * radii[j]
+                rinner = layersizes[i-1] * radii[j]
                 for k = 1:m
                     a, b = polygon[k], polygon[mod1(k + 1, m)]
                     onsameside(a, b, lower, upper, tol) && continue
                     e = (a + b) / 2
-                    for step in (r - rin) .* (1 / 2, 1 / 4, 1 / 8, 1 / 16)
+                    for step in (r - rinner) .* (1 / 2, 1 / 4, 1 / 8, 1 / 16)
                         q = e + step * (c - e) / norm(c - e)
                         if inpolygon(q, polygon) && !inpolygon(q, inner)
                             push!(regions, q)

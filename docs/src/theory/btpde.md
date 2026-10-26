@@ -61,7 +61,7 @@ where
     favored in the absence of a
     gradient, or
   - ``c_{i j} = \frac{2 \rho_i}{\rho_i + \rho_j}`` and ``c_{j i} = \frac{2 \rho_j}{\rho_i +
-    \rho_j}``, which ensures that the non-uniform intitial spin density is preserved in the
+    \rho_j}``, which ensures that the non-uniform initial spin density is preserved in the
     absence of a gradient [Lee2021](@cite).
 
 The diffusion MRI signal is measured at echo time ``t = T_\text{echo}``. This signal is
@@ -72,7 +72,7 @@ T_\text{echo})``:
 S(\vec{g}) = \int_\Omega M(\vec{x}, T_\text{echo}) \, \mathrm{d} \Omega(\vec{x}).
 ```
 
-## Periodic boundary conditions
+## [Periodic boundary conditions](@id periodic-theory)
 
 A sample of periodic tissue fills a box ``[0, L_1] \times \dots \times [0, L_d]``, with the
 cells cut by its faces and their periodic images entering on the opposite faces

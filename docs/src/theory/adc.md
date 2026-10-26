@@ -90,7 +90,7 @@ numerical tolerance, where ``S_\text{initial} = \int_\Omega \rho(\vec{x}) \, \ma
 
 The ADC may be interpreted as a correction to the intrinsic diffusion coefficient, taking
 into account the deviation from the free diffusion arising from interior interfaces,
-non-isotropic diffusion, fluid movements etc. For suffiently small b-values, the signal
+non-isotropic diffusion, fluid movements etc. For sufficiently small b-values, the signal
 attenuation is given by
 
 ```math
