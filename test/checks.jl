@@ -38,6 +38,55 @@
     end
 end
 
+@testset "Outward normals" begin
+    # Divergence theorem: ∫_∂Ω x_d n_d dS = |Ω| for each compartment Ω and axis d.
+    # P1 elements represent x_d exactly, so the surface integrals G must reproduce
+    # the compartment volumes, also for non-convex compartments such as the ECS.
+    setups = [
+        DiskSetup(; ncell = 3, rmin = 2.0, rmax = 4.0, ecs = BoxECS(; margin = 1.0)),
+        SphereSetup(;
+            ncell = 3,
+            rmin = 2.0,
+            rmax = 4.0,
+            nsidewall = 60,
+            ecs = BoxECS(; margin = 1.0),
+        ),
+        CylinderSetup(;
+            ncell = 3,
+            rmin = 2.0,
+            rmax = 4.0,
+            ecs = ConvexHullECS(; margin = 1.0),
+            height = 10.0,
+            bend = 0.02,
+            twist = π / 4,
+        ),
+        CylinderSetup(;
+            ncell = 2,
+            layersizes = [0.6, 1.0],
+            rmin = 2.0,
+            rmax = 4.0,
+            ecs = BoxECS(; margin = 1.0),
+            height = 10.0,
+        ),
+    ]
+    for setup ∈ setups
+        Random.seed!(1)
+        mesh, = create_geometry(setup)
+        model = Model(; mesh, get_coeffs(setup)...)
+        matrices = assemble_matrices(model)
+        dim = size(mesh.points[1], 1)
+        for i ∈ eachindex(mesh.points), d = 1:dim
+            @test mesh.points[i][d, :]' * matrices.G[i][:, d] ≈ matrices.volumes[i] rtol =
+                1e-8
+        end
+
+        # With equal spin densities, permeable interfaces conserve magnetization
+        # and the flux matrix is symmetric
+        @test norm(matrices.Q * ones(size(matrices.Q, 1))) ≤ 1e-10 * norm(matrices.Q, 1)
+        @test matrices.Q ≈ matrices.Q'
+    end
+end
+
 @testset "Permeable plates vs analytical solution" begin
     # For a gradient across the plates, the 2D plates and the 3D slabs reduce to
     # the one-dimensional problem of the analytical matrix formalism
