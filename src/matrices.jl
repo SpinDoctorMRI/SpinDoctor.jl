@@ -1,7 +1,7 @@
 # Finite element matrices of a model
 
 """
-    assemble_matrices(model)
+    assemble_matrices(model; periodic = false)
 
 Assemble the finite element matrices of `model`.
 
@@ -16,10 +16,28 @@ Returns a named tuple with
   ``\\int_{\\partial \\Omega} \\varphi_i n_d \\, \\mathrm{d}s`` over the boundary of the
   compartment with outward normal `n` (one row per point, one column per axis);
 - the compartment `volumes`.
+
+With `periodic = true` (or one `Bool` per axis), the mesh is a sample of periodic tissue
+in its bounding box, such as the meshes of [`PeriodicBoxECS`](@ref) and
+[`VoronoiSetup`](@ref), and each compartment is periodic along the given axes: the points
+on opposite faces of the box are identified. The solvers then use periodic boundary
+conditions instead of impermeable box faces. The matrices are still those of the whole
+mesh, and the named tuple also contains
+
+- the prolongation `P` from the periodic points to all the points (see
+  [`periodic_restriction`](@ref)), its compartment blocks `P_cmpts`, and the index of one
+  point for each periodic point (`masters`);
+- the matrices `Cx` (``\\int \\varphi_i (D \\nabla \\varphi_j)_d``, one per axis `d`, see
+  [`assemble_derivative_matrix`](@ref)).
+
+Without periodicity, these fields are `nothing`.
 """
-function assemble_matrices(model::Model{T,dim}) where {T,dim}
+function assemble_matrices(model::Model{T,dim}; periodic = false) where {T,dim}
     (; mesh, D, T2) = model
     ncompartment = length(mesh.points)
+    periodic isa Bool && (periodic = fill(periodic, dim))
+    length(periodic) == dim || error("Give `periodic` as a `Bool` or one per axis")
+    dims = findall(periodic)
 
     M_cmpts = SparseMatrixCSC{T,Int}[]
     S_cmpts = SparseMatrixCSC{T,Int}[]
@@ -56,7 +74,39 @@ function assemble_matrices(model::Model{T,dim}) where {T,dim}
     Mx = [blockdiag(Mx_cmpts[d]...) for d = 1:dim]
     Q = assemble_flux_matrix(model)
 
-    (; M, S, R, Mx, Q, M_cmpts, S_cmpts, Mx_cmpts, G, volumes)
+    if isempty(dims)
+        P = P_cmpts = masters = Cx = nothing
+    else
+        # The outer boundaries are the faces of the box, which are not boundaries with
+        # periodicity
+        outer = [j for j in axes(mesh.facets, 2) if count(!isempty, mesh.facets[:, j]) == 1]
+        all(iszero, model.kappa[outer]) || error(
+            "Outer boundaries with relaxation (nonzero `kappa`) are not available with periodic boundary conditions",
+        )
+
+        # The box is the bounding box of all the compartments
+        allpoints = reduce(hcat, mesh.points)
+        box = vec(minimum(allpoints; dims = 2)), vec(maximum(allpoints; dims = 2))
+        atol = 1e-8 * norm(box[2] - box[1])
+        restrictions = map(1:ncompartment) do i
+            facets = reduce(hcat, mesh.facets[i, :])
+            periodic_restriction(mesh.points[i], facets, box, dims; atol)
+        end
+        P_cmpts = first.(restrictions)
+        P = blockdiag(P_cmpts...)
+        offsets = cumsum([0; size.(mesh.points, 2)])
+        masters =
+            reduce(vcat, [m .+ offsets[i] for (i, m) in enumerate(last.(restrictions))])
+        Cx = map(1:dim) do d
+            blockdiag(
+                (
+                    assemble_derivative_matrix(mesh.elements[i], mesh.points[i], d, D[i]) for i = 1:ncompartment
+                )...,
+            )
+        end
+    end
+
+    (; M, S, R, Mx, Q, M_cmpts, S_cmpts, Mx_cmpts, G, volumes, P, P_cmpts, masters, Cx)
 end
 
 """

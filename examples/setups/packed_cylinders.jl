@@ -3,7 +3,8 @@ name = "packed_cylinders"
 savedir = joinpath("data", name)
 
 # Geometrical setup: a dense packing of myelinated axons in a periodic box (70 % of the
-# area), cut by the box faces
+# area), cut by the box faces. The mesh is periodic: use
+# `assemble_matrices(model; periodic = true)` for periodic boundary conditions.
 setup = CylinderSetup(;
     ncell = 20,
     nsidewall = 16,

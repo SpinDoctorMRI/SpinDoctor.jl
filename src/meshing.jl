@@ -6,7 +6,8 @@
 Create a global finite element mesh of the regions enclosed by the surface triangulation
 `surfaces` (see [`create_surfaces`](@ref)), with TetGen in 3D and Triangle in 2D. The
 elements have quality constraints, and a maximum volume (area in 2D) `refinement` if it is
-finite.
+finite. For samples of periodic tissue (with a `box`), the facets on the box (in 2D) or
+all the facets (in 3D) are kept as they are, so that the mesh is periodic.
 
 Returns a named tuple with `points`, `facets` and `facetmarkers` (boundary numbers), and
 `elements` and `elementmarkers` (region numbers).
@@ -16,6 +17,7 @@ function create_mesh(surfaces, refinement)
     regionmarkers = get(surfaces, :regionmarkers, 1:size(regions, 2))
 
     dim = size(points, 1)
+    keep = haskey(surfaces, :box) ? "Y" : ""
 
     if dim == 2
         regionlist = [regions; regionmarkers'; fill(refinement, 1, length(regionmarkers))]
@@ -25,7 +27,7 @@ function create_mesh(surfaces, refinement)
         triin.segmentlist = facets
         triin.segmentmarkerlist = facetmarkers
         triin.regionlist = regionlist
-        triout = first(triangulate("pqaAQ", triin))
+        triout = first(triangulate("pqaAQ" * keep, triin))
 
         points = triout.pointlist
         facets = Int.(triout.segmentlist)
@@ -66,7 +68,7 @@ function create_mesh(surfaces, refinement)
         local tetgen
         for ratio in ratios
             try
-                tetgen = tetrahedralize(input, "pq$(ratio)AQ$(maxvolume)")
+                tetgen = tetrahedralize(input, "pq$(ratio)AQ$(keep)$(maxvolume)")
                 break
             catch e
                 e isa TetGenError && e.rc == 2 && ratio != last(ratios) || rethrow()

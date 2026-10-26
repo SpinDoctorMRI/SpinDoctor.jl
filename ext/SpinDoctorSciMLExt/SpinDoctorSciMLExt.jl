@@ -20,6 +20,8 @@ function solve_btpde(
     reltol = 1e-4,
     callbacks = AbstractCallback[],
 ) where {T,dim}
+    isnothing(get(matrices, :P, nothing)) ||
+        error("Periodic boundary conditions are only available with `ThetaSolver`")
     problem = (; model, matrices)
     (; gamma) = model
     (; M, S, R, Mx, Q) = matrices

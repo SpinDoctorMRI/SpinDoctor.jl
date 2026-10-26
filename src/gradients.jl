@@ -312,6 +312,17 @@ echotime(g::ScalarGradient) = echotime(g.profile)
 echotime(g::GeneralGradient) = g.TE
 
 """
+    wavevector(gradient, t, gamma)
+
+Wave vector ``q(t) = \\gamma \\int_0^t g(s) \\, \\mathrm{d}s`` of the gradient sequence
+`gradient` at time `t`, for the gyromagnetic ratio `gamma`.
+"""
+wavevector(g::ScalarGradient, t, gamma) =
+    gamma * g.amplitude * integral(g.profile, t) * g.dir
+wavevector(g::GeneralGradient, t, gamma) =
+    gamma * first(quadgk(g.gvec, zero(t), max(zero(t), t)))
+
+"""
     bvalue(gradient, gamma)
 
 b-value of the scalar gradient sequence `gradient` for the gyromagnetic ratio `gamma`.

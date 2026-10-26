@@ -6,6 +6,7 @@
         boxsize = 20.0,
         fraction = 0.8,
         lloyd = 10,
+        meshsize = boxsize / ncell^(1 / 3) / 8,
         refinement = Inf,
     )
 
@@ -16,8 +17,11 @@ cells are cut by the faces of the box, their periodic images enter on the opposi
 and the extracellular space fills the gaps (as for a [`PeriodicBoxECS`](@ref)).
 
 Unlike packings of spheres, which cannot fill more than about 64 % of the volume,
-polyhedral cells can fill any fraction below one. The tetrahedra have a volume of at most
-`refinement`. The coefficients are given as for a [`SphereSetup`](@ref) with one layer.
+polyhedral cells can fill any fraction below one. The surfaces are triangulated with
+triangles of size `meshsize`, such that the opposite faces of the box have the same
+triangles, and the tetrahedra have a volume of at most `refinement`. The mesh is periodic,
+so that periodic boundary conditions may be used with `assemble_matrices(model; periodic =
+true)`. The coefficients are given as for a [`SphereSetup`](@ref) with one layer.
 """
 @with_kw struct VoronoiSetup{T} <: AbstractSetup{T}
     ncell::Int = 20
@@ -28,6 +32,8 @@ polyhedral cells can fill any fraction below one. The tetrahedra have a volume o
     @assert 0 < fraction < 1
     lloyd::Int = 10
     @assert lloyd >= 0
+    meshsize::T = boxsize / ncell^(1 / 3) / 8
+    @assert meshsize > 0
     refinement::T = Inf
     @assert refinement > 0
 end
@@ -234,20 +240,25 @@ function polyhedron_centroid(faces)
 end
 
 # The cells (with their periodic images) cut by the faces of the box, and the ECS between
-# them. The facets are polygons, and the parts of the box faces in the ECS are triangulated.
+# them, with a triangulation of all the surfaces with triangles of size `meshsize`. The
+# edges of the polygons are split into segments of at most `meshsize`, and the polygons
+# are triangulated in their planes. The lower faces of the box are triangulated, and the
+# upper faces are their translates, so that the surface triangulation is periodic.
 function create_surfaces(setup::VoronoiSetup{T}, cells) where {T}
-    (; ncell) = setup
+    (; ncell, meshsize) = setup
     (; centers, gap, box) = cells
     lower, upper = SVector{3,T}(box[1]), SVector{3,T}(box[2])
     L = upper - lower
     nregion = ncell + 1
     tol = sqrt(eps(T)) * norm(L)
+    maxarea = meshsize^2 / 2
 
     polyhedra = periodic_voronoi(centers, L[1], gap)
+    pieces = box_pieces(polyhedra, lower, upper)
 
     points = SVector{3,T}[]
     function addpoint(p)
-        # Points are shared between the faces of a piece, and with the box faces
+        # The vertices are shared between the faces of a piece, and with the box faces
         for (k, q) in enumerate(points)
             norm(p - q) <= tol && return k
         end
@@ -255,15 +266,17 @@ function create_surfaces(setup::VoronoiSetup{T}, cells) where {T}
         length(points)
     end
 
-    facets = Any[]
-    facetmarkers = Int[]
+    # Face f of the box: axis div(f + 1, 2), lower for odd f
+    faceaxis(f) = div(f + 1, 2)
+    faceplane(f) = isodd(f) ? lower[faceaxis(f)] : upper[faceaxis(f)]
+    onface(p, f) = abs(p[faceaxis(f)] - faceplane(f)) <= tol
+
+    # Polygons of the cell pieces: membranes, and cell parts of the box faces
     regions = SVector{3,T}[]
     regionmarkers = Int[]
-    boxpolygons = [Vector{Int}[] for _ = 1:6] # Cell polygons on each box face
-    onface(p, f) = abs(p[div(f + 1, 2)] - (isodd(f) ? lower : upper)[div(f + 1, 2)]) <= tol
+    membranes = Tuple{Int,Vector{Int}}[]
+    boxpolygons = [Tuple{Int,Vector{Int}}[] for _ = 1:6]
     ecsseeds = SVector{3,T}[]
-
-    pieces = box_pieces(polyhedra, lower, upper)
     for (i, piece) in pieces
         push!(regions, polyhedron_centroid(piece))
         push!(regionmarkers, i)
@@ -271,89 +284,192 @@ function create_surfaces(setup::VoronoiSetup{T}, cells) where {T}
             polygon = addpoint.(face)
             f = findfirst(f -> all(p -> onface(p, f), face), 1:6)
             if isnothing(f)
-                # Membrane between the cell and the ECS
-                push!(facets, polygon)
-                push!(facetmarkers, interface_index(i, nregion, nregion))
+                push!(membranes, (i, polygon))
                 # ECS point: halfway to the neighboring cell, in the gap
                 p = sum(face) / length(face) + gap / 2 * polygon_normal(face)
                 all(lower .< p .< upper) && push!(ecsseeds, p)
             else
-                push!(facets, polygon)
-                push!(facetmarkers, outer_boundary_index(i, nregion))
-                push!(boxpolygons[f], polygon)
+                push!(boxpolygons[f], (i, polygon))
             end
         end
     end
 
-    # The faces of the box: the ECS parts are the faces with holes in the cells. The
-    # outlines of the faces pass through the points of the cells on the edges of the box.
-    for f = 1:6
-        d = div(f + 1, 2)
-        plane = isodd(f) ? lower[d] : upper[d]
+    # Outlines of the box faces: the corners and the vertices on the edges of the box, in
+    # counterclockwise order (as seen from the axis direction)
+    corners = [lower + SVector{3,T}(i, j, k) .* L for i in (0, 1), j in (0, 1), k in (0, 1)]
+    addpoint.(corners)
+    outlines = map(1:6) do f
+        d = faceaxis(f)
         e1, e2 = filter(!=(d), 1:3)
-        corners = [
-            Base.setindex(Base.setindex(Base.setindex(lower, plane, d), x, e1), y, e2)
-            for (x, y) in (
-                (lower[e1], lower[e2]),
-                (upper[e1], lower[e2]),
-                (upper[e1], upper[e2]),
-                (lower[e1], upper[e2]),
-            )
-        ]
-        outline = addpoint.(corners)
-        onedge = [
-            k for (k, p) in enumerate(points) if onface(p, f) && (
+        onedge(p) =
+            onface(p, f) && (
                 abs(p[e1] - lower[e1]) <= tol ||
                 abs(p[e1] - upper[e1]) <= tol ||
                 abs(p[e2] - lower[e2]) <= tol ||
                 abs(p[e2] - upper[e2]) <= tol
             )
-        ]
-        center = (corners[1] + corners[3]) / 2
+        center = (lower + upper) / 2
         angle(k) = atan(points[k][e2] - center[e2], points[k][e1] - center[e1])
-        outline = sort(unique([outline; onedge]); by = angle)
+        sort(filter(k -> onedge(points[k]), eachindex(points)); by = angle)
+    end
 
-        # Triangulate the face outside of the cells, without new points on the outline and
-        # the cell polygons
-        local2global = unique([outline; reduce(vcat, boxpolygons[f]; init = Int[])])
+    # Split the edges into segments of at most `meshsize` (with the same points for the
+    # edges of neighboring polygons)
+    edgepoints = Dict{Tuple{Int,Int},Vector{Int}}()
+    function chain(a, b)
+        key = minmax(a, b)
+        inner = get!(edgepoints, key) do
+            p, q = points[key[1]], points[key[2]]
+            nsplit = max(1, ceil(Int, norm(q - p) / meshsize))
+            map(1:(nsplit-1)) do k
+                push!(points, p + k / nsplit * (q - p))
+                length(points)
+            end
+        end
+        a < b ? inner : reverse(inner)
+    end
+    split(polygon) = reduce(
+        vcat,
+        [
+            [polygon[k]; chain(polygon[k], polygon[mod1(k + 1, length(polygon))])] for
+            k in eachindex(polygon)
+        ],
+    )
+    outlines = split.(outlines)
+    membranes = [(i, split(polygon)) for (i, polygon) in membranes]
+    boxpolygons =
+        [[(i, split(polygon)) for (i, polygon) in polygons] for polygons in boxpolygons]
+
+    facets = Vector{Int}[]
+    facetmarkers = Int[]
+
+    # Triangulate a polygon (or a face with polygons inside) in the plane with the origin o
+    # and the axes e1, e2, keeping the boundary points. Returns the triangles in global
+    # numbering, the region attributes and the new points.
+    function triangulate_plane(loops, seeds, attributes, o, e1, e2)
+        local2global = unique(reduce(vcat, loops))
         global2local = Dict(k => i for (i, k) in enumerate(local2global))
-        segments = Set{Tuple{Int,Int}}()
-        for polygon in [[outline]; boxpolygons[f]], k in eachindex(polygon)
-            a, b = global2local[polygon[k]],
-            global2local[polygon[mod1(k + 1, length(polygon))]]
-            push!(segments, minmax(a, b))
-        end
+        segments = unique([
+            collect(
+                minmax(
+                    global2local[loop[k]],
+                    global2local[loop[mod1(k + 1, length(loop))]],
+                ),
+            ) for loop in loops for k in eachindex(loop)
+        ])
+        coordinates(p) = [dot(p - o, e1), dot(p - o, e2)]
         triin = TriangulateIO()
-        triin.pointlist = reduce(hcat, [points[k][[e1, e2]] for k in local2global])
-        triin.segmentlist = reduce(hcat, [collect(e) for e in segments])
-        holes =
-            [sum(points[polygon])[[e1, e2]] / length(polygon) for polygon in boxpolygons[f]]
-        isempty(holes) || (triin.holelist = reduce(hcat, holes))
-        triout = first(triangulate("pqYQ", triin))
-
-        # New points inside the face
-        for k = (length(local2global)+1):size(triout.pointlist, 2)
-            q = triout.pointlist[:, k]
-            p = Base.setindex(
-                Base.setindex(Base.setindex(lower, plane, d), q[1], e1),
-                q[2],
-                e2,
-            )
-            push!(points, p)
-            push!(local2global, length(points))
+        triin.pointlist = reduce(hcat, [coordinates(points[k]) for k in local2global])
+        triin.segmentlist = reduce(hcat, segments)
+        if !isempty(seeds)
+            triin.regionlist = [
+                reduce(hcat, coordinates.(seeds))
+                attributes'
+                fill(maxarea, 1, length(seeds))
+            ]
         end
-        for t in eachcol(triout.trianglelist)
-            push!(facets, local2global[t])
-            push!(facetmarkers, outer_boundary_index(nregion, nregion))
+        triout = first(triangulate("pqYYa$(maxarea)AQ", triin))
+        newpoints = [
+            o + q[1] * e1 + q[2] * e2 for
+            q in eachcol(triout.pointlist[:, (length(local2global)+1):end])
+        ]
+        triangles = map(eachcol(triout.trianglelist)) do t
+            [
+                k <= length(local2global) ? local2global[k] : -(k - length(local2global)) for k in t
+            ]
+        end
+        attrs =
+            isempty(seeds) ? zeros(Int, length(triangles)) :
+            round.(Int, triout.triangleattributelist[:])
+        triangles, attrs, newpoints
+    end
 
-            # ECS point: slightly inside the box from the triangle. The ECS in the box may
-            # have several parts (e.g. pockets at the edges of the box), which all touch the
-            # box faces.
-            a, b, c = points[local2global[t]]
-            area = norm(cross(b - a, c - a)) / 2
-            inradius = 2 * area / (norm(b - a) + norm(c - b) + norm(a - c))
-            inward = (isodd(f) ? 1 : -1) * SVector{3,T}(1:3 .== d)
-            push!(ecsseeds, (a + b + c) / 3 + inradius / 1000 * inward)
+    # Membranes
+    for (i, polygon) in membranes
+        vertices = points[polygon]
+        n = polygon_normal(vertices)
+        e1 = normalize(vertices[2] - vertices[1])
+        triangles, _, newpoints =
+            triangulate_plane([polygon], [], Int[], vertices[1], e1, cross(n, e1))
+        offset = length(points)
+        append!(points, newpoints)
+        for t in triangles
+            push!(facets, [k > 0 ? k : offset - k for k in t])
+            push!(facetmarkers, interface_index(i, nregion, nregion))
+        end
+    end
+
+    # Lower faces of the box, and their translates on the upper faces
+    for f in (1, 3, 5)
+        d = faceaxis(f)
+        e1, e2 = SVector{3,T}.(eachcol(Matrix{T}(I, 3, 3)[:, filter(!=(d), 1:3)]))
+        polygons = boxpolygons[f]
+        seeds = [sum(points[polygon]) / length(polygon) for (_, polygon) in polygons]
+        triangles, attrs, newpoints = triangulate_plane(
+            [[outlines[f]]; last.(polygons)],
+            seeds,
+            first.(polygons),
+            lower,
+            e1,
+            e2,
+        )
+        offset = length(points)
+        append!(points, newpoints)
+        triangles = [[k > 0 ? k : offset - k for k in t] for t in triangles]
+
+        # The points of the upper face: the translates of the points on the lower face
+        shift = L[d] * SVector{3,T}(1:3 .== d)
+        lowerpoints = unique(reduce(vcat, triangles))
+        upperpoints = findall(p -> onface(p, f + 1), points)
+        matches = match_points(
+            reduce(hcat, points[upperpoints]),
+            reduce(hcat, points[lowerpoints] .+ Ref(shift)),
+            tol,
+        )
+        translate = Dict{Int,Int}()
+        for (k, m) in zip(lowerpoints, matches)
+            if m > 0
+                translate[k] = upperpoints[m]
+            elseif k > offset
+                push!(points, points[k] + shift)
+                translate[k] = length(points)
+            else
+                error("The opposite faces of the box do not match")
+            end
+        end
+
+        for (t, attr) in zip(triangles, attrs)
+            marker = outer_boundary_index(attr == 0 ? nregion : attr, nregion)
+            push!(facets, t, [translate[k] for k in t])
+            push!(facetmarkers, marker, marker)
+        end
+
+        # ECS points slightly inside the box from the largest triangle of each connected
+        # part of the ECS on the face. The ECS in the box may have several parts (e.g.
+        # pockets at the edges of the box), which all touch the box faces.
+        ecs = findall(iszero, attrs)
+        parent = collect(eachindex(ecs))
+        root(i) = parent[i] == i ? i : (parent[i] = root(parent[i]))
+        edgetriangle = Dict{Tuple{Int,Int},Int}()
+        for (i, k) in enumerate(ecs), j = 1:3
+            t = triangles[k]
+            edge = minmax(t[j], t[mod1(j + 1, 3)])
+            haskey(edgetriangle, edge) ? (parent[root(i)] = root(edgetriangle[edge])) :
+            (edgetriangle[edge] = i)
+        end
+        inradius(t) = (
+            (a, b, c) = points[t];
+            norm(cross(b - a, c - a)) / (norm(b - a) + norm(c - b) + norm(a - c))
+        )
+        inward = SVector{3,T}(1:3 .== d)
+        for r in unique(root.(eachindex(ecs)))
+            k = ecs[argmax(
+                i -> root(i) == r ? inradius(triangles[ecs[i]]) : -one(T),
+                eachindex(ecs),
+            )]
+            p = sum(points[triangles[k]]) / 3
+            dp = inradius(triangles[k]) / 1000 * inward
+            push!(ecsseeds, p + dp, p + shift - dp)
         end
     end
 
@@ -365,10 +481,12 @@ function create_surfaces(setup::VoronoiSetup{T}, cells) where {T}
 
     (;
         points = reduce(hcat, points),
-        facets,
+        facets = reduce(hcat, facets),
         facetmarkers,
         regions = reduce(hcat, regions),
         regionmarkers,
+        box = (Vector(lower), Vector(upper)),
+        meshsize,
     )
 end
 

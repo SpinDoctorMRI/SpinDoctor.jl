@@ -86,4 +86,46 @@ CUDA.allowscalar(false)
         )
         @test all(gpu .≈ cpu)
     end
+
+    @testset "Periodic boundary conditions" begin
+        setup = CylinderSetup(;
+            ncell = 8,
+            rmin = 1.0,
+            rmax = 2.0,
+            nsidewall = 16,
+            ecs = PeriodicBoxECS(; fraction = 0.6),
+            height = 2.0,
+        )
+        coeffs = coefficients(
+            setup;
+            D = (; cell = [0.002 * I(3)], ecs = 0.002 * I(3)),
+            T2 = (; cell = [Inf], ecs = Inf),
+            rho = (; cell = [1.0], ecs = 1.0),
+            kappa = (;
+                cell_interfaces = Float64[],
+                cell_boundaries = [0],
+                cell_ecs = 1e-4,
+                ecs = 0,
+            ),
+            gamma = 2.67513e-4,
+        )
+        mesh, = create_geometry(setup; rng = Xoshiro(1))
+        model = Model(; mesh, coeffs...)
+        matrices = assemble_matrices(model; periodic = true)
+        profile = PGSE(2000.0, 6000.0)
+        gradient = ScalarGradient(dir, profile; bvalue = 1000, gamma = model.gamma)
+        cpu = solve_btpde(model, matrices, gradient, ThetaSolver(; timestep = 50.0))
+        solver = ThetaSolver(; timestep = 50.0, arraytype = CuArray)
+        gpu = solve_btpde(model, matrices, gradient, solver)
+        @test gpu ≈ cpu rtol = 1e-8
+        cpu = solve_hadc_tensors(model, matrices, profile; timestep = 50.0)
+        gpu = solve_hadc_tensors(
+            model,
+            matrices,
+            profile;
+            timestep = 50.0,
+            arraytype = CuArray,
+        )
+        @test all(gpu .≈ cpu)
+    end
 end

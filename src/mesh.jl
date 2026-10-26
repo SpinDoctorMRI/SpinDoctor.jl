@@ -225,3 +225,70 @@ function facet_geometry(points, facets, elements::AbstractMatrix)
     orientations = sign.(sum((facet_centers - element_centers) .* normals; dims = 1))
     areas, facet_centers, orientations .* normals
 end
+
+"""
+    P, masters = periodic_restriction(points, facets, box, dims; atol)
+
+Identify the points on opposite faces of the periodic `box = (lower, upper)` along the
+axes `dims`: the points of the boundary `facets` on an upper face are images of the points
+of the facets on the lower face, translated by the box size (up to `atol`). Points that
+touch a face without a facet on it (e.g. the vertex of a cell) are not identified.
+
+Returns the prolongation `P` (size `npoint`, `nreduced`), which copies the values of the
+reduced (periodic) points to all their images, and the index of one point for each reduced
+point (`masters`).
+
+An error is thrown if a point on a face has no image on the opposite face.
+"""
+function periodic_restriction(points, facets, (lower, upper), dims; atol)
+    npoint = size(points, 2)
+    parent = collect(1:npoint)
+    root(i) = parent[i] == i ? i : (parent[i] = root(parent[i]))
+    function onface(d, x)
+        inface = [all(k -> abs(points[d, k] - x) <= atol, f) for f in eachcol(facets)]
+        sort(unique(vec(facets[:, inface])))
+    end
+    for d in dims
+        onlower = onface(d, lower[d])
+        onupper = onface(d, upper[d])
+        images = points[:, onupper]
+        images[d, :] .-= upper[d] - lower[d]
+        matches = match_points(points[:, onlower], images, atol)
+        length(onlower) == length(onupper) && all(>(0), matches) || error(
+            "The mesh is not periodic along axis $d: the faces have $(length(onlower)) and $(length(onupper)) points, $(count(iszero, matches)) without image",
+        )
+        for (i, j) in zip(onupper, onlower[matches])
+            parent[root(i)] = root(j)
+        end
+    end
+    roots = root.(1:npoint)
+    masters = unique(roots)
+    index = zeros(Int, npoint)
+    index[masters] = 1:length(masters)
+    P = sparse(
+        1:npoint,
+        index[roots],
+        ones(eltype(points), npoint),
+        npoint,
+        length(masters),
+    )
+    P, masters
+end
+
+# For each column of B, the index of a column of A within `atol` (zero if there is none),
+# using a grid of cells of size `2 atol`
+function match_points(A, B, atol)
+    cell(x) = Tuple(floor.(Int, x ./ 2atol))
+    grid = Dict{NTuple{size(A, 1),Int},Vector{Int}}()
+    for j in axes(A, 2)
+        push!(get!(grid, cell(A[:, j]), Int[]), j)
+    end
+    offsets = Iterators.product(ntuple(_ -> -1:1, size(A, 1))...)
+    map(eachcol(B)) do b
+        c = cell(b)
+        for o in offsets, j in get(grid, c .+ o, Int[])
+            norm(A[:, j] - b) <= atol && return j
+        end
+        0
+    end
+end

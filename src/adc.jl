@@ -78,6 +78,9 @@ The auxiliary diffusion problem is solved with the Crank-Nicolson scheme, with s
 most `timestep` in each characteristic interval of the profile. By linearity, the ADC in any
 direction follows from one solve per axis. With `arraytype = CuArray` (after `using CUDA,
 CUDSS`), it is solved on an NVIDIA GPU.
+
+With periodic matrices (`assemble_matrices(model; periodic = true)`), the compartments
+are periodic, and the faces of the box are not boundaries.
 """
 function solve_hadc_tensors(
     model,
@@ -88,6 +91,14 @@ function solve_hadc_tensors(
 )
     (; D) = model
     (; M_cmpts, S_cmpts, G, volumes) = matrices
+    P_cmpts = get(matrices, :P_cmpts, nothing)
+    if !isnothing(P_cmpts)
+        # Periodic compartments: the matrices of the periodic points, where the surface
+        # integrals on opposite faces of the box cancel
+        M_cmpts = [sparse(P') * Mi * P for (Mi, P) in zip(M_cmpts, P_cmpts)]
+        S_cmpts = [sparse(P') * Si * P for (Si, P) in zip(S_cmpts, P_cmpts)]
+        G = [P' * Gi for (Gi, P) in zip(G, P_cmpts)]
+    end
 
     # The auxiliary function solves M w' + S w = F(t) B u for the direction u, and the ADC
     # correction is u' A u / (volume * int_F2) with A = B' int F(t) w(t) dt. The compartments

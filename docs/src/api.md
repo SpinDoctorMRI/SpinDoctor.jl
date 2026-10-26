@@ -123,8 +123,10 @@ SpinDoctor.split_mesh
 SpinDoctor.facet_elements
 SpinDoctor.element_geometry
 SpinDoctor.facet_geometry
+SpinDoctor.periodic_restriction
 SpinDoctor.assemble_mass_matrix
 SpinDoctor.assemble_stiffness_matrix
+SpinDoctor.assemble_derivative_matrix
 SpinDoctor.assemble_flux_matrix
 ```
 
@@ -155,6 +157,7 @@ SpinDoctor.AbstractTimeProfile
 SpinDoctor.AbstractGradient
 SpinDoctor.integral
 SpinDoctor.int_F2
+SpinDoctor.wavevector
 SpinDoctor.intervals
 SpinDoctor.echotime
 SpinDoctor.isconstant

@@ -13,7 +13,10 @@ Returns a named tuple containing:
 - `facetmarkers`: the boundary number of each facet;
 - `regions`: points inside the regions (size `dim`, `npoint`), by default one per region;
 - `regionmarkers` (optional): the region number of each of these points, for regions
-  with several parts.
+  with several parts;
+- `box` and `meshsize` (samples of periodic tissue): the box `(lower, upper)`, whose
+  opposite faces have the same points, and the size of the facets. The mesh keeps the
+  facets on the box (in 2D) or all the facets (in 3D), so that the mesh is periodic.
 
 The boundaries between `n` regions are numbered with the interfaces between regions
 `i < j` first (row by row: 12, 13, ..., 1n, 23, ...), followed by the outer boundaries of
@@ -175,35 +178,54 @@ function create_surfaces(setup::ExtrusionSetup, cells)
     facets = groundmesh.elements
     facetmarkers = groundmesh.elementmarkers
 
-    # Copy ground points to the two 3D planes top and bottom
+    # Copy the ground points to the layers between the bottom and the top. Periodic samples
+    # are cut into layers of the mesh size, since the mesh keeps their facets, and the other
+    # setups have one layer.
+    periodic = haskey(groundfacets, :box)
+    nlayer = periodic ? max(1, ceil(Int, height / groundfacets.meshsize)) : 1
     npoint = size(points, 2)
-    z = fill(height / 2, 1, npoint)
-    points = [points points; -z z]
+    z = range(-height / 2, height / 2, nlayer + 1)
+    points = [repeat(points, 1, nlayer + 1); repeat(z', npoint)[:]']
 
-    # Create two side facet triangles from each ground edge. They form a
-    # rectangle representing the extruded edge. The top layer points are
-    # numbered `npoint` higher than the bottom layer
-    le = edges[1:1, :]
-    ri = edges[2:2, :]
-    sidefacets = [
-        le le
-        ri (ri .+ npoint)
-        (ri .+ npoint) (le .+ npoint)
-    ]
+    # Each ground edge is extruded to a rectangle in each layer, split into two triangles.
+    # In periodic samples, the diagonal goes from the first point of the edge (in
+    # lexicographic order of the coordinates) in the lower layer, so that the opposite faces
+    # of the box have the same triangles.
+    sidefacets = zeros(Int, 3, 0)
+    if periodic
+        for (k, (a, b)) in enumerate(eachcol(edges))
+            if groundmesh.points[:, b] < groundmesh.points[:, a]
+                edges[:, k] = [b, a]
+            end
+        end
+    end
+    for l = 1:nlayer
+        a = edges[1:1, :] .+ (l - 1) * npoint
+        b = edges[2:2, :] .+ (l - 1) * npoint
+        sidefacets = [sidefacets [a a; b (b .+ npoint); (b .+ npoint) (a .+ npoint)]]
+    end
 
     # Boundary numbers: see `interface_index` and `outer_boundary_index`
-    sidefacetmarkers = [edgemarkers; edgemarkers]
+    sidefacetmarkers = repeat(edgemarkers, 2nlayer)
 
     # Side facets, bottom facets and top facets. The bottom and top facets of a region are
     # on its outer boundary.
-    facets = [sidefacets facets (facets .+ npoint)]
+    facets = [sidefacets facets (facets .+ nlayer * npoint)]
     top = outer_boundary_index.(facetmarkers, nregion)
     facetmarkers = [sidefacetmarkers; top; top]
 
-    # Put the region points in the middle of the bottom and top layers (z = 0)
-    regions = [groundregions[1:2, :]; zeros(1, size(groundregions, 2))]
+    # Put the region points in the middle of the bottom and top layers (z = 0), or in the
+    # middle of a layer
+    zregion = isodd(nlayer) ? 0.0 : height / 2nlayer
+    regions = [groundregions[1:2, :]; fill(zregion, 1, size(groundregions, 2))]
 
-    (; points, facets, facetmarkers, regions, regionmarkers)
+    surfaces = (; points, facets, facetmarkers, regions, regionmarkers)
+    if periodic
+        lower, upper = groundfacets.box
+        box = ([lower; -height / 2], [upper; height / 2])
+        surfaces = (; surfaces..., box, groundfacets.meshsize)
+    end
+    surfaces
 end
 
 function create_surfaces(setup::NeuronSetup, meshfile)
@@ -387,13 +409,15 @@ function create_surfaces(setup::DiskSetup{T,<:PeriodicBoxECS}, cells) where {T}
         for i = 1:nlayer
             r = layersizes[i] * radii[j]
             n = max(8, round(Int, nsidewall * r / rmean))
-            # Vertices close to a box face, and cuts close to a box edge, are moved onto
-            # it, so that the cuts leave no slivers. A quarter of the distance between the
+            # Vertices close to a box face are moved away from it (towards the center), and
+            # cuts close to a box edge are moved onto it, so that the cuts leave no slivers
+            # and no membrane lies on a face. An eighth of the distance between the
             # vertices and the chords of their neighbors keeps the polygons convex.
-            snap = r * (1 - cos(2pi / n)) / 4
+            snap = r * (1 - cos(2pi / n)) / 8
             polygon = [
-                snap_to_faces(
+                away_from_faces(
                     c + r * SVector(cos(2pi * k / n), sin(2pi * k / n)),
+                    c,
                     box,
                     snap,
                 ) for k = 0:(n-1)
@@ -476,6 +500,10 @@ function create_surfaces(setup::DiskSetup{T,<:PeriodicBoxECS}, cells) where {T}
     boundarypoints = boundarypoints[.!duplicate]
     edges = [SVector(rep[e[1]], rep[e[2]]) for e in edges]
 
+    # The segments of the box boundary are split into pieces of at most the side length of
+    # the polygon of mean radius. The opposite sides of the box have the same points, and
+    # the mesh keeps them, so that the mesh is periodic.
+    meshsize = 2pi * rmean / nsidewall
     nb = length(boundarypoints)
     for k = 1:nb
         a, b = boundarypoints[k], boundarypoints[mod1(k + 1, nb)]
@@ -486,8 +514,18 @@ function create_surfaces(setup::DiskSetup{T,<:PeriodicBoxECS}, cells) where {T}
         m = (points[a] + points[b]) / 2 + SVector(-t[2], t[1]) / 1000
         inside = [region for (region, polygon) in pieces if inpolygon(m, polygon)]
         region = isempty(inside) ? nregion : minimum(inside)
-        push!(edges, SVector(a, b))
-        push!(edgemarkers, outer_boundary_index(region, nregion))
+        nsplit = max(1, ceil(Int, norm(t) / meshsize))
+        chain = [a]
+        for i = 1:(nsplit-1)
+            push!(points, points[a] + i / nsplit * t)
+            push!(rep, length(points))
+            push!(chain, length(points))
+        end
+        push!(chain, b)
+        for i = 1:nsplit
+            push!(edges, SVector(chain[i], chain[i+1]))
+            push!(edgemarkers, outer_boundary_index(region, nregion))
+        end
 
         # Region point: the ECS and the layers may have several parts in the box (e.g.
         # between two cells and a face, or between an inner layer and a corner), which the
@@ -509,11 +547,22 @@ function create_surfaces(setup::DiskSetup{T,<:PeriodicBoxECS}, cells) where {T}
         facetmarkers = edgemarkers,
         regions = reduce(hcat, regions),
         regionmarkers,
+        box = (Vector(lower), Vector(upper)),
+        meshsize,
     )
 end
 
 create_surfaces(::PeriodicBoxECS, points) =
     error("PeriodicBoxECS is only available for disks and cylinders")
+
+# Move the coordinates of the point p that are within `snap` of a face of the periodic box
+# (or of one of its periodic images) to the distance `snap` from the face, on the side of
+# the center c
+away_from_faces(p, c, (lower, upper), snap) =
+    map(p, c, SVector{length(p)}(lower), SVector{length(p)}(upper)) do x, xc, l, u
+        y = l + (u - l) * round((x - l) / (u - l))
+        abs(x - y) < snap ? y + (xc < y ? -snap : snap) : x
+    end
 
 # Move the coordinates of the point p that are within `snap` of a face of the periodic box
 # (or of one of its periodic images) onto the face

@@ -50,7 +50,8 @@ SpinDoctor also comes with a geometry generation module, allowing for
 3. an extra-cellular space (ECS) enclosed in either a box or a convex hull around the
    cells;
 4. dense samples of periodic tissue: packings of disks and cylinders, or polyhedral
-   (shrunk Voronoi) cells, cut by the faces of a periodic box;
+   (shrunk Voronoi) cells, cut by the faces of a periodic box, with periodic boundary
+   conditions;
 5. deformation of canonical cells by bending and twisting.
 
 In addition, a variety of neuron meshes is available, whose surface geometries were

@@ -48,9 +48,10 @@ end
 Extracellular space of a sample of a periodic tissue. The box of the cell configuration
 (`cells.box`, e.g. from [`periodic_packing`](@ref)) is filled with the cells, cut by its
 faces, and their periodic images, and the ECS fills the rest. Unlike [`BoxECS`](@ref),
-there is no free layer of ECS along the faces, and the geometry is periodic. The box faces
-are impermeable boundaries, as in the other recipes (the equations have no periodic
-boundary conditions).
+there is no free layer of ECS along the faces, and the geometry is periodic. The mesh is
+periodic too (the opposite faces of the box have the same points), so that periodic
+boundary conditions may be used with `assemble_matrices(model; periodic = true)`;
+otherwise, the box faces are impermeable boundaries.
 
 If no cell configuration is given to [`create_geometry`](@ref), a packing with the cell
 volume fraction `fraction` is created (see [`create_cells`](@ref)). Available for disks

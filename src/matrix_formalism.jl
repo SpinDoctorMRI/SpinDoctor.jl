@@ -40,6 +40,8 @@ relaxation matrix `massrelax` in the eigenfunction basis.
 See [Li2020](@cite), [Agdestein2021](@cite).
 """
 function solve_laplace(model::Model{T,dim}, matrices; neig_max) where {T,dim}
+    isnothing(get(matrices, :P, nothing)) ||
+        error("The matrix formalism is not available with periodic boundary conditions")
     (; M, S, R, Mx, Q) = matrices
 
     # Compute at most all eigenvalues in the given domain

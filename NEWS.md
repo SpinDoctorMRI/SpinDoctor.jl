@@ -83,5 +83,11 @@ extension, split OrdinaryDiffEq packages).
   threads. The GPU tests have their own environment in `test/gpu`.
 - The HADC solves all compartments together, and the BTPDE with non-constant gradients
   applies the matrix of the gradient without forming it at every step.
+- Periodic boundary conditions for the samples of periodic tissue, whose meshes are
+  periodic: `assemble_matrices(model; periodic = true)`, then `solve_btpde` (with
+  `ThetaSolver`, on the CPU or the GPU) and `solve_hadc`. The magnetization is written as
+  `exp(-i q(t) ⋅ x) m(x, t)` with the wave vector `q(t) = γ ∫ g` and a periodic `m`. The
+  signals and ADCs then no longer depend on the position of the cells in the box, and the
+  ECS is not restricted by the box faces.
 - Value-based tests (analytical solutions, exact identities), and regression outputs of
   v0.1.0 in `test/regression`.

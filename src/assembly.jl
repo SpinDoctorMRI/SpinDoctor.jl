@@ -86,6 +86,21 @@ simplex `x` (of full dimension) with constant diffusion tensor `D`.
 end
 
 """
+    local_derivative(x, D, d)
+
+P1 matrix ``C_{ij} = \\int_K \\varphi_i (D \\nabla \\varphi_j)_d`` of the simplex `x` (of full
+dimension) with constant diffusion tensor `D`: ``C_{ij} = |K| (D \\nabla \\varphi_j)_d / n``.
+"""
+@inline function local_derivative(x::SMatrix{dim,n,T}, D, d) where {dim,n,T}
+    E = edgevectors(x)
+    B = inv(E)
+    grad_lambda = hcat(-sum(B'; dims = 2), B')
+    g = (D*grad_lambda)[d, :]
+    c = abs(det(E)) / factorial(dim) / n
+    SMatrix{n,n,T}(ntuple(k -> c * g[div(k-1, n)+1], Val(n * n)))
+end
+
+"""
     FEPattern(elements, nnode)
 
 Sparsity pattern of the P1 matrices of a mesh with `elements`, together with the list of
@@ -230,6 +245,33 @@ function _stiffness(points, elements, D, pattern, ::Val{dim}) where {dim}
     nb = Val(dim + 1)
     assemble(
         e -> local_stiffness(simplex(points, elements, e, Val(dim), nb), D),
+        pattern,
+        elements,
+        nb,
+    )
+end
+
+"""
+    assemble_derivative_matrix(elements, points, d, D = I[, pattern])
+
+Assemble the P1 matrix ``C_{ij} = \\int \\varphi_i (D \\nabla \\varphi_j)_d`` of the simplices
+`elements` with `points`, for a constant diffusion tensor `D` and the axis `d`.
+"""
+function assemble_derivative_matrix(
+    elements,
+    points,
+    d,
+    D = I;
+    pattern = FEPattern(elements, size(points, 2)),
+)
+    dim = size(points, 1)
+    _derivative(points, elements, SMatrix{dim,dim}(D * I(dim)), d, pattern, Val(dim))
+end
+
+function _derivative(points, elements, D, d, pattern, ::Val{dim}) where {dim}
+    nb = Val(dim + 1)
+    assemble(
+        e -> local_derivative(simplex(points, elements, e, Val(dim), nb), D, d),
         pattern,
         elements,
         nb,

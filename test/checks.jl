@@ -295,6 +295,123 @@ end
     end
 end
 
+@testset "Periodic boundary conditions" begin
+    # Free diffusion in a periodic rectangle, with boundary points every 0.25: the periodic
+    # part of the magnetization stays constant, and the signal is exp(-b u' D u)
+    Lx, Ly, h = 4.0, 3.0, 0.25
+    corners = [[0.0, 0.0], [Lx, 0.0], [Lx, Ly], [0.0, Ly]]
+    boundary = reduce(vcat, map(zip(corners, circshift(corners, -1))) do (a, b)
+        n = round(Int, norm(b - a) / h)
+        [a + (b - a) * i / n for i = 0:(n-1)]
+    end)
+    n = length(boundary)
+    surfaces = (;
+        points = reduce(hcat, boundary),
+        facets = [1:n circshift(1:n, -1)]',
+        facetmarkers = ones(Int, n),
+        regions = [1.0; 1.0;;],
+        box = ([0.0, 0.0], [Lx, Ly]),
+    )
+    mesh = SpinDoctor.split_mesh(SpinDoctor.create_mesh(surfaces, 0.05))
+    D = [0.002 0.0005; 0.0005 0.001]
+    model = Model(; mesh, rho = [1.0 + 0im], D = [D], T2 = [Inf], kappa = [0.0], gamma)
+    matrices = assemble_matrices(model; periodic = true)
+    @test size(matrices.P, 2) == size(mesh.points[1], 2) - size(boundary, 1) / 2 - 1
+    @test norm(matrices.P' * matrices.G[1]) < 1e-12
+    for d = 1:2
+        # The derivative of a constant is zero, and C' 1 is a boundary integral
+        @test norm(matrices.Cx[d] * ones(size(matrices.M, 1))) < 1e-14
+        @test matrices.Cx[d]' * ones(size(matrices.M, 1)) ≈ (matrices.G[1]*D)[:, d]
+    end
+    for (profile, dir) in
+        ((PGSE(2000.0, 20000.0), [1.0, 0.0]), (CosOGSE(5000.0, 6000.0, 3), [1.0, 2.0]))
+        gradient = ScalarGradient(dir, profile; bvalue = 1000, gamma)
+        u = solve_btpde(model, matrices, gradient, ThetaSolver(; timestep = 10.0))
+        u0 = solve_btpde(
+            model,
+            assemble_matrices(model),
+            gradient,
+            ThetaSolver(; timestep = 10.0),
+        )
+        signal(u) = abs(compute_signal(matrices.M, u)) / (Lx * Ly)
+        @test signal(u) ≈ exp(-1000 * gradient.dir' * D * gradient.dir) rtol = 1e-5
+        @test signal(u0) > 1.5 * signal(u)
+    end
+    @test only(solve_hadc_tensors(model, matrices, PGSE(2000.0, 20000.0))) ≈ D
+
+    # Meshes that are not periodic
+    setup = SphereSetup(; ncell = 2, ecs = BoxECS())
+    mesh, = create_geometry(setup; rng = Xoshiro(1))
+    model = Model(; mesh, get_coeffs(setup)...)
+    @test_throws ErrorException assemble_matrices(model; periodic = true)
+
+    # A sample of periodic tissue: the signals and the HADC of the compartments do not
+    # depend on the position of the cells in the box (unlike with impermeable box faces),
+    # and the cells that do not touch the box are the same as without periodicity
+    setup = DiskSetup(;
+        ncell = 8,
+        rmin = 1.0,
+        rmax = 2.0,
+        dmin = 0.2,
+        nsidewall = 16,
+        ecs = PeriodicBoxECS(; fraction = 0.5),
+        refinement = 0.1,
+    )
+    coeffs = get_coeffs(setup)
+    coeffs = (; coeffs..., kappa = zero(coeffs.kappa))
+    cells = SpinDoctor.create_cells(setup; rng = Xoshiro(1))
+    L = cells.box[2][1]
+    shifted = (; cells..., centers = mod.(cells.centers .+ [L / 3, L / 5], L))
+    gradient = ScalarGradient([1.0, 0.3], PGSE(5000.0, 50000.0); bvalue = 2000, gamma)
+    results = map((cells, shifted)) do cells
+        mesh, = create_geometry(setup; cells)
+        model = Model(; mesh, coeffs...)
+        map((true, false)) do periodic
+            matrices = assemble_matrices(model; periodic)
+            u = solve_btpde(model, matrices, gradient, ThetaSolver(; timestep = 200.0))
+            signals = compute_signal.(matrices.M_cmpts, split_field(mesh, u))
+            adcs = solve_hadc(model, matrices, gradient; timestep = 200.0)
+            (; signals = abs.(signals) ./ matrices.volumes, adcs)
+        end
+    end
+    (periodic, walls), (periodic_shifted, walls_shifted) = results
+    @test periodic.signals ≈ periodic_shifted.signals rtol = 5e-3
+    @test periodic.adcs ≈ periodic_shifted.adcs rtol = 5e-3
+    @test !isapprox(walls.signals, walls_shifted.signals; rtol = 1e-2)
+    @test !isapprox(walls.adcs, walls_shifted.adcs; rtol = 1e-2)
+    r = vec(cells.radii)
+    inside = [all(r[j] .< cells.centers[:, j] .< L - r[j]) for j = 1:8]
+    @test periodic.signals[1:8][inside] ≈ walls.signals[1:8][inside] rtol = 5e-3
+    @test periodic.adcs[end] > 2 * walls.adcs[end]
+
+    # Periodic meshes of cylinders (also along the axis) and polyhedral cells. Along the
+    # cylinders, the diffusion is free with periodicity, and restricted by the top and
+    # bottom faces without.
+    setup = CylinderSetup(;
+        ncell = 5,
+        rmin = 1.0,
+        rmax = 2.0,
+        nsidewall = 12,
+        ecs = PeriodicBoxECS(; fraction = 0.5),
+        height = 2.0,
+    )
+    mesh, = create_geometry(setup; rng = Xoshiro(2))
+    model = Model(; mesh, get_coeffs(setup)...)
+    profile = PGSE(2000.0, 20000.0)
+    hadc = solve_hadc_tensors(model, assemble_matrices(model; periodic = true), profile)
+    @test [D[3, 3] for D in hadc] ≈ [D[3, 3] for D in model.D]
+    hadc = solve_hadc_tensors(model, assemble_matrices(model), profile)
+    @test all(i -> hadc[i][3, 3] < model.D[i][3, 3] / 2, eachindex(hadc))
+
+    setup = VoronoiSetup(; ncell = 6, boxsize = 8.0, fraction = 0.8)
+    mesh, = create_geometry(setup; rng = Xoshiro(2))
+    model = Model(; mesh, get_coeffs(setup)...)
+    hadc = solve_hadc_tensors(model, assemble_matrices(model; periodic = true), profile)
+    hadc_walls = solve_hadc_tensors(model, assemble_matrices(model), profile)
+    @test all(D -> all(>(0), eigvals(Symmetric(D))), hadc)
+    @test tr(hadc[end]) > 2 * tr(hadc_walls[end])
+end
+
 @testset "Geometry files" begin
     setup = CylinderSetup(; ncell = 2, rmin = 2.0, rmax = 3.0, ecs = BoxECS(), height = 5.0)
     other = CylinderSetup(; ncell = 2, rmin = 2.0, rmax = 3.0, ecs = BoxECS(), height = 6.0)

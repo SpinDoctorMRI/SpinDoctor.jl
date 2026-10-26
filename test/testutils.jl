@@ -88,3 +88,6 @@ get_coeffs(setup::NeuronSetup) = coefficients(
     kappa = (; neuron_ecs = 1e-4, neuron = 0.0, ecs = 0.0),
     gamma = 2.67513e-4,
 )
+
+get_coeffs(setup::VoronoiSetup) =
+    get_coeffs(SphereSetup(; ncell = setup.ncell, ecs = BoxECS()))

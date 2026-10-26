@@ -71,3 +71,29 @@ T_\text{echo})``:
 ```math
 S(\vec{g}) = \int_\Omega M(\vec{x}, T_\text{echo}) \, \mathrm{d} \Omega(\vec{x}).
 ```
+
+## Periodic boundary conditions
+
+A sample of periodic tissue fills a box ``[0, L_1] \times \dots \times [0, L_d]``, with the
+cells cut by its faces and their periodic images entering on the opposite faces
+([`PeriodicBoxECS`](@ref), [`VoronoiSetup`](@ref)). Because of the term ``\vec{g}(t)
+\cdot \vec{x}``, the magnetization is not periodic, but the phase-shifted magnetization
+
+```math
+m(\vec{x}, t) = e^{\mathrm{i} \vec{q}(t) \cdot \vec{x}} M(\vec{x}, t), \quad \vec{q}(t) =
+\gamma \int_0^t \vec{g}(s) \, \mathrm{d} s,
+```
+
+is, where ``\vec{q}`` is the wave vector (see [`wavevector`](@ref)). It solves
+
+```math
+\frac{\partial m}{\partial t} = (\nabla - \mathrm{i} \vec{q}(t)) \cdot \mathbf{D} (\nabla
+- \mathrm{i} \vec{q}(t)) m - \frac{1}{T_2} m
+```
+
+in the compartments, with the interface conditions of ``M`` (with ``\mathbf{D} \nabla M``
+replaced by ``\mathbf{D} (\nabla - \mathrm{i} \vec{q}) m``), and periodic boundary
+conditions on the faces of the box. The finite element mesh is periodic (the opposite faces
+of the box have the same points), and the points on opposite faces are identified in each
+compartment (`assemble_matrices(model; periodic = true)`). For refocused sequences,
+``\vec{q}(T_\text{echo}) = 0`` and the signal is the integral of ``m``.
