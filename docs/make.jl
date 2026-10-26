@@ -15,7 +15,7 @@ examples = [
     "High Angular Resolution" => "hardi",
 ]
 output = "generated"
-for e ∈ examples
+for e in examples
     e = joinpath(@__DIR__, "..", "examples", "$(e.second).jl")
     o = joinpath(@__DIR__, "src", output)
     Literate.markdown(e, o)
@@ -40,7 +40,7 @@ makedocs(;
     pages = [
         "Home" => "index.md",
         "Getting Started" => "getting_started.md",
-        "Examples" => [e.first => joinpath(output, e.second * ".md") for e ∈ examples],
+        "Examples" => [e.first => joinpath(output, e.second * ".md") for e in examples],
         "Theory" => [
             "Theory" => "theory/theory.md",
             "Bloch-Torrey PDE" => "theory/btpde.md",
