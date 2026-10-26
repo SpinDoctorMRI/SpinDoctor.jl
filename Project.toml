@@ -1,6 +1,6 @@
 name = "SpinDoctor"
 uuid = "56cc2822-f090-446c-a2af-a0f45c3009e4"
-version = "0.2.0"
+version = "1.0.0"
 authors = ["Syver Døving Agdestein <syverda@gmail.com>"]
 
 [deps]

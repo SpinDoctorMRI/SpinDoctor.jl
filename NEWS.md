@@ -1,6 +1,6 @@
 # Changes
 
-## v0.2.0
+## v1.0.0
 
 This release runs on current Julia versions (1.10 and later) with current versions of all
 dependencies. The core no longer depends on the SciML stack, Arpack or Expokit. It includes the modernization of
