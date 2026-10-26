@@ -68,11 +68,13 @@ Setup recipe for a set of spheres immersed in a ECS.
 end
 
 """
-    NeuronSetup
+    NeuronSetup(; meshfile, ecs = NoECS(), refinement = Inf)
 
-Setup recipe for a neuron, possibly wrapped in a ECS.
+Setup recipe for a neuron, possibly wrapped in a ECS. The neuron is given by the volume
+mesh `meshfile` in the Gmsh format, e.g. from the RealNeuronMeshes repository.
 """
 @with_kw struct NeuronSetup{T,E} <: AbstractSetup{T}
+    meshfile::String = ""
     ecs::E = NoECS()
     refinement::T = Inf
     @assert refinement > 0

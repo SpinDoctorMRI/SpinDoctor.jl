@@ -25,15 +25,18 @@ Triangulate = "f7e6ffb2-c36d-4f8f-a77e-16e897189344"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [weakdeps]
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 
 [extensions]
+SpinDoctorJLD2Ext = "JLD2"
 SpinDoctorMakieExt = "Makie"
 
 [compat]
 Aqua = "0.8"
 DiffEqCallbacks = "4"
 Expokit = "0.2"
+JLD2 = "0.6"
 KrylovKit = "0.10"
 LinearAlgebra = "1"
 Makie = "0.24"
@@ -57,7 +60,8 @@ julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Test"]
+test = ["Aqua", "JLD2", "Test"]

@@ -11,6 +11,7 @@ using QuadGK
 using Test
 using Aqua
 using Random
+using JLD2
 
 include("testutils.jl")
 

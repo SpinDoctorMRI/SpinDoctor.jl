@@ -50,7 +50,7 @@ coeffs = coefficients(
 
 # We then proceed to build the geometry and finite element mesh.
 
-mesh, surfaces, cells = create_geometry(setup; recreate = true)
+mesh, surfaces, cells = create_geometry(setup)
 plot_mesh(mesh, 1:3)
 plot_mesh(mesh)
 

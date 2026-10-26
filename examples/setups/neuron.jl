@@ -111,6 +111,7 @@ end
 
 # Geometrical setup
 setup = NeuronSetup(;
+    meshfile = joinpath(savedir, "mesh.msh"),
     ecs = NoECS(),
     # refinement = 0.5,
 )

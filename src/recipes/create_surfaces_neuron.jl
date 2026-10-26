@@ -1,45 +1,16 @@
-function create_surfaces(setup::NeuronSetup{T}, filename) where {T}
+function create_surfaces(setup::NeuronSetup, meshfile)
     (; ecs) = setup
 
-    if !isfile(filename * "_elements.txt") || !isfile(filename * "_nodes.txt")
-        gmesh2fem(filename)
-    end
-    @info "Reading neuron FE mesh from " * filename
+    @info "Reading neuron FE mesh from " * meshfile
+    points, elements = read_gmsh(meshfile)
 
-    # Read points
-    nline = open(filename * "_nodes.txt", "r") do io
-        countlines(io)
+    # Boundary facets: the element faces that belong to one element only
+    count = Dict{SVector{3,Int},Int}()
+    for e ∈ axes(elements, 2), skip = 1:4
+        f = sort(SVector{3}(ntuple(k -> elements[k < skip ? k : k + 1, e], Val(3))))
+        count[f] = get(count, f, 0) + 1
     end
-    points = open(filename * "_nodes.txt", "r") do io
-        points = zeros(3, nline)
-        for iline = 1:nline
-            points[:, iline] = parse.(T, split(readline(io)))
-        end
-        points
-    end
-
-    # Read elements
-    nline = open(filename * "_elements.txt", "r") do io
-        countlines(io)
-    end
-    elements = open(filename * "_elements.txt", "r") do io
-        elements = zeros(Int, 4, nline)
-        for iline = 1:nline
-            elements[:, iline] = parse.(Int, split(readline(io)))
-        end
-        elements
-    end
-
-    # Extract boundary facets from elements (remove interior facets)
-    facets = [elements[[1, 2, 3], :] elements[[1, 2, 4], :] elements[[1, 3, 4], :] elements[
-        [2, 3, 4],
-        :,
-    ]]
-    sort!(facets, dims = 1)
-    facets_unq = unique(facets, dims = 2)
-    # FIXME: The below statement is slow
-    ikeep = [count(f -> f == fu, eachcol(facets)) == 1 for fu ∈ eachcol(facets_unq)]
-    facets = facets_unq[:, ikeep]
+    facets = reduce(hcat, [Vector(f) for (f, c) ∈ count if c == 1])
 
     volumes, centers = get_mesh_volumes(points, elements)
     centermass = centers * volumes / sum(volumes)

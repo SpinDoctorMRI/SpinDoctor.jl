@@ -71,7 +71,7 @@ export AbstractSetup,
     CylinderSetup,
     SlabSetup
 export coefficients, analytical_coefficients
-export create_geometry
+export create_geometry, save_geometry, load_geometry
 
 # Utils
 include("utils/fresnel.jl")
@@ -104,7 +104,7 @@ include("geometry/facet_elements.jl")
 include("geometry/get_volumes.jl")
 include("geometry/get_mesh_surface.jl")
 include("geometry/get_mesh_surfacenormals.jl")
-include("geometry/gmesh2fem.jl")
+include("geometry/read_gmsh.jl")
 include("geometry/read_cells.jl")
 include("geometry/read_surfaces.jl")
 include("geometry/read_mesh.jl")
@@ -174,7 +174,10 @@ include("recipes/coefficients.jl")
 include("recipes/create_cells.jl")
 include("recipes/create_surfaces.jl")
 include("recipes/create_geometry.jl")
+include("recipes/geometry_io.jl")
 include("recipes/radial_dimension.jl")
 include("recipes/analytical_coefficients.jl")
+
+include("error_hints.jl")
 
 end

@@ -212,6 +212,34 @@ end
     @test_throws ErrorException create_geometry(SphereSetup(; ncell = 3); cells)
 end
 
+@testset "Geometry files" begin
+    setup = CylinderSetup(; ncell = 2, rmin = 2.0, rmax = 3.0, ecs = BoxECS(), height = 5.0)
+    other = CylinderSetup(; ncell = 2, rmin = 2.0, rmax = 3.0, ecs = BoxECS(), height = 6.0)
+    same(m1, m2) =
+        m1.points == m2.points && m1.elements == m2.elements && m1.facets == m2.facets
+    mktempdir() do dir
+        mesh, _, cells = create_geometry(setup; rng = Xoshiro(1))
+
+        # JLD2 cache: created, then loaded (also with another random generator)
+        file = joinpath(dir, "geometry.jld2")
+        @test same(create_geometry(setup; cache = file, rng = Xoshiro(1))[1], mesh)
+        @test isfile(file)
+        mesh_cached, _, cells_cached = create_geometry(setup; cache = file, rng = Xoshiro(2))
+        @test same(mesh_cached, mesh)
+        @test cells_cached == cells
+
+        # A different setup is not taken from the cache
+        @test !same(create_geometry(other; cache = file, rng = Xoshiro(1))[1], mesh)
+        @test load_geometry(file).setup == repr(other)
+
+        # Text files: created, then reused (with full precision)
+        savedir = joinpath(dir, "text")
+        @test same(create_geometry(setup; savedir, rng = Xoshiro(1))[1], mesh)
+        @test same(create_geometry(setup; savedir, rng = Xoshiro(2))[1], mesh)
+        @test !same(create_geometry(other; savedir, rng = Xoshiro(1))[1], mesh)
+    end
+end
+
 @testset "Utilities" begin
     # Directions on a hemisphere
     d = unitsphere(20; half = true, normal = [1.0, 1.0, 0.0])

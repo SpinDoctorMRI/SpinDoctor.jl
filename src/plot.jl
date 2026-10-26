@@ -35,22 +35,3 @@ function plot_hardi end
 # Implemented in the Makie extension
 function initialize_plotter! end
 function update_plotter! end
-
-function __init__()
-    Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
-        f = exc.f
-        if f ∈ (
-            plot_surfaces,
-            plot_mesh,
-            plot_field,
-            plot_hardi,
-            initialize_plotter!,
-            update_plotter!,
-        )
-            print(
-                io,
-                "\nPlotting requires a Makie backend. Load one with `using CairoMakie` or `using GLMakie`.",
-            )
-        end
-    end
-end
