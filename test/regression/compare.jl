@@ -81,8 +81,13 @@ for case in sort(collect(keys(ref)))
     end
     for key in sort(collect(keys(ref[case])))
         if !haskey(new[case], key)
-            println("  ", rpad(key, 22), "missing")
-            global allok = false
+            if ref[case][key] isa AbstractString
+                # Error recorded by the reference, not by the new code
+                println("  ", rpad(key, 22), "now runs (reference failed)")
+            else
+                println("  ", rpad(key, 22), "missing")
+                global allok = false
+            end
             continue
         end
         # Matrix sums can vanish (stiffness matrix, moments of centered
@@ -92,6 +97,9 @@ for case in sort(collect(keys(ref)))
         msg, ok = compare(key, new[case][key], ref[case][key]; scale)
         println("  ", rpad(key, 22), ok ? "" : "✗ ", msg)
         global allok &= ok
+    end
+    for key in sort(collect(setdiff(keys(new[case]), keys(ref[case]))))
+        println("  ", rpad(key, 22), "new (not in the reference)")
     end
 end
 allok || error("Regression outputs differ from the reference")

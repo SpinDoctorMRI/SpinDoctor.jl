@@ -2,6 +2,42 @@
 
 γ = 2.67513e-4
 
+@testset "Compartment boundaries" begin
+    # Every boundary facet of a compartment is a face of one of its elements. The
+    # saved meshes of bent and layered cylinders used to violate this (and could
+    # not be assembled), since facets with all their points on an interface were
+    # also assigned to the neighboring compartment.
+    for (name, setup) ∈ [
+        "cylinders_bent_hull" => CylinderSetup(;
+            ncell = 3,
+            rmin = 2.0,
+            rmax = 4.0,
+            ecs = ConvexHullECS(; margin = 1.0),
+            height = 10.0,
+            bend = 0.02,
+            twist = π / 4,
+        ),
+        "cylinders_layers_hull" => CylinderSetup(;
+            ncell = 2,
+            layersizes = [0.6, 1.0],
+            rmin = 2.0,
+            rmax = 4.0,
+            ecs = ConvexHullECS(; margin = 1.0),
+            height = 10.0,
+            bend = 0.02,
+            twist = π / 4,
+        ),
+    ]
+        savedir = joinpath(@__DIR__, "regression", "meshes", name)
+        mesh, = create_geometry(setup; savedir, recreate = false)
+        for i ∈ eachindex(mesh.points), f ∈ mesh.facets[i, :]
+            isempty(f) || @test all(>(0), SpinDoctor.facet_elements(mesh.elements[i], f))
+        end
+        model = Model(; mesh, get_coeffs(setup)...)
+        @test assemble_matrices(model) isa NamedTuple
+    end
+end
+
 @testset "Permeable plates vs analytical solution" begin
     # For a gradient across the plates, the 2D plates and the 3D slabs reduce to
     # the one-dimensional problem of the analytical matrix formalism

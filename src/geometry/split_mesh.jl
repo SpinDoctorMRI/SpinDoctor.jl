@@ -18,31 +18,23 @@ function split_mesh(mesh_all)
 
     # Map global to local points
     point_map = sort.(unique.(elements))
-
-    # Inverse point map
-    point_map_inv = [zeros(Int, npoint) for _ = 1:ncompartment]
-    for icmpt = 1:ncompartment
-        for ipoint = 1:length(point_map[icmpt])
-            point_map_inv[icmpt][point_map[icmpt][ipoint]] = ipoint
-        end
-    end
-
-    boundary_facets =
-        [facets_all[:, facetmarkers_all.==iboundary] for iboundary = 1:nboundary]
     points = [points_all[:, point_map[icmpt]] for icmpt = 1:ncompartment]
 
+    # Assign each boundary facet to the compartments that have it as an element face
+    # (an interface belongs to both of its compartments), and renumber locally
     facets = [zeros(Int, dim, 0) for _ = 1:ncompartment, _ = 1:nboundary]
+    point_map_inv = zeros(Int, npoint)
     for icmpt = 1:ncompartment
-        # replace!(ipoint -> point_map_inv[icmpt][ipoint], elements[icmpt])
-        elements[icmpt] .= point_map_inv[icmpt][elements[icmpt]]
-
+        point_map_inv[point_map[icmpt]] = 1:length(point_map[icmpt])
+        inside = facet_elements(elements[icmpt], facets_all) .> 0
         for iboundary = 1:nboundary
-            # f = replace(ipoint -> point_map_inv[icmpt][ipoint], boundary_facets[iboundary])
-            f = point_map_inv[icmpt][boundary_facets[iboundary]]
-            if all(f .!= 0)
-                facets[icmpt, iboundary] = f
+            sel = inside .& (facetmarkers_all .== iboundary)
+            if any(sel)
+                facets[icmpt, iboundary] = point_map_inv[facets_all[:, sel]]
             end
         end
+        elements[icmpt] = point_map_inv[elements[icmpt]]
+        point_map_inv[point_map[icmpt]] .= 0
     end
 
     FEMesh(; point_map, points, facets, elements)
