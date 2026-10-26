@@ -6,7 +6,7 @@ function plot_surfaces(surfaces, boundaries = 1:maximum(surfaces.facetmarkers))
         ax = Axis(fig[1, 1])
         i = 1
         for b ∈ boundaries
-            f = facets[:, facetmarkers.==b]
+            f = facets[:, facetmarkers .== b]
             if !isempty(f)
                 segs = [
                     (Point2f(points[:, f[1]]), Point2f(points[:, f[2]])) for f ∈ eachcol(f)
@@ -20,7 +20,7 @@ function plot_surfaces(surfaces, boundaries = 1:maximum(surfaces.facetmarkers))
         scene = Figure()
         first = true
         for b ∈ boundaries
-            f = facets[:, facetmarkers.==b]
+            f = facets[:, facetmarkers .== b]
             if !isempty(f)
                 color = points[3, :]
                 if first

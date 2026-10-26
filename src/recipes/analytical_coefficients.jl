@@ -15,7 +15,7 @@ function analytical_coefficients(setup::PlateSetup, coeffs)
     r = cumsum(widths) * 1e-6
     D = tr.(coeffs.D) ./ size(coeffs.D[1], 1) .* 1e-6
     T₂ = coeffs.T₂ * 1e-6
-    W = [[coeffs.κ[(i-1)*(2n-i)÷2+1] for i = 1:n-1]; coeffs.κ[end]]
+    W = [[coeffs.κ[(i-1)*(2n-i)÷2+1] for i = 1:(n-1)]; coeffs.κ[end]]
     γ = coeffs.γ
 
     (; ρ, r, D, W, T₂, γ, dim)
@@ -33,7 +33,7 @@ function analytical_coefficients(setup::Union{DiskSetup,SphereSetup}, coeffs)
     r = r * 1e-6
     D = tr.(coeffs.D) ./ size(coeffs.D[1], 1) .* 1e-6
     T₂ = coeffs.T₂ * 1e-6
-    W = [[coeffs.κ[(i-1)*(2n-i)÷2+1] for i = 1:n-1]; coeffs.κ[end]]
+    W = [[coeffs.κ[(i-1)*(2n-i)÷2+1] for i = 1:(n-1)]; coeffs.κ[end]]
     γ = coeffs.γ
 
     (; ρ, r, D, W, T₂, γ, dim)

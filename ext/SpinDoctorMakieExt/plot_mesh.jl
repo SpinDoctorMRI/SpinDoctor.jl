@@ -5,7 +5,14 @@ function plot_mesh(femesh::FEMesh{T,2}, compartments = 1:length(femesh.points)) 
     for (i, icmpt) ∈ enumerate(compartments)
         points = femesh.points[icmpt]
         elements = femesh.elements[icmpt]
-        poly!(ax, points', elements'; color = Cycled(i), strokewidth = 1, shading = NoShading)
+        poly!(
+            ax,
+            points',
+            elements';
+            color = Cycled(i),
+            strokewidth = 1,
+            shading = NoShading,
+        )
     end
     fig
 end

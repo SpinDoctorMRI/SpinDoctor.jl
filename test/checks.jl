@@ -194,7 +194,7 @@ end
         area(f) = sum(first(SpinDoctor.get_mesh_surface(p, f)))
         ncomplete = setup isa ExtrusionSetup ? 2 : dim
         for d = 1:ncomplete, face ∈ (faces[2d-1], faces[2d])
-            @test area(face) ≈ prod(L[[1:d-1; d+1:dim]])
+            @test area(face) ≈ prod(L[[1:(d-1); (d+1):dim]])
         end
         if setup isa ExtrusionSetup
             # The cylinders cross the top and bottom faces
@@ -224,7 +224,8 @@ end
         file = joinpath(dir, "geometry.jld2")
         @test same(create_geometry(setup; cache = file, rng = Xoshiro(1))[1], mesh)
         @test isfile(file)
-        mesh_cached, _, cells_cached = create_geometry(setup; cache = file, rng = Xoshiro(2))
+        mesh_cached, _, cells_cached =
+            create_geometry(setup; cache = file, rng = Xoshiro(2))
         @test same(mesh_cached, mesh)
         @test cells_cached == cells
 

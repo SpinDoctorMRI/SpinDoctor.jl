@@ -15,7 +15,7 @@ function read_surfaces(filename)
         points = zeros(dim, npoint)
         for ipoint = 1:npoint
             tmp = parse.(Float64, split(readline(io)))
-            points[:, ipoint] = tmp[2:2+dim-1]
+            points[:, ipoint] = tmp[2:(2+dim-1)]
         end
         points, dim
     end
@@ -39,7 +39,7 @@ function read_surfaces(filename)
             tmp = parse.(Int, split(readline(io)))
             facetmarkers[ifacet] = tmp[3]
             tmp = parse.(Int, split(readline(io)))
-            facets[:, ifacet] = tmp[2:2+dim-1]
+            facets[:, ifacet] = tmp[2:(2+dim-1)]
         end
 
         # Read list of holes (empty)
@@ -52,7 +52,7 @@ function read_surfaces(filename)
         regions = zeros(dim, nregion)
         for iregion = 1:nregion
             tmp = parse.(Float64, split(readline(io)))
-            regions[:, iregion] = tmp[2:2+dim-1]
+            regions[:, iregion] = tmp[2:(2+dim-1)]
         end
 
         facets, facetmarkers, regions

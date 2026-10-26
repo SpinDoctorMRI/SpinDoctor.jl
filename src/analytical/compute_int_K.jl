@@ -6,7 +6,7 @@ function compute_int_K(params, α₁, n₁, α₂, n₂)
     L = R
 
     dr = r[m] * 1e-12
-    r₁ = [0; r[1:m-1]] .+ dr
+    r₁ = [0; r[1:(m-1)]] .+ dr
     r₂ = r[1:m] .- dr
 
     K = 0

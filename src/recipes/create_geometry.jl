@@ -116,7 +116,7 @@ function finalize_geometry(setup, mesh_all, surfaces, cells)
 
     # Check that boundaries are correctly assigned
     ncompartment = length(mesh.points)
-    for i = 1:ncompartment, j ∈ [1:i-1; i+1:ncompartment]
+    for i = 1:ncompartment, j ∈ [1:(i-1); (i+1):ncompartment]
         isempty(mesh.facets[i, end-ncompartment+j]) || @warn("""
              Outer boundary of compartment $i is registered as
              an interface to compartment $j, this is not intended.

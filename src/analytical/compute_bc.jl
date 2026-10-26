@@ -9,14 +9,14 @@ function compute_bc(params, α, n)
         return bc
     end
 
-    ρ = r[1:m-1] ./ sqrt.(D[1:m-1])
-    ρt = r[1:m-1] ./ sqrt.(D[2:m])
+    ρ = r[1:(m-1)] ./ sqrt.(D[1:(m-1)])
+    ρt = r[1:(m-1)] ./ sqrt.(D[2:m])
 
     if dim == 1
         bc[1, 1] = sqrt(D[1]) * α
     end
 
-    for i = 1:m-1
+    for i = 1:(m-1)
         J, Y, dJ, dY = compute_JY(α * ρ[i], n, dim)
         J1, Y1, dJ1, dY1 = compute_JY(α * ρt[i], n, dim)
 

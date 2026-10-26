@@ -22,9 +22,9 @@ function create_surfaces(setup::Union{DiskSetup,SphereSetup}, cells)
         r = layersizes[i] * radii[j]
         if dim == 2
             n = max(nside_min, round(Int, nsidewall * r / rmean))
-            angles = 2π * collect(0:n-1) / n
+            angles = 2π * collect(0:(n-1)) / n
             cell_points[j, i] = r * [cos.(angles'); sin.(angles')] .+ centers[:, j]
-            cell_facets[j, i] = [(1:n-1)' n; (2:n)' 1]
+            cell_facets[j, i] = [(1:(n-1))' n; (2:n)' 1]
         elseif dim == 3
             n = max(nside_min, round(Int, nsidewall * (r / rmean)^2))
             cell_points[j, i] = centers[:, j] .+ r .* create_fibonacci_sphere(n)

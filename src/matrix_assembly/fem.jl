@@ -10,13 +10,22 @@
 
 Vertices of element `e` as the columns of a static matrix.
 """
-@inline function simplex(points::AbstractMatrix{T}, elements, e, ::Val{dim}, ::Val{n}) where {T,dim,n}
-    SMatrix{dim,n,T}(ntuple(i -> points[(i-1)%dim+1, elements[(i-1)÷dim+1, e]], Val(dim * n)))
+@inline function simplex(
+    points::AbstractMatrix{T},
+    elements,
+    e,
+    ::Val{dim},
+    ::Val{n},
+) where {T,dim,n}
+    SMatrix{dim,n,T}(
+        ntuple(i -> points[(i-1)%dim+1, elements[(i-1)÷dim+1, e]], Val(dim * n)),
+    )
 end
 
 # Edge vectors from the first vertex
-@inline edgevectors(x::SMatrix{dim,n,T}) where {dim,n,T} =
-    SMatrix{dim,n - 1,T}(ntuple(i -> x[(i-1)%dim+1, (i-1)÷dim+2] - x[(i-1)%dim+1, 1], Val(dim * (n - 1))))
+@inline edgevectors(x::SMatrix{dim,n,T}) where {dim,n,T} = SMatrix{dim,n - 1,T}(
+    ntuple(i -> x[(i-1)%dim+1, (i-1)÷dim+2] - x[(i-1)%dim+1, 1], Val(dim * (n - 1))),
+)
 
 """
     simplex_measure(x)
@@ -116,7 +125,7 @@ function FEPattern(elements, nnode)
     cols = Vector{Vector{Int}}(undef, nnode)
     Threads.@threads for j = 1:nnode
         rows = Int[]
-        for k = ptr[j]:ptr[j+1]-1, a = 1:nbasis
+        for k = ptr[j]:(ptr[j+1]-1), a = 1:nbasis
             push!(rows, elements[a, elems[k]])
         end
         cols[j] = unique!(sort!(rows))
@@ -124,7 +133,7 @@ function FEPattern(elements, nnode)
     colptr = cumsum([1; length.(cols)])
     rowval = zeros(Int, colptr[end] - 1)
     for j = 1:nnode
-        rowval[colptr[j]:colptr[j+1]-1] = cols[j]
+        rowval[colptr[j]:(colptr[j+1]-1)] = cols[j]
     end
 
     FEPattern(nnode, colptr, rowval, ptr, elems, locs)
@@ -136,14 +145,19 @@ end
 Assemble the sparse matrix with the element contributions `localmatrix(e)` (static
 `nbasis × nbasis` matrices).
 """
-function assemble(localmatrix::F, pattern::FEPattern, elements, ::Val{nbasis}) where {F,nbasis}
+function assemble(
+    localmatrix::F,
+    pattern::FEPattern,
+    elements,
+    ::Val{nbasis},
+) where {F,nbasis}
     (; nnode, colptr, rowval, ptr, elems, locs) = pattern
     size(elements, 2) > 0 || return spzeros(nnode, nnode)
     T = eltype(localmatrix(1))
     nzval = zeros(T, length(rowval))
     Threads.@threads for j = 1:nnode
-        rows = view(rowval, colptr[j]:colptr[j+1]-1)
-        for k = ptr[j]:ptr[j+1]-1
+        rows = view(rowval, colptr[j]:(colptr[j+1]-1))
+        for k = ptr[j]:(ptr[j+1]-1)
             e, b = elems[k], locs[k]
             K = localmatrix(e)
             for a = 1:nbasis
@@ -172,7 +186,8 @@ function assemble_mass_matrix(
     nodeweights = nothing,
     pattern = FEPattern(elements, size(points, 2)),
 )
-    isnothing(elementweights) || isnothing(nodeweights) ||
+    isnothing(elementweights) ||
+        isnothing(nodeweights) ||
         error("Give either element weights or node weights, not both")
     dim = Val(size(points, 1))
     nbasis = Val(size(elements, 1))
@@ -212,7 +227,12 @@ end
 
 function _stiffness(points, elements, D, pattern, ::Val{dim}) where {dim}
     nb = Val(dim + 1)
-    assemble(e -> local_stiffness(simplex(points, elements, e, Val(dim), nb), D), pattern, elements, nb)
+    assemble(
+        e -> local_stiffness(simplex(points, elements, e, Val(dim), nb), D),
+        pattern,
+        elements,
+        nb,
+    )
 end
 
 """
@@ -244,10 +264,32 @@ Append the entries of `c` times the P1 mass matrix of the `facets` to the triple
 `cols[a, f]`.
 """
 function facet_mass_triplets!(I, J, V, points, facets, rows, cols, c)
-    _facet_mass_triplets!(I, J, V, points, facets, rows, cols, c, Val(size(points, 1)), Val(size(facets, 1)))
+    _facet_mass_triplets!(
+        I,
+        J,
+        V,
+        points,
+        facets,
+        rows,
+        cols,
+        c,
+        Val(size(points, 1)),
+        Val(size(facets, 1)),
+    )
 end
 
-function _facet_mass_triplets!(I, J, V, points, facets, rows, cols, c, dim, ::Val{n}) where {n}
+function _facet_mass_triplets!(
+    I,
+    J,
+    V,
+    points,
+    facets,
+    rows,
+    cols,
+    c,
+    dim,
+    ::Val{n},
+) where {n}
     for f ∈ axes(facets, 2)
         K = local_mass(simplex(points, facets, f, dim, Val(n)))
         for b = 1:n, a = 1:n

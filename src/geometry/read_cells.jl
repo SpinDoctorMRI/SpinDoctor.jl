@@ -18,7 +18,7 @@ function read_cells(cellfilename)
         readline(io)
         for icell = 1:ncell
             tmp = parse.(Float64, split(readline(io)))
-            centers[:, icell] = tmp[2:1+dim]
+            centers[:, icell] = tmp[2:(1+dim)]
             radii[icell] = tmp[2+dim]
         end
         (; centers, radii)

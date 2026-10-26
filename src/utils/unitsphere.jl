@@ -11,7 +11,7 @@ function unitsphere(ndirection; half = false, normal = [0, 0, 1])
     if half
         # Fibonacci lattice on the upper hemisphere (z > 0)
         φ = (1 + √5) / 2
-        inds = collect(0:ndirection-1)'
+        inds = collect(0:(ndirection-1))'
         θ = 2π / φ * inds
         ϕ = acos.(1 .- (inds .+ 0.5) ./ ndirection)
         directions = [

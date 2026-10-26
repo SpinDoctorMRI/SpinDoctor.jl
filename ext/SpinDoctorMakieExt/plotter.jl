@@ -15,7 +15,7 @@ function initialize_plotter!(p::Plotter, problem, gradient, ξ, t)
 
     npoint_cmpts = size.(femesh.points, 2)
     inds = [0; cumsum(npoint_cmpts[1:end])]
-    ξ_cmpts = [@lift($ξobs[1+inds[i]:inds[i+1]]) for i = 1:ncompartment]
+    ξ_cmpts = [@lift($ξobs[(1+inds[i]):inds[i+1]]) for i = 1:ncompartment]
 
     fig = Figure()
 

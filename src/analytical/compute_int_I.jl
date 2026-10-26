@@ -5,7 +5,7 @@ function compute_int_I(params, α₁, α₂, n)
 
     dr = r[m] * 1e-12
     r₂ = r[1:m] .- dr
-    r₁ = [0; r[1:m-1]] .+ dr
+    r₁ = [0; r[1:(m-1)]] .+ dr
 
     # Check if α₁ is not equal to α₂
     # if abs(α₁ - α₂) > 1e-8

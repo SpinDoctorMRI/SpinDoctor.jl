@@ -9,7 +9,7 @@ circle.
 """
 function unitcircle(n; half = false, normal = [0, 0, 1])
     # Create directions (unformly distributed on unit circle)
-    θ = 2π * collect(0:n-1)' / (1 + half)n
+    θ = 2π * collect(0:(n-1))' / (1 + half)n
     directions = [
         cos.(θ)
         sin.(θ)

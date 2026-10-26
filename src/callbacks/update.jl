@@ -19,7 +19,7 @@ function update!(writer::VTKWriter, problem, gradient, ξ, t)
             elements = model.mesh.elements[icmpt]
 
             cells = [MeshCell(celltype, elements[:, i]) for i = 1:size(elements, 2)]
-            ξ_cmpt = ξ[1+inds_cmpts[icmpt]:inds_cmpts[icmpt+1]]
+            ξ_cmpt = ξ[(1+inds_cmpts[icmpt]):inds_cmpts[icmpt+1]]
 
             vtkfile = vtk_grid(vtmfile, points, cells)
             vtkfile["Magnetization (real part)", VTKPointData()] = real(ξ_cmpt)

@@ -31,8 +31,8 @@ function create_surfaces(setup::ExtrusionSetup, cells)
     ri = edges[2:2, :]
     sidefacets = [
         le le
-        ri (ri.+npoint)
-        (ri.+npoint) (le.+npoint)
+        ri (ri .+ npoint)
+        (ri .+ npoint) (le .+ npoint)
     ]
 
     # The boundaries are ordered as follows:

@@ -70,7 +70,7 @@ function solve_karger(model, difftensors, gradient::ScalarGradient; timestep)
     c₁, c₂ = 1 / 2 - √3 / 6, 1 / 2 + √3 / 6
     S = complex(S₀)
     ivals = intervals(gradient)
-    for i = 1:length(ivals)-1
+    for i = 1:(length(ivals)-1)
         nstep = max(1, ceil(Int, (ivals[i+1] - ivals[i]) / dt))
         h = (ivals[i+1] - ivals[i]) / nstep
         for istep = 1:nstep

@@ -7,8 +7,8 @@ function create_surfaces(setup::PlateSetup{T}, _) where {T}
     y = depth / 2
 
     points = zeros(T, 2, 2(n + 1))
-    for i = 1:n+1
-        points[:, 1+2(i-1):2i] = [
+    for i = 1:(n+1)
+        points[:, (1+2(i-1)):2i] = [
             x[i] x[i]
             -y y
         ]

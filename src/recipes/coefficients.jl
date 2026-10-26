@@ -14,7 +14,7 @@ function coefficients(setup::PlateSetup{T}; D, T₂, ρ, κ, γ) where {T}
         ρ = zeros(Complex{T}, n),
         γ = T(γ),
     )
-    for i = 1:n-1
+    for i = 1:(n-1)
         coeffs.κ[(i-1)*(2n-i)÷2+1] = κ.interfaces[i]
     end
     for i = 1:n
@@ -52,15 +52,15 @@ function coefficients(setup::NeuronSetup{T}; D, T₂, ρ, κ, γ) where {T}
     )
 
     # Distribute material properties to compartments and boundaries
-    coeffs.ρ[compartments.=="neuron"] .= ρ.neuron
-    coeffs.ρ[compartments.=="ecs"] .= ρ.ecs
-    coeffs.D[compartments.=="neuron"] .= [D.neuron]
-    coeffs.D[compartments.=="ecs"] .= [D.ecs]
-    coeffs.T₂[compartments.=="neuron"] .= T₂.neuron
-    coeffs.T₂[compartments.=="ecs"] .= T₂.ecs
-    coeffs.κ[boundaries.=="neuron,ecs"] .= κ.neuron_ecs
-    coeffs.κ[boundaries.=="neuron"] .= κ.neuron
-    coeffs.κ[boundaries.=="ecs"] .= κ.ecs
+    coeffs.ρ[compartments .== "neuron"] .= ρ.neuron
+    coeffs.ρ[compartments .== "ecs"] .= ρ.ecs
+    coeffs.D[compartments .== "neuron"] .= [D.neuron]
+    coeffs.D[compartments .== "ecs"] .= [D.ecs]
+    coeffs.T₂[compartments .== "neuron"] .= T₂.neuron
+    coeffs.T₂[compartments .== "ecs"] .= T₂.ecs
+    coeffs.κ[boundaries .== "neuron,ecs"] .= κ.neuron_ecs
+    coeffs.κ[boundaries .== "neuron"] .= κ.neuron
+    coeffs.κ[boundaries .== "ecs"] .= κ.ecs
 
     coeffs
 end

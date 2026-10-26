@@ -64,7 +64,8 @@ function local_indices(point_map, globals)
     issorted(point_map) || error("The point map of the compartment must be sorted")
     map(globals) do g
         i = searchsortedfirst(point_map, g)
-        i ≤ length(point_map) && point_map[i] == g || error("Point $g is not in the compartment")
+        i ≤ length(point_map) && point_map[i] == g ||
+            error("Point $g is not in the compartment")
         i
     end
 end

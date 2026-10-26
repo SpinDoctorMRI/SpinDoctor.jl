@@ -40,7 +40,8 @@ function box_faces(
     pmax = maximum(points; dims = 2)
     isnothing(atol) && (atol = 1e-8 * norm(pmax - pmin))
 
-    onplane(f, d, value) = all(a -> abs(points[d, facets[a, f]] - value) ≤ atol, axes(facets, 1))
+    onplane(f, d, value) =
+        all(a -> abs(points[d, facets[a, f]] - value) ≤ atol, axes(facets, 1))
     face(d, value) = facets[:, [f for f ∈ axes(facets, 2) if onplane(f, d, value)]]
 
     names = (:xmin, :xmax, :ymin, :ymax, :zmin, :zmax)[1:2dim]

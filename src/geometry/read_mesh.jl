@@ -11,7 +11,7 @@ function read_mesh(filename)
         npoint, dim, = parse.(Int, split(readline(io)))
         points = zeros(dim, npoint)
         for ipoint = 1:npoint
-            points[:, ipoint] = parse.(Float64, split(readline(io))[2:1+dim])
+            points[:, ipoint] = parse.(Float64, split(readline(io))[2:(1+dim)])
         end
         points, dim
     end
@@ -23,7 +23,7 @@ function read_mesh(filename)
         facetmarkers = zeros(Int, nfacet)
         for ifacet = 1:nfacet
             tmp = parse.(Int, split(readline(io)))
-            facets[:, ifacet] = tmp[2:1+dim]
+            facets[:, ifacet] = tmp[2:(1+dim)]
             facetmarkers[ifacet] = tmp[2+dim]
         end
         facets, facetmarkers
@@ -36,7 +36,7 @@ function read_mesh(filename)
         elementmarkers = zeros(Int, nelement)
         for ielement = 1:nelement
             tmp = parse.(Int, split(readline(io)))
-            elements[:, ielement] = tmp[2:2+dim]
+            elements[:, ielement] = tmp[2:(2+dim)]
             elementmarkers[ielement] = tmp[3+dim]
         end
         elements, elementmarkers

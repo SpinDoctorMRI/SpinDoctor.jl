@@ -25,7 +25,7 @@ function solve_laplace(model::Model{T,dim}, matrices; neig_max) where {T,dim}
 
     # All Laplace eigenvalues are nonnegative (up to round-off)
     all(≥(-√eps(real(eltype(λ))) * maximum(abs, λ)), real.(λ)) ||
-        @warn "Obtained negative eigenvalues for Laplace operator." findall(λ .< 0) λ[λ.<0]
+        @warn "Obtained negative eigenvalues for Laplace operator." findall(λ .< 0) λ[λ .< 0]
 
     # Normalize eigenfunctions with mass weighting
     ϕ ./= sqrt.(sum(ϕ .* (M * ϕ), dims = 1))

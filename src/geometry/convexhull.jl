@@ -25,10 +25,10 @@ function convexhull2(p)
 
     # Iterate through points
     i = 1
-    for i = 1:npoint-1
+    for i = 1:(npoint-1)
         done = true
         jnext = i
-        for j = i+1:npoint
+        for j = (i+1):npoint
             if isclock(u, p[:, j] - p[:, i])
                 u = p[:, j] - p[:, i]
                 jnext = j

@@ -65,7 +65,13 @@ cases = [
         (1, s, platecoeffs(s, 4, 2), true)
     end,
     "disks_box_2d" => begin
-        s = DiskSetup(; ncell = 3, rmin = 2.0, rmax = 4.0, ecs = BoxECS(; margin = 1.0), refinement = 0.5)
+        s = DiskSetup(;
+            ncell = 3,
+            rmin = 2.0,
+            rmax = 4.0,
+            ecs = BoxECS(; margin = 1.0),
+            refinement = 0.5,
+        )
         (2, s, cellcoeffs(s, 1, 2), false)
     end,
     "cylinders_box" => begin
@@ -190,75 +196,119 @@ for (name, (seed, setup, coeffs, analytical)) in cases
         out["matrix_Mx$(d)_vAv"] = v' * matrices.Mx[d] * v
     end
     out["G_sum"] = [sum(matrices.G[i][:, d]) for i = 1:ncmpt for d = 1:dim]
-    out["G_xn"] = [mesh.points[i][d, :]' * matrices.G[i][:, d] for i = 1:ncmpt for d = 1:dim]
+    out["G_xn"] =
+        [mesh.points[i][d, :]' * matrices.G[i][:, d] for i = 1:ncmpt for d = 1:dim]
 
     profile = PGSE(2000.0, 6000.0)
     dirs = directions(dim)
     grad = gradient_for(profile, dirs[end], 1000.0)
 
-    tryrecord!(out, "adc_sta", () -> reduce(vcat, [compute_adc_sta(model, gradient_for(profile, d, 1000.0)) for d in dirs]))
-    tryrecord!(out, "hadc", () -> reduce(vcat, [solve_hadc(model, matrices, gradient_for(profile, d, 1000.0)) for d in dirs]))
+    tryrecord!(
+        out,
+        "adc_sta",
+        () -> reduce(
+            vcat,
+            [compute_adc_sta(model, gradient_for(profile, d, 1000.0)) for d in dirs],
+        ),
+    )
+    tryrecord!(
+        out,
+        "hadc",
+        () -> reduce(
+            vcat,
+            [solve_hadc(model, matrices, gradient_for(profile, d, 1000.0)) for d in dirs],
+        ),
+    )
 
-    tryrecord!(out, "btpde_qndf", () -> begin
-        ξ = solve_btpde(model, matrices, grad)
-        s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
-        Dict("re" => re(s), "im" => im_(s))
-    end)
-    tryrecord!(out, "btpde_cn", () -> begin
-        solver = IntervalConstantSolver(; θ = 0.5, timestep = 20.0)
-        ξ = solve_btpde(model, matrices, grad, solver)
-        s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
-        s0 = compute_signal.(matrices.M_cmpts, split_field(mesh, initial_conditions(model)))
-        Dict(
-            "re" => re(s),
-            "im" => im_(s),
-            "fit_adc" => [fit_adc([0.0, 1000.0], [s0[i], s[i]]) for i = 1:ncmpt],
-        )
-    end)
+    tryrecord!(
+        out,
+        "btpde_qndf",
+        () -> begin
+            ξ = solve_btpde(model, matrices, grad)
+            s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
+            Dict("re" => re(s), "im" => im_(s))
+        end,
+    )
+    tryrecord!(
+        out,
+        "btpde_cn",
+        () -> begin
+            solver = IntervalConstantSolver(; θ = 0.5, timestep = 20.0)
+            ξ = solve_btpde(model, matrices, grad, solver)
+            s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
+            s0 = compute_signal.(
+                matrices.M_cmpts,
+                split_field(mesh, initial_conditions(model)),
+            )
+            Dict(
+                "re" => re(s),
+                "im" => im_(s),
+                "fit_adc" => [fit_adc([0.0, 1000.0], [s0[i], s[i]]) for i = 1:ncmpt],
+            )
+        end,
+    )
     if name == "slabs"
         TE = 5000.0
         φ = -π / 6
         Rot = [cos(φ) sin(φ) 0; -sin(φ) cos(φ) 0; 0 0 1]
         gvec(t) = 1.0 * Rot * [sin(2π * t / TE), sin(20π * t / TE) / 5, cos(2π * t / TE)]
         general = GeneralGradient(; gvec, TE)
-        tryrecord!(out, "btpde_general", () -> begin
-            ξ = solve_btpde(model, matrices, general)
-            s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
-            Dict("re" => re(s), "im" => im_(s))
-        end)
+        tryrecord!(
+            out,
+            "btpde_general",
+            () -> begin
+                ξ = solve_btpde(model, matrices, general)
+                s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
+                Dict("re" => re(s), "im" => im_(s))
+            end,
+        )
         ogse = gradient_for(CosOGSE(5000.0, 5000.0, 2), dirs[end], 1000.0)
         tryrecord!(out, "hadc_ogse", () -> solve_hadc(model, matrices, ogse))
     end
 
-    tryrecord!(out, "laplace_mf", () -> begin
-        lap_eig = solve_laplace(model, matrices; neig_max = 30)
-        ξ = solve_mf(model, matrices, lap_eig, grad)
-        s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
-        Dict("eigenvalues" => lap_eig.values, "re" => re(s), "im" => im_(s))
-    end)
+    tryrecord!(
+        out,
+        "laplace_mf",
+        () -> begin
+            lap_eig = solve_laplace(model, matrices; neig_max = 30)
+            ξ = solve_mf(model, matrices, lap_eig, grad)
+            s = compute_signal.(matrices.M_cmpts, split_field(mesh, ξ))
+            Dict("eigenvalues" => lap_eig.values, "re" => re(s), "im" => im_(s))
+        end,
+    )
 
-    tryrecord!(out, "karger", () -> begin
-        kdirs = dim == 2 ? unitcircle(8)[1:2, :] : unitsphere(10)
-        adcs = [solve_hadc(model, matrices, gradient_for(profile, collect(d), 1000.0)) for d in eachcol(kdirs)]
-        difftensors = fit_tensors(kdirs, adcs)
-        s = solve_karger(model, difftensors, grad; timestep = 5.0)
-        Dict(
-            "difftensors" => reduce(vcat, vec.(difftensors)),
-            "re" => re(s),
-            "im" => im_(s),
-        )
-    end)
+    tryrecord!(
+        out,
+        "karger",
+        () -> begin
+            kdirs = dim == 2 ? unitcircle(8)[1:2, :] : unitsphere(10)
+            adcs = [
+                solve_hadc(model, matrices, gradient_for(profile, collect(d), 1000.0)) for d in eachcol(kdirs)
+            ]
+            difftensors = fit_tensors(kdirs, adcs)
+            s = solve_karger(model, difftensors, grad; timestep = 5.0)
+            Dict(
+                "difftensors" => reduce(vcat, vec.(difftensors)),
+                "re" => re(s),
+                "im" => im_(s),
+            )
+        end,
+    )
 
     if analytical
-        tryrecord!(out, "analytical", () -> begin
-            volumes = get_cmpt_volumes(mesh)
-            D_avg = 1 / dim * tr.(model.D)' * volumes / sum(volumes)
-            eiglim = length2eig(1.0, D_avg)
-            acoeffs = analytical_coefficients(setup, coeffs)
-            alap = solve_analytical_laplace(; acoeffs..., eiglim, eigstep = 1e-8)
-            s = solve_analytical_mf(alap, volumes, grad)
-            Dict("re" => real(s), "im" => imag(s))
-        end)
+        tryrecord!(
+            out,
+            "analytical",
+            () -> begin
+                volumes = get_cmpt_volumes(mesh)
+                D_avg = 1 / dim * tr.(model.D)' * volumes / sum(volumes)
+                eiglim = length2eig(1.0, D_avg)
+                acoeffs = analytical_coefficients(setup, coeffs)
+                alap = solve_analytical_laplace(; acoeffs..., eiglim, eigstep = 1e-8)
+                s = solve_analytical_mf(alap, volumes, grad)
+                Dict("re" => real(s), "im" => imag(s))
+            end,
+        )
     end
 end
 

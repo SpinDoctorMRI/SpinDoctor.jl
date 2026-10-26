@@ -7,7 +7,13 @@ interval-wise constant are approximated by `ninterval` constant intervals.
 
 See [Li2020](@cite), [Agdestein2021](@cite).
 """
-function solve_mf(model::Model{TT,dim}, matrices, lap_eig, gradient; ninterval = 500) where {TT,dim}
+function solve_mf(
+    model::Model{TT,dim},
+    matrices,
+    lap_eig,
+    gradient;
+    ninterval = 500,
+) where {TT,dim}
     (; γ) = model
     (; M) = matrices
 
@@ -40,7 +46,7 @@ function solve_mf(model::Model{TT,dim}, matrices, lap_eig, gradient; ninterval =
     if isa(gradient, ScalarGradient) && isconstant(gradient.profile)
         # The gradient is constant on each interval
         t = intervals(gradient.profile)
-        for i = 1:length(t)-1
+        for i = 1:(length(t)-1)
             δᵢ = t[i+1] - t[i]
             tᵢ = (t[i+1] + t[i]) / 2
             K!(K, gradient(tᵢ))

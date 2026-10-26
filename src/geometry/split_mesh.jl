@@ -14,7 +14,7 @@ function split_mesh(mesh_all)
     dim, npoint = size(mesh_all.points)
     ncompartment = maximum(elementmarkers_all)
     nboundary = maximum(facetmarkers_all)
-    elements = [elements_all[:, elementmarkers_all.==icmpt] for icmpt = 1:ncompartment]
+    elements = [elements_all[:, elementmarkers_all .== icmpt] for icmpt = 1:ncompartment]
 
     # Map global to local points
     point_map = sort.(unique.(elements))

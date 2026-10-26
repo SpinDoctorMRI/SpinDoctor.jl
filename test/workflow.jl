@@ -43,7 +43,8 @@ T = Float64
     end
 
     @testset "NeuronSetup" begin
-        setup = NeuronSetup(; meshfile = joinpath(@__DIR__, "meshfiles", "neuron", "mesh.msh"))
+        setup =
+            NeuronSetup(; meshfile = joinpath(@__DIR__, "meshfiles", "neuron", "mesh.msh"))
         coeffs = get_coeffs(setup)
         mesh, = create_geometry(setup)
         model = Model(; mesh, coeffs...)
