@@ -12,8 +12,56 @@ found at <https://github.com/SpinDoctorMRI/SpinDoctor>.
 
 ## Getting started
 
+```julia
+using SpinDoctor
+using LinearAlgebra
+
+# Three cylinders in a box-shaped extracellular space (ECS)
+setup = CylinderSetup(;
+    ncell = 3,
+    rmin = 2.0,
+    rmax = 4.0,
+    ecs = BoxECS(; margin = 1.0),
+    height = 10.0,
+)
+coeffs = coefficients(
+    setup;
+    D = (; cell = [0.002 * I(3)], ecs = 0.002 * I(3)),
+    T₂ = (; cell = [Inf], ecs = Inf),
+    ρ = (; cell = [1.0], ecs = 1.0),
+    κ = (; cell_interfaces = Float64[], cell_boundaries = [0.0], cell_ecs = 1e-4, ecs = 0.0),
+    γ = 2.67513e-4,
+)
+mesh, surfaces, cells = create_geometry(setup)
+model = Model(; mesh, coeffs...)
+matrices = assemble_matrices(model)
+
+# PGSE sequence with b = 1000 s/mm²
+profile = PGSE(2000.0, 6000.0)
+gradient = ScalarGradient([1.0, 0.0, 0.0], profile, √(1000 / int_F²(profile)) / coeffs.γ)
+
+ξ = solve_btpde(model, matrices, gradient)  # Magnetization at echo time
+signal = compute_signal(matrices.M, ξ)
+adcs = solve_hadc(model, matrices, gradient)  # ADC of each compartment
+```
+
+SpinDoctor uses micrometers and microseconds: diffusivities are in µm²/µs (`0.002` is
+`2 × 10⁻³ mm²/s`), b-values in µs/µm² (numerically equal to s/mm²) and permeabilities in
+µm/µs (numerically equal to m/s). Gradient amplitudes are in T/m, with the gyromagnetic
+ratio of water protons `γ = 2.67513 × 10⁻⁴` rad/(µs µm T/m).
+
+Optional packages extend SpinDoctor:
+
+- a Makie backend (`using CairoMakie` or `using GLMakie`) for plotting meshes, fields and
+  the time stepping;
+- `using JLD2` for storing geometries (`create_geometry(setup; cache = "geometry.jld2")`).
+
+The matrix assembly uses all Julia threads (start Julia with `--threads=auto`).
+
+More:
+
 1. The `examples` folder contains drivers showing how to create geometry and solve
-   different problems.
+   different problems, with their own environment (`julia --project=examples`).
 2. The input files for the drivers are found in the folder `examples/setups`, and define
    different models.
 3. Multiple neuron meshes are available from
@@ -92,7 +140,7 @@ SpinDoctor has support for the following features:
      g_z(t))`;
 3. uniformly distributed gradient directions in 2D and 3D for high angular resolution
    diffusion imaging (HARDI).
-4. Live plotting utilities
+4. Live plotting utilities (with a Makie backend)
 5. Export VTK snapshots or time series to visualize finite element magnetization
    fields in [ParaView](https://www.paraview.org).
 
@@ -100,8 +148,8 @@ SpinDoctor also comes with a geometry generation module, allowing for
 
 1. multilayered spherical cells with a nucleus;
 2. multilayered disk and cylinder cells with a myelin layer;
-3. an extra-cellular space (ECS) enclosed in either a box, a convex hull, or a tight
-   wrapping around the cells;
+3. an extra-cellular space (ECS) enclosed in either a box or a convex hull around the
+   cells;
 4. stacks of plates or slab cells;
 5. deformation of canonical cells by bending and twisting.
 
