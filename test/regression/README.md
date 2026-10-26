@@ -33,4 +33,16 @@ The baseline records an error instead of values for:
 
 ## Intended changes to the reference
 
-None yet.
+1. Segment mass matrix (commit "Fix the P1 mass matrix of line segments"): in
+   2D (`plates_2d`, `disks_box_2d`), `matrix_Q_*` and `G_*` are halved, and
+   all signals, eigenvalues and ADCs change accordingly (by 5–10 % for the
+   signals here).
+2. Outward normals (commit "Fix the outward normals of non-convex
+   compartments"): `G_*`, `hadc` and `karger` change for the ECS of all
+   setups with an ECS, for the neuron, and for the bent cylinders. The other
+   compartments are unchanged.
+3. Bent and layered cylinders (commit "Assign boundary facets to
+   compartments by element faces"): these setups now run; their outputs are
+   recorded for the first time.
+
+The current `reference.toml` was recorded after these changes, on Julia 1.12.
