@@ -18,7 +18,7 @@ refactoring does not change results unintentionally.
 To check the current code:
 
 ```bash
-julia --project=test test/regression/record.jl /tmp/outputs.toml
+julia --project=. test/regression/record.jl /tmp/outputs.toml
 julia test/regression/compare.jl /tmp/outputs.toml test/regression/reference.toml
 ```
 

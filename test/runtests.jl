@@ -19,9 +19,5 @@ include("testutils.jl")
 end
 
 @testset "Aqua" begin
-    Aqua.test_all(
-        SpinDoctor;
-        ambiguities = false,
-        project_toml_formatting = false, # https://github.com/JuliaTesting/Aqua.jl/issues/72
-    )
+    Aqua.test_all(SpinDoctor; ambiguities = false)
 end

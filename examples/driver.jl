@@ -98,7 +98,11 @@ adc_cmpts = @time solve(hadc, gradient)
 ## Solve Karger model
 
 # Compute HADC and fit difftensors
-directions = unitsphere(50)
+if dim == 2
+    directions = unitcircle(50)[1:2, :]
+elseif dim == 3
+    directions = unitsphere(50)
+end
 gradients = [
     ScalarGradient(collect(d), gradient.profile, gradient.amplitude) for
     d ∈ eachcol(directions)

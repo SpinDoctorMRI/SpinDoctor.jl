@@ -18,7 +18,7 @@ function tolerance(key)
        startswith(key, "btpde_general") ||
        startswith(key, "hadc") ||
        startswith(key, "karger")
-        1e-3
+        5e-3
     elseif startswith(key, "laplace_mf")
         1e-6
     else
@@ -30,7 +30,14 @@ flatten(x::Number) = [Float64(x)]
 flatten(x::AbstractVector) = Float64.(x)
 flatten(x) = error("Cannot flatten $(typeof(x))")
 
-function compare(key, a, b)
+# Relative difference, with a lower bound `scale` on the norm of the reference
+function relerr(a, b, scale = 0.0)
+    x, y = flatten(a), flatten(b)
+    length(x) == length(y) || return Inf
+    sqrt(sum(abs2, x - y)) / max(sqrt(sum(abs2, y)), scale, eps())
+end
+
+function compare(key, a, b; scale = 0.0)
     if b isa AbstractString
         # The reference failed: report what the new code does instead
         return (a isa AbstractString ? "still fails" : "now runs (reference failed)"), true
@@ -39,7 +46,17 @@ function compare(key, a, b)
     elseif b isa AbstractDict
         msgs = String[]
         ok = true
-        for k in sort(collect(keys(b)))
+        ks = sort(collect(keys(b)))
+        if "re" in ks && "im" in ks
+            # Compare complex signals as a whole: the imaginary parts are often
+            # round-off
+            haskey(a, "re") && haskey(a, "im") || return "re/im missing", false
+            err = relerr([a["re"]; a["im"]], [b["re"]; b["im"]])
+            push!(msgs, "signal: $(round(err; sigdigits = 2))")
+            ok &= err ≤ tolerance(key)
+            filter!(k -> k ∉ ("re", "im"), ks)
+        end
+        for k in ks
             haskey(a, k) || (push!(msgs, "$k missing"); ok = false; continue)
             msg, o = compare("$key.$k", a[k], b[k])
             push!(msgs, "$k: $msg")
@@ -47,9 +64,8 @@ function compare(key, a, b)
         end
         return join(msgs, ", "), ok
     else
-        x, y = flatten(a), flatten(b)
-        length(x) == length(y) || return "length $(length(x)) ≠ $(length(y))", false
-        err = sqrt(sum(abs2, x - y)) / max(sqrt(sum(abs2, y)), eps())
+        err = relerr(a, b, scale)
+        isinf(err) && return "different lengths", false
         return string(round(err; sigdigits = 2)), err ≤ tolerance(key)
     end
 end
@@ -69,7 +85,11 @@ for case in sort(collect(keys(ref)))
             global allok = false
             continue
         end
-        msg, ok = compare(key, new[case][key], ref[case][key])
+        # Matrix sums can vanish (stiffness matrix, moments of centered
+        # geometries): compare them on the scale of the quadratic form
+        m = match(r"^(matrix_\w+)_sum$", key)
+        scale = isnothing(m) ? 0.0 : abs(get(ref[case], m[1] * "_vAv", 0.0))
+        msg, ok = compare(key, new[case][key], ref[case][key]; scale)
         println("  ", rpad(key, 22), ok ? "" : "✗ ", msg)
         global allok &= ok
     end

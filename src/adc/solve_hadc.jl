@@ -13,7 +13,7 @@ implemented for scalar gradients.
 function solve(
     problem::HADC,
     gradient::ScalarGradient,
-    odesolver = QNDF(; autodiff = false);
+    odesolver = QNDF();
     abstol = 1e-6,
     reltol = 1e-4,
 )
@@ -63,7 +63,7 @@ function solve(
         odeproblem = ODEProblem(odefunction, ω₀[icmpt], (0, TE), p)
 
         # Solve ODE, keep all time steps (for integral)
-        sol = OrdinaryDiffEqCore.solve(
+        sol = SciMLBase.solve(
             odeproblem,
             odesolver;
             reltol = reltol,

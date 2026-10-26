@@ -1,10 +1,13 @@
 """
-    solve(problem::Karger, gradient, odesolver = QNDF(); timestep)
+    solve(problem::Karger, gradient; timestep)
 
 Solve the finite pulse Karger model (FPK) using precomputed effective diffusion tensors
 `difftensors`.
+
+The compartment signals are integrated with a fourth order Magnus method, with steps of at
+most `timestep` within each characteristic interval of the gradient sequence.
 """
-function solve(problem::Karger, gradient::ScalarGradient, odesolver = QNDF(); timestep)
+function solve(problem::Karger, gradient::ScalarGradient; timestep)
     (; model, difftensors) = problem
     (; mesh, T₂, ρ, κ, γ) = model
 
@@ -57,21 +60,28 @@ function solve(problem::Karger, gradient::ScalarGradient, odesolver = QNDF(); ti
     # Initial signal
     S₀ = volumes .* ρ
 
-    ADC_diag = spdiagm([d' * D * d for D ∈ difftensors])
+    ADC_diag = Diagonal([d' * D * d for D ∈ difftensors])
 
-    # Time-dependent linear ODE: du/dt = J(t) * u
-    # where J(t) = A - (F(t)² * (γg)²) * ADC_diag - R
-    J_cache = copy(A - ADC_diag - R)
-    p = (; A, ADC_diag, R, f, γ, g, J_cache)
+    # Linear ODE dS/dt = J(t) S with J(t) = A - (γ g F(t))² ADC - R
+    A = Matrix(A)
+    R = Matrix(R)
+    J(t) = A - (γ * g * integral(f, t))^2 * ADC_diag - R
 
-    function karger_rhs!(du, u, p, t)
-        (; A, ADC_diag, R, f, γ, g, J_cache) = p
-        J_cache .= A .- (integral(f, t)^2 * (γ * g)^2) .* ADC_diag .- R
-        mul!(du, J_cache, u)
+    # Fourth order Magnus method (two Gauss-Legendre points per step)
+    c₁, c₂ = 1 / 2 - √3 / 6, 1 / 2 + √3 / 6
+    S = complex(S₀)
+    ivals = intervals(gradient)
+    for i = 1:length(ivals)-1
+        nstep = max(1, ceil(Int, (ivals[i+1] - ivals[i]) / dt))
+        h = (ivals[i+1] - ivals[i]) / nstep
+        for istep = 1:nstep
+            t = ivals[i] + (istep - 1) * h
+            J₁ = J(t + c₁ * h)
+            J₂ = J(t + c₂ * h)
+            Ω = h / 2 * (J₁ + J₂) + √3 / 12 * h^2 * (J₂ * J₁ - J₁ * J₂)
+            S = exp(Ω) * S
+        end
     end
 
-    prob = ODEProblem(karger_rhs!, S₀, (0.0, TE), p)
-    sol = OrdinaryDiffEqCore.solve(prob, QNDF(); dt)
-
-    sol.u[end]
+    S
 end

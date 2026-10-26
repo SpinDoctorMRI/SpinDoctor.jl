@@ -6,18 +6,16 @@ Diffusion MRI simulation toolbox.
 module SpinDoctor
 
 using Arpack: eigs
-using DiffEqCallbacks: PresetTimeCallback, FunctionCallingCallback
+using DiffEqCallbacks: FunctionCallingCallback
 using Expokit: expmv!
-using GLPK: Optimizer
 using LinearAlgebra
 using OrdinaryDiffEqBDF: QNDF
-using OrdinaryDiffEqCore: OrdinaryDiffEqCore
-using SciMLBase: ODEProblem, ODEFunction, DiscreteCallback
 using Parameters
 using Polynomials: fit
 using Printf
 using QuadGK
 using Roots: find_zeros
+using SciMLBase: SciMLBase, AbstractODEAlgorithm, ODEFunction, ODEProblem
 using SparseArrays
 using SpecialFunctions
 using StaticArrays
@@ -26,7 +24,7 @@ using TetGen: RawTetGenIO, facetlist!, tetrahedralize
 using Triangulate: TriangulateIO, triangulate
 using WriteVTK
 
-# Gradidents
+# Gradients
 export PGSE, CosOGSE, SinOGSE, DoublePGSE, GeneralGradient, ScalarGradient
 export integral, int_F², intervals, isconstant, echotime
 
@@ -163,7 +161,7 @@ include("btpde/solve_karger.jl")
 include("adc/compute_adc_sta.jl")
 include("adc/solve_hadc.jl")
 
-# Postprocessing
+# Post-processing
 include("postprocess/fit_adc.jl")
 include("postprocess/fit_tensors.jl")
 include("postprocess/savefield.jl")

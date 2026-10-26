@@ -33,3 +33,6 @@ Manifest.toml
 # Local configurations
 .DS_STORE
 .vscode
+
+# Environment of the regression baseline
+!test/regression/baseline-env/Manifest.toml
