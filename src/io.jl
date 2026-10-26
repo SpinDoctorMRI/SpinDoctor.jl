@@ -6,7 +6,7 @@
     points, elements = read_gmsh(filename)
 
 Read the points and tetrahedra of a volume mesh in the Gmsh format (version 2, as in the
-RealNeuronMeshes repository).
+RealNeuronMeshes repository). Other elements (e.g. surface triangles) are skipped.
 """
 function read_gmsh(filename)
     open(filename, "r") do io
@@ -23,15 +23,16 @@ function read_gmsh(filename)
         end
         readline(io)
 
-        # Elements
+        # Elements: number, type (4 for tetrahedra), number of tags, tags, and points
         readline(io)
         nelement = parse(Int, readline(io))
-        elements = zeros(Int, 4, nelement)
-        for ielement = 1:nelement
-            elements[:, ielement] = parse.(Int, split(readline(io))[6:9])
+        elements = Int[]
+        for _ = 1:nelement
+            fields = parse.(Int, split(readline(io)))
+            fields[2] == 4 && append!(elements, fields[(4+fields[3]):end])
         end
 
-        points, elements
+        points, reshape(elements, 4, :)
     end
 end
 

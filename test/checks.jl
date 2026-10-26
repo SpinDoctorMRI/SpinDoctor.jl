@@ -449,6 +449,32 @@ end
         cells = periodic_packing(1 .+ rand(Xoshiro(1), 5); fraction = 0.5)
         SpinDoctor.save_cells(joinpath(dir, "cells"), cells)
         @test SpinDoctor.read_cells(joinpath(dir, "cells")) == cells
+
+        # Gmsh files: the tetrahedra are read, other elements (e.g. triangles) are skipped
+        file = joinpath(dir, "mesh.msh")
+        write(
+            file,
+            """
+            \$MeshFormat
+            2.2 0 8
+            \$EndMeshFormat
+            \$Nodes
+            4
+            1 0 0 0
+            2 1 0 0
+            3 0 1 0
+            4 0 0 1
+            \$EndNodes
+            \$Elements
+            2
+            1 2 2 0 1 1 2 3
+            2 4 2 0 1 1 2 3 4
+            \$EndElements
+            """,
+        )
+        points, elements = SpinDoctor.read_gmsh(file)
+        @test size(points) == (3, 4)
+        @test elements == reshape([1, 2, 3, 4], 4, 1)
     end
 end
 
