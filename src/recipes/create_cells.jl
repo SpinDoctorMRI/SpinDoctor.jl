@@ -1,15 +1,16 @@
 """
-    create_cells(setup)
+    create_cells(setup; rng = Random.default_rng())
 
 Create geometrical configuration of cells. Return `nothing` or mathematical
-description (radii, centers).
+description (radii, centers). Random cell positions are drawn from `rng`.
 """
 function create_cells end
 
-create_cells(::AbstractSetup) = nothing
-create_cells(setup::ExtrusionSetup) = create_cells(setup.groundsetup)
+create_cells(::AbstractSetup; rng = Random.default_rng()) = nothing
+create_cells(setup::ExtrusionSetup; rng = Random.default_rng()) =
+    create_cells(setup.groundsetup; rng)
 
-function create_cells(setup::Union{DiskSetup,SphereSetup})
+function create_cells(setup::Union{DiskSetup,SphereSetup}; rng = Random.default_rng())
     (; ncell, rmin, rmax, dmin, dmax) = setup
 
     # Choose between spheres and cylinders
@@ -42,9 +43,9 @@ function create_cells(setup::Union{DiskSetup,SphereSetup})
         # Generate a random point using a uniform distribution with zero mean and
         # variance proportional to rmean
         if ndim == 3 # sphere
-            point = (rand(ndim) .- 0.5) * rmean * max(10, ncell^(1 / 3))
+            point = (rand(rng, ndim) .- 0.5) * rmean * max(10, ncell^(1 / 3))
         else # cylinder
-            point = (rand(ndim) .- 0.5) * rmean * max(10.0, sqrt(ncell)) * 40.0
+            point = (rand(rng, ndim) .- 0.5) * rmean * max(10.0, sqrt(ncell)) * 40.0
         end
 
         # Distance from point to the (already determined) cells

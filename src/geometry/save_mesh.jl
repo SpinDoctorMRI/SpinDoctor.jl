@@ -15,9 +15,9 @@ function save_mesh(mesh_all, filename)
         write(io, "$npoint $dim 0 0\n")
         for ipoint = 1:npoint
             if dim == 2
-                write(io, @sprintf("%d %f %f\n", ipoint, points[:, ipoint]...))
+                write(io, @sprintf("%d %.17g %.17g\n", ipoint, points[:, ipoint]...))
             elseif dim == 3
-                write(io, @sprintf("%d %f %f %f\n", ipoint, points[:, ipoint]...))
+                write(io, @sprintf("%d %.17g %.17g %.17g\n", ipoint, points[:, ipoint]...))
             end
         end
     end

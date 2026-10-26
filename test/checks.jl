@@ -120,3 +120,36 @@ end
         @test real(signal) ≈ real(signal_analytical) rtol = 1e-2
     end
 end
+
+@testset "Utilities" begin
+    # Directions on a hemisphere
+    d = unitsphere(20; half = true, normal = [1.0, 1.0, 0.0])
+    @test size(d) == (3, 20)
+    @test all(≥(0), [1, 1, 0]' * d)
+    @test all(≈(1), sum(abs2, d; dims = 1))
+
+    # Reproducible cell configurations
+    setup = SphereSetup(; ncell = 3)
+    @test SpinDoctor.create_cells(setup; rng = Xoshiro(1)) ==
+          SpinDoctor.create_cells(setup; rng = Xoshiro(1))
+
+    # VTK output of 2D (triangle) and 3D (tetrahedron) meshes
+    for setup ∈ [
+        PlateSetup(; depth = 2.0, widths = [1.0, 1.0]),
+        SlabSetup(; depth = 2.0, widths = [1.0, 1.0], height = 1.0),
+    ]
+        mesh, = create_geometry(setup)
+        model = Model(; mesh, get_coeffs(setup)...)
+        matrices = assemble_matrices(model)
+        dim = size(mesh.points[1], 1)
+        gradient = ScalarGradient([1.0; zeros(dim - 1)], PGSE(10.0, 20.0), 0.01)
+        mktempdir() do dir
+            writer = VTKWriter(; dir = joinpath(dir, "nested", "output"), nupdate = 2)
+            solver = IntervalConstantSolver(; timestep = 5.0)
+            ξ = solve(BTPDE(; model, matrices), gradient, solver; callbacks = [writer])
+            @test isfile(joinpath(dir, "nested", "output", "solution.pvd"))
+            savefield(mesh, ξ, joinpath(dir, "field"))
+            @test isfile(joinpath(dir, "field.vtm"))
+        end
+    end
+end

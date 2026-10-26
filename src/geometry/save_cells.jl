@@ -27,9 +27,9 @@ function save_cells(cells, cellfilename)
         write(io, "Number n, Center ($c), Radius r\n")
         for i = 1:ncell
             if d == 2
-                write(io, @sprintf "%d %g %g %g\n" i centers[:, i]... radii[i])
+                write(io, @sprintf "%d %.17g %.17g %.17g\n" i centers[:, i]... radii[i])
             else
-                write(io, @sprintf "%d %g %g %g %g\n" i centers[:, i]... radii[i])
+                write(io, @sprintf "%d %.17g %.17g %.17g %.17g\n" i centers[:, i]... radii[i])
             end
         end
     end

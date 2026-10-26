@@ -14,6 +14,7 @@ using Parameters
 using Polynomials: fit
 using Printf
 using QuadGK
+using Random
 using Roots: find_zeros
 using SciMLBase: SciMLBase, AbstractODEAlgorithm, ODEFunction, ODEProblem
 using SparseArrays
@@ -59,7 +60,7 @@ export compute_signal
 export Printer, VTKWriter, Plotter
 
 # Recipes
-export NoECS, BoxECS, ConvexHullECS, TightWrapECS
+export NoECS, BoxECS, ConvexHullECS
 export AbstractSetup,
     PlateSetup,
     ExtrusionSetup,

@@ -1,11 +1,12 @@
 """
-    create_geometry(setup; savedir = nothing, recreate = true)
+    create_geometry(setup; savedir = nothing, recreate = true, rng = Random.default_rng())
 
 Create cells, surfaces and finite element mesh. If `savedir` is a path,
 geometry files are saved. If additionally `recreate = false`, previous geometry
-files will be reused instead of generating new ones.
+files will be reused instead of generating new ones. Random cell configurations
+are drawn from `rng`.
 """
-function create_geometry(setup; savedir = nothing, recreate = true)
+function create_geometry(setup; savedir = nothing, recreate = true, rng = Random.default_rng())
     (; refinement) = setup
 
     # File name for saving or loading geometry
@@ -22,7 +23,7 @@ function create_geometry(setup; savedir = nothing, recreate = true)
     if do_save && isfile(cellfilename) && !recreate
         cells = read_cells(cellfilename)
     else
-        cells = create_cells(setup)
+        cells = create_cells(setup; rng)
         !isnothing(cells) && do_save && save_cells(cells, cellfilename)
     end
 

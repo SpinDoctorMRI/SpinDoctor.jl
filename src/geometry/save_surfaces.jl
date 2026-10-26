@@ -62,7 +62,7 @@ function save_surfaces(filename, surfaces)
                 write(
                     io,
                     @sprintf(
-                        "%d %f %f %d %f\n",
+                        "%d %.17g %.17g %d %f\n",
                         i,
                         regions[:, i]...,
                         i,
@@ -73,7 +73,7 @@ function save_surfaces(filename, surfaces)
                 write(
                     io,
                     @sprintf(
-                        "%d %f %f %f %d %f\n",
+                        "%d %.17g %.17g %.17g %d %f\n",
                         i,
                         regions[:, i]...,
                         i,

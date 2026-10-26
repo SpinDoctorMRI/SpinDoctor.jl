@@ -11,13 +11,14 @@ function update!(writer::VTKWriter, problem, gradient, ξ, t)
 
         vtmfile = vtk_multiblock("$dir/$(filename)_$ifile")
 
+        dim = size(model.mesh.points[1], 1)
+        celltype = dim == 2 ? VTKCellTypes.VTK_TRIANGLE : VTKCellTypes.VTK_TETRA
+
         for icmpt = 1:ncompartment
             points = model.mesh.points[icmpt]
             elements = model.mesh.elements[icmpt]
 
-            cells = [
-                MeshCell(VTKCellTypes.VTK_TETRA, elements[:, i]) for i = 1:size(elements, 2)
-            ]
+            cells = [MeshCell(celltype, elements[:, i]) for i = 1:size(elements, 2)]
             ξ_cmpt = ξ[1+inds_cmpts[icmpt]:inds_cmpts[icmpt+1]]
 
             vtkfile = vtk_grid(vtmfile, points, cells)

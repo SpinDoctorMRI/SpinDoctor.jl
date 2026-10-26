@@ -4,7 +4,7 @@ end
 
 function initialize!(writer::VTKWriter, problem, gradient, ξ, t)
     (; dir, filename) = writer
-    ispath(dir) || mkdir(dir)
+    mkpath(dir)
     writer.pvd = paraview_collection(joinpath(dir, filename))
     update!(writer, problem, gradient, ξ, t)
 end

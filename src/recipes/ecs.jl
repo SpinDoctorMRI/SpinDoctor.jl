@@ -16,11 +16,6 @@ end
     @assert maxiter ≥ 0
 end
 
-@with_kw struct TightWrapECS{T} <: AbstractECS
-    margin::T = 1.0
-    @assert margin > 0
-end
-
 function create_surfaces(::NoECS, points)
     T = eltype(points)
     dim = size(points, 1)
@@ -138,8 +133,4 @@ function create_surfaces(ecs::ConvexHullECS, points)
     region = points[:, i] - margin / 2 * dirs[:, i] / norm(dirs[:, i])
 
     (; points, facets, region)
-end
-
-function create_surfaces(ecs::TightWrapECS, points)
-    error("Not implemented")
 end

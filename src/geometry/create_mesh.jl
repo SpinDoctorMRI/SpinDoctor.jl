@@ -18,7 +18,7 @@ function create_mesh(surfaces, refinement)
         triin.segmentlist = facets
         triin.segmentmarkerlist = facetmarkers
         triin.regionlist = regionlist
-        triout = first(triangulate("pcaAQ", triin))
+        triout = first(triangulate("pqcaAQ", triin))
 
         points = triout.pointlist
         facets = Int.(triout.segmentlist)
@@ -40,9 +40,9 @@ function create_mesh(surfaces, refinement)
         ]
 
         if isinf(refinement)
-            tetgen = tetrahedralize(input, "pqA")
+            tetgen = tetrahedralize(input, "pqAQ")
         else
-            tetgen = tetrahedralize(input, "pqAa$(refinement)")
+            tetgen = tetrahedralize(input, "pqAQa$(refinement)")
         end
 
         points = tetgen.pointlist
