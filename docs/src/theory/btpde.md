@@ -84,7 +84,7 @@ m(\vec{x}, t) = e^{\mathrm{i} \vec{q}(t) \cdot \vec{x}} M(\vec{x}, t), \quad \ve
 \gamma \int_0^t \vec{g}(s) \, \mathrm{d} s,
 ```
 
-is, where ``\vec{q}`` is the wave vector (see [`wavevector`](@ref)). It solves
+is, where ``\vec{q}`` is the wave vector (see [`SpinDoctor.wavevector`](@ref)). It solves
 
 ```math
 \frac{\partial m}{\partial t} = (\nabla - \mathrm{i} \vec{q}(t)) \cdot \mathbf{D} (\nabla
