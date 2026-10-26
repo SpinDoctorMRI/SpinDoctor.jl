@@ -63,7 +63,7 @@ function solve(
         odeproblem = ODEProblem(odefunction, ω₀[icmpt], (0, TE), p)
 
         # Solve ODE, keep all time steps (for integral)
-        sol = OrdinaryDiffEq.solve(
+        sol = OrdinaryDiffEqCore.solve(
             odeproblem,
             odesolver;
             reltol = reltol,

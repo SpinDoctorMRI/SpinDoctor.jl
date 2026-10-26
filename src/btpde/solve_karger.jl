@@ -1,10 +1,10 @@
 """
-    solve(problem::Karger, gradient, odesolver = MagnusGL6(); timestep)
+    solve(problem::Karger, gradient, odesolver = QNDF(); timestep)
 
 Solve the finite pulse Karger model (FPK) using precomputed effective diffusion tensors
 `difftensors`.
 """
-function solve(problem::Karger, gradient::ScalarGradient, odesolver = MagnusGL6(); timestep)
+function solve(problem::Karger, gradient::ScalarGradient, odesolver = QNDF(); timestep)
     (; model, difftensors) = problem
     (; mesh, T₂, ρ, κ, γ) = model
 
@@ -57,20 +57,21 @@ function solve(problem::Karger, gradient::ScalarGradient, odesolver = MagnusGL6(
     # Initial signal
     S₀ = volumes .* ρ
 
-    # Update function for linear ODE operator
-    function update_func(J, u, p, t)
-        (; A, ADC_diag, R, f, γ, g) = p
-        J .= A .- (integral(f, t)^2 * (γ * g)^2) .* ADC_diag .- R
-    end
-
     ADC_diag = spdiagm([d' * D * d for D ∈ difftensors])
 
-    p = (; A, ADC_diag, R, f, γ, g)
-    J_prototype = A - ADC_diag - R
-    J = DiffEqArrayOperator(J_prototype; update_func)
+    # Time-dependent linear ODE: du/dt = J(t) * u
+    # where J(t) = A - (F(t)² * (γg)²) * ADC_diag - R
+    J_cache = copy(A - ADC_diag - R)
+    p = (; A, ADC_diag, R, f, γ, g, J_cache)
 
-    prob = ODEProblem(J, S₀, (0.0, TE), p)
-    sol = OrdinaryDiffEq.solve(prob, odesolver; dt)
+    function karger_rhs!(du, u, p, t)
+        (; A, ADC_diag, R, f, γ, g, J_cache) = p
+        J_cache .= A .- (integral(f, t)^2 * (γ * g)^2) .* ADC_diag .- R
+        mul!(du, J_cache, u)
+    end
+
+    prob = ODEProblem(karger_rhs!, S₀, (0.0, TE), p)
+    sol = OrdinaryDiffEqCore.solve(prob, QNDF(); dt)
 
     sol.u[end]
 end
