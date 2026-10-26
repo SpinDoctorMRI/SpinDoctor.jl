@@ -35,7 +35,13 @@ function compute_adc_sta(model::Model{T}, gradient::ScalarGradient) where {T}
 end
 
 """
-    solve_hadc(model, matrices, gradient; timestep = echotime(gradient) / 1000)
+    solve_hadc(
+        model,
+        matrices,
+        gradient;
+        timestep = echotime(gradient) / 1000,
+        arraytype = Array,
+    )
 
 Compute the ADC of each compartment in the direction of the scalar gradient `gradient`,
 using the homogenized ADC model (HADC). See [`solve_hadc_tensors`](@ref).
@@ -45,13 +51,20 @@ function solve_hadc(
     matrices,
     gradient::ScalarGradient;
     timestep = echotime(gradient) / 1000,
+    arraytype = Array,
 )
-    tensors = solve_hadc_tensors(model, matrices, gradient.profile; timestep)
+    tensors = solve_hadc_tensors(model, matrices, gradient.profile; timestep, arraytype)
     [gradient.dir' * D * gradient.dir for D in tensors]
 end
 
 """
-    solve_hadc_tensors(model, matrices, profile; timestep = echotime(profile) / 1000)
+    solve_hadc_tensors(
+        model,
+        matrices,
+        profile;
+        timestep = echotime(profile) / 1000,
+        arraytype = Array,
+    )
 
 Compute the apparent diffusion tensor of each compartment for the time profile `profile`,
 using the homogenized ADC model (HADC) [Schiavi2016](@cite). The ADC in the direction `u` is
@@ -63,49 +76,63 @@ estimated by weighting the compartment ADCs with [`compartment_weights`](@ref).
 
 The auxiliary diffusion problem is solved with the Crank-Nicolson scheme, with steps of at
 most `timestep` in each characteristic interval of the profile. By linearity, the ADC in any
-direction follows from one solve per axis.
+direction follows from one solve per axis. With `arraytype = CuArray` (after `using CUDA,
+CUDSS`), it is solved on an NVIDIA GPU.
 """
 function solve_hadc_tensors(
     model,
     matrices,
     profile::AbstractTimeProfile;
     timestep = echotime(profile) / 1000,
+    arraytype = Array,
 )
     (; D) = model
     (; M_cmpts, S_cmpts, G, volumes) = matrices
+
+    # The auxiliary function solves M w' + S w = F(t) B u for the direction u, and the ADC
+    # correction is u' A u / (volume * int_F2) with A = B' int F(t) w(t) dt. The compartments
+    # are independent, and solved together (with block diagonal matrices).
+    B = [G[i] * D[i] for i in eachindex(D)]
+    Wint = hadc_integral(
+        blockdiag(M_cmpts...),
+        blockdiag(S_cmpts...),
+        reduce(vcat, B),
+        profile,
+        timestep,
+        arraytype,
+    )
+    offsets = cumsum([0; size.(B, 1)])
     map(eachindex(D)) do i
-        # The auxiliary function solves M w' + S w = F(t) B u for the direction u, and the
-        # ADC correction is u' A u / (volume * int_F2) with A = int F(t) B' w(t) dt
-        B = G[i] * D[i]
-        A = hadc_integral(M_cmpts[i], S_cmpts[i], B, profile, timestep)
+        A = B[i]' * Wint[(offsets[i]+1):offsets[i+1], :]
         D[i] - (A + A') / 2 / (volumes[i] * int_F2(profile))
     end
 end
 
-# Compute A = int_0^TE F(t) B' W(t) dt, where W solves M W' + S W = F(t) B, W(0) = 0, with the
-# Crank-Nicolson scheme and the trapezoidal rule
-function hadc_integral(M, S, B, profile, timestep)
+# Compute int_0^TE F(t) W(t) dt, where W solves M W' + S W = F(t) B, W(0) = 0, with the
+# Crank-Nicolson scheme and the trapezoidal rule, on the device of `arraytype`
+function hadc_integral(M, S, B, profile, timestep, arraytype)
+    B = to_device(arraytype, B)
     W = zero(B)
+    Wint = zero(B)
     rhs = similar(B)
-    A = zeros(eltype(B), size(B, 2), size(B, 2))
     factorizations = Dict{eltype(B),Any}()
     ivals = intervals(profile)
     for k = 1:(length(ivals)-1)
         nstep = max(1, ceil(Int, (ivals[k+1] - ivals[k]) / timestep))
         h = (ivals[k+1] - ivals[k]) / nstep
-        F = get!(() -> cholesky(Symmetric(M + h / 2 * S)), factorizations, h)
-        E = M - h / 2 * S
+        F = get!(() -> device_cholesky(arraytype, M + h / 2 * S), factorizations, h)
+        E = to_device(arraytype, M - h / 2 * S)
         for n = 1:nstep
             t0 = ivals[k] + (n - 1) * h
             t1 = n == nstep ? ivals[k+1] : t0 + h
             f0 = integral(profile, t0)
             f1 = integral(profile, t1)
-            A .+= h / 2 * f0 * (B' * W)
+            Wint .+= h / 2 * f0 .* W
             mul!(rhs, E, W)
-            rhs .+= h / 2 * (f0 + f1) * B
+            rhs .+= h / 2 * (f0 + f1) .* B
             W = F \ rhs
-            A .+= h / 2 * f1 * (B' * W)
+            Wint .+= h / 2 * f1 .* W
         end
     end
-    A
+    to_cpu(Wint)
 end

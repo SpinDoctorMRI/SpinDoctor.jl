@@ -21,16 +21,21 @@ Triangulate = "f7e6ffb2-c36d-4f8f-a77e-16e897189344"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [weakdeps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+CUDSS = "45b445bb-4962-46a0-9369-b4df9d0f772e"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [extensions]
+SpinDoctorCUDAExt = ["CUDA", "CUDSS"]
 SpinDoctorJLD2Ext = "JLD2"
 SpinDoctorMakieExt = "Makie"
 SpinDoctorSciMLExt = "SciMLBase"
 
 [compat]
+CUDA = "6"
+CUDSS = "1"
 JLD2 = "0.6"
 KrylovKit = "0.10"
 LinearAlgebra = "1"

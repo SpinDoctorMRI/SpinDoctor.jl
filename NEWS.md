@@ -77,5 +77,11 @@ extension, split OrdinaryDiffEq packages).
   with disks or cylinders cut by its faces (without the free ECS layer of `BoxECS`), and
   `VoronoiSetup` creates polyhedral cells (shrunk Voronoi cells) for any cell volume
   fraction. The TetGen meshing accepts polygon facets and several seeds per region.
+- Time stepping on NVIDIA GPUs with the sparse direct solvers of cuDSS (`using CUDA, CUDSS`):
+  `ThetaSolver(; arraytype = CuArray)` for the BTPDE, and `solve_hadc(...; arraytype =
+  CuArray)`. For a mesh of 7e4 nodes, an RTX 4090 is 10 to 18 times faster than 8 CPU
+  threads. The GPU tests have their own environment in `test/gpu`.
+- The HADC solves all compartments together, and the BTPDE with non-constant gradients
+  applies the matrix of the gradient without forming it at every step.
 - Value-based tests (analytical solutions, exact identities), and regression outputs of
   v0.1.0 in `test/regression`.

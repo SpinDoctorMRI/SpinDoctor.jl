@@ -55,7 +55,9 @@ Optional packages extend SpinDoctor:
   the time stepping;
 - `using JLD2` for storing geometries (`create_geometry(setup; cache = "geometry.jld2")`);
 - OrdinaryDiffEq solver packages (e.g. `using OrdinaryDiffEqBDF` for `QNDF()`) for adaptive
-  time stepping of the BTPDE, in addition to the built-in `ThetaSolver`.
+  time stepping of the BTPDE, in addition to the built-in `ThetaSolver`;
+- `using CUDA, CUDSS` for time stepping on NVIDIA GPUs (`ThetaSolver(; arraytype =
+  CuArray)` and `solve_hadc(...; arraytype = CuArray)`).
 
 The matrix assembly uses all Julia threads (start Julia with `--threads=auto`).
 
