@@ -1,12 +1,28 @@
 """
-    create_geometry(setup; savedir = nothing, recreate = true, rng = Random.default_rng())
+    create_geometry(
+        setup;
+        cells = nothing,
+        savedir = nothing,
+        recreate = true,
+        rng = Random.default_rng(),
+    )
 
 Create cells, surfaces and finite element mesh. If `savedir` is a path,
 geometry files are saved. If additionally `recreate = false`, previous geometry
 files will be reused instead of generating new ones. Random cell configurations
 are drawn from `rng`.
+
+For disks, cylinders and spheres, a cell configuration `(; centers, radii)` (as
+returned by `create_cells`) may be given instead, with `centers` of size
+`dim × ncell` and `radii` of size `1 × ncell`, e.g. from a packing algorithm.
 """
-function create_geometry(setup; savedir = nothing, recreate = true, rng = Random.default_rng())
+function create_geometry(
+    setup;
+    cells = nothing,
+    savedir = nothing,
+    recreate = true,
+    rng = Random.default_rng(),
+)
     (; refinement) = setup
 
     # File name for saving or loading geometry
@@ -20,7 +36,12 @@ function create_geometry(setup; savedir = nothing, recreate = true, rng = Random
 
     # Check if cell description file is already available
     cellfilename = joinpath(savedir, "cells")
-    if do_save && isfile(cellfilename) && !recreate
+    if !isnothing(cells)
+        ncell = cells_setup(setup).ncell
+        size(cells.centers, 2) == length(cells.radii) == ncell ||
+            error("The setup has $ncell cells, but $(length(cells.radii)) were given")
+        do_save && save_cells(cells, cellfilename)
+    elseif do_save && isfile(cellfilename) && !recreate
         cells = read_cells(cellfilename)
     else
         cells = create_cells(setup; rng)

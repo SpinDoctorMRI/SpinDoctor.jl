@@ -154,6 +154,69 @@ end
     end
 end
 
+@testset "Compartment meshes and box faces" begin
+    for setup ∈ [
+        DiskSetup(; ncell = 3, rmin = 2.0, rmax = 4.0, ecs = BoxECS(; margin = 1.0)),
+        SphereSetup(;
+            ncell = 3,
+            rmin = 2.0,
+            rmax = 4.0,
+            nsidewall = 60,
+            ecs = BoxECS(; margin = 1.0),
+        ),
+        CylinderSetup(;
+            ncell = 3,
+            rmin = 2.0,
+            rmax = 4.0,
+            ecs = BoxECS(; margin = 1.0),
+            height = 10.0,
+        ),
+    ]
+        Random.seed!(3)
+        mesh, = create_geometry(setup)
+        dim = size(mesh.points[1], 1)
+        volumes = get_cmpt_volumes(mesh)
+
+        # The ECS as a mesh and model of its own
+        ecs = compartment_mesh(mesh, length(mesh.points))
+        @test get_cmpt_volumes(ecs) ≈ volumes[end:end]
+        model = Model(;
+            mesh = ecs,
+            ρ = [1.0 + 0im],
+            D = [0.002 * Matrix(I, dim, dim)],
+            T₂ = [Inf],
+            κ = zeros(size(ecs.facets, 2)),
+            γ = γ,
+        )
+        matrices = assemble_matrices(model)
+        @test sum(matrices.M) ≈ volumes[end]
+        @test compartment_weights(model) ≈ [1.0]
+
+        # Faces of the box: the faces crossed by no cell are full rectangles
+        faces = box_faces(mesh)
+        p = mesh.points[end]
+        L = vec(maximum(p; dims = 2) - minimum(p; dims = 2))
+        area(f) = sum(first(SpinDoctor.get_mesh_surface(p, f)))
+        ncomplete = setup isa ExtrusionSetup ? 2 : dim
+        for d = 1:ncomplete, face ∈ (faces[2d-1], faces[2d])
+            @test area(face) ≈ prod(L[[1:d-1; d+1:dim]])
+        end
+        if setup isa ExtrusionSetup
+            # The cylinders cross the top and bottom faces
+            @test 0 < area(faces.zmin) < L[1] * L[2]
+            @test area(faces.zmin) ≈ area(faces.zmax)
+        end
+    end
+
+    # Given cell configuration
+    setup = DiskSetup(; ncell = 2, nsidewall = 40, ecs = BoxECS(; margin = 1.0))
+    cells = (; centers = [-4.0 4.0; 0.0 0.0], radii = [3.0 2.0])
+    mesh, = create_geometry(setup; cells)
+    volumes = get_cmpt_volumes(mesh)
+    @test volumes[1:2] ≈ π * [3.0, 2.0] .^ 2 rtol = 0.02
+    @test_throws ErrorException create_geometry(SphereSetup(; ncell = 3); cells)
+end
+
 @testset "Utilities" begin
     # Directions on a hemisphere
     d = unitsphere(20; half = true, normal = [1.0, 1.0, 0.0])

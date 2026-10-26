@@ -33,6 +33,7 @@ export assemble_matrices
 export split_mesh
 export split_field
 export get_cmpt_volumes
+export compartment_mesh, box_faces
 
 export Model
 export initial_conditions
@@ -42,6 +43,7 @@ export savefield
 export compute_adc_sta
 export fit_adc
 export fit_tensors
+export compartment_weights
 export plot_surfaces, plot_mesh, plot_field, plot_hardi
 
 export BTPDE, HADC, Karger
@@ -116,6 +118,7 @@ include("geometry/save_surfaces.jl")
 include("geometry/save_mesh.jl")
 include("geometry/split_mesh.jl")
 include("geometry/split_field.jl")
+include("geometry/compartments.jl")
 
 # Matrix assembly
 include("matrix_assembly/fem.jl")
@@ -157,6 +160,7 @@ include("adc/solve_hadc.jl")
 # Post-processing
 include("postprocess/fit_adc.jl")
 include("postprocess/fit_tensors.jl")
+include("postprocess/compartment_weights.jl")
 include("postprocess/savefield.jl")
 
 # Plotting (implemented in the Makie extension)

@@ -94,3 +94,7 @@ function create_cells(setup::Union{DiskSetup,SphereSetup}; rng = Random.default_
 
     (; radii, centers)
 end
+
+# The setup describing the cells (the ground setup of an extrusion)
+cells_setup(setup) = setup
+cells_setup(setup::ExtrusionSetup) = setup.groundsetup
