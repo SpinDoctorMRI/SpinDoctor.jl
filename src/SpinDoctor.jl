@@ -74,111 +74,32 @@ export AbstractSetup,
 export coefficients, analytical_coefficients
 export create_geometry, save_geometry, load_geometry
 
-# Utils
-include("utils/fresnel.jl")
-include("utils/unitcircle.jl")
-include("utils/unitsphere.jl")
-include("utils/compute_signal.jl")
+include("directions.jl")
+include("gradients.jl")
+include("gradient_integrals.jl")
 
-# Magnetic field gradient sequences
-include("gradients/sequences.jl")
-include("gradients/gradient.jl")
-include("gradients/integral.jl")
-include("gradients/int_F2.jl")
-include("gradients/intervals.jl")
-include("gradients/echotime.jl")
-include("gradients/isconstant.jl")
-include("gradients/diffusion_time.jl")
-include("gradients/diffusion_time_sta.jl")
-include("gradients/j_integral.jl")
+include("mesh.jl")
+include("meshing.jl")
+include("io.jl")
+include("model.jl")
 
-# Datatypes
-include("datatypes/femesh.jl")
-include("datatypes/model.jl")
+include("assembly.jl")
+include("matrices.jl")
 
-# Geometry
-include("geometry/create_mesh.jl")
-include("geometry/convexhull.jl")
-include("geometry/create_fibonacci_sphere.jl")
-include("geometry/deform_domain.jl")
-include("geometry/facet_elements.jl")
-include("geometry/get_volumes.jl")
-include("geometry/get_mesh_surface.jl")
-include("geometry/get_mesh_surfacenormals.jl")
-include("geometry/read_gmsh.jl")
-include("geometry/read_cells.jl")
-include("geometry/read_surfaces.jl")
-include("geometry/read_mesh.jl")
-include("geometry/save_cells.jl")
-include("geometry/save_surfaces.jl")
-include("geometry/save_mesh.jl")
-include("geometry/split_mesh.jl")
-include("geometry/split_field.jl")
-include("geometry/compartments.jl")
+include("btpde.jl")
+include("karger.jl")
+include("adc.jl")
+include("matrix_formalism.jl")
+include("analytical.jl")
+include("postprocess.jl")
+include("callbacks.jl")
 
-# Matrix assembly
-include("matrix_assembly/fem.jl")
-include("matrix_assembly/couple_flux_matrix.jl")
-include("matrix_assembly/assemble_matrices.jl")
-
-# Matrix formalism
-include("matrix_formalism/eig2length.jl")
-include("matrix_formalism/limit_lengthscale.jl")
-include("matrix_formalism/solve_laplace.jl")
-include("matrix_formalism/solve_mf.jl")
-include("matrix_formalism/compute_mf_diffusion_tensor.jl")
-
-# Analytical
-include("analytical/alpha_func.jl")
-include("analytical/compute_bc.jl")
-include("analytical/compute_beta.jl")
-include("analytical/compute_int_I.jl")
-include("analytical/compute_int_J.jl")
-include("analytical/compute_int_K.jl")
-include("analytical/compute_JY.jl")
-include("analytical/compute_nu.jl")
-include("analytical/compute_v.jl")
-include("analytical/find_alpha.jl")
-include("analytical/solve_analytical_laplace.jl")
-include("analytical/solve_analytical_mf.jl")
-
-# BTPDE
-include("btpde/initial_conditions.jl")
-include("btpde/interval_constant_solver.jl")
-include("btpde/solve_btpde.jl")
-include("btpde/solve_btpde_midpoint.jl")
-include("btpde/solve_karger.jl")
-
-# ADC
-include("adc/compute_adc_sta.jl")
-include("adc/solve_hadc.jl")
-
-# Post-processing
-include("postprocess/fit_adc.jl")
-include("postprocess/fit_tensors.jl")
-include("postprocess/compartment_weights.jl")
-include("postprocess/savefield.jl")
-
-# Plotting (implemented in the Makie extension)
-include("plot.jl")
-
-# Callbacks
-include("callbacks/callbacks.jl")
-include("callbacks/initialize.jl")
-include("callbacks/update.jl")
-include("callbacks/finalize.jl")
-
-# Recipes
-include("recipes/ecs.jl")
 include("recipes/setups.jl")
 include("recipes/coefficients.jl")
-include("recipes/create_cells.jl")
-include("recipes/create_surfaces.jl")
-include("recipes/create_geometry.jl")
-include("recipes/geometry_io.jl")
-include("recipes/radial_dimension.jl")
-include("recipes/analytical_coefficients.jl")
+include("recipes/cells.jl")
+include("recipes/surfaces.jl")
+include("recipes/geometry.jl")
 
-include("error_hints.jl")
+include("extensions.jl")
 
 end
