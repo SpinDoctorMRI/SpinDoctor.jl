@@ -6,18 +6,13 @@ function initialize_plotter!(p::Plotter, problem, gradient, u, t)
 
     femesh = problem.model.mesh
     M = problem.matrices.M
-    ncompartment, nboundary = size(femesh.facets)
     dim = size(femesh.points[1], 1)
 
     umax = maximum(abs, u)
     S0 = abs(sum(M * u))
     TE = echotime(gradient)
 
-    npoint_cmpts = size.(femesh.points, 2)
-    inds = [0; cumsum(npoint_cmpts[1:end])]
-    u_cmpts = [@lift($uobs[(1+inds[i]):inds[i+1]]) for i = 1:ncompartment]
-
-    fig = Figure()
+    fig = Figure(; size = (1000, 700))
 
     if gradient isa ScalarGradient
         _f = Point2f[]
@@ -64,66 +59,14 @@ function initialize_plotter!(p::Plotter, problem, gradient, u, t)
     ylims!(ax, 0, 1.1)
     lines!(ax, attenuation)
 
-    gm = fig[1, 2] = GridLayout()
-    colorrange = (0, umax)
-    if dim == 2
-        ax = Axis(gm[1, 1]; title = "Magnetization (magnitude)")
-        for icmpt = 1:ncompartment
-            elements = femesh.elements[icmpt]
-            points = femesh.points[icmpt]
-            color = @lift abs.($(u_cmpts[icmpt]))
-            mesh!(ax, points', elements'; color, shading = NoShading, colorrange)
-        end
-    elseif dim == 3
-        ax = Axis3(gm[1, 1]; title = "Magnetization (magnitude)")
-        ax.aspect = :data
-        for icmpt = 1:ncompartment
-            color = @lift abs.($(u_cmpts[icmpt]))
-            points = femesh.points[icmpt]
-            for iboundary = 1:nboundary
-                facets = femesh.facets[icmpt, iboundary]
-                if !isempty(facets)
-                    mesh!(ax, points', facets'; color, shading = NoShading, colorrange)
-                end
-            end
-        end
+    # Magnetization: magnitude and phase
+    for (row, part, title) in ((1, :abs, "Magnitude"), (2, :phase, "Phase"))
+        ax = mesh_axis(fig[row, 2], dim; title)
+        colorrange = part == :abs ? (zero(umax), umax) : nothing
+        plot = plot_field!(ax, femesh, uobs; part, colorrange)
+        Colorbar(fig[row, 3], plot; label = field_label(part))
     end
-    Colorbar(gm[1, 2]; limits = colorrange)
-
-    gm = fig[2, 2] = GridLayout()
-    colormap = :cyclic_mrybm_35_75_c68_n256
-    colorrange = (-pi, pi)
-    if dim == 2
-        ax = Axis(gm[1, 1]; title = "Magnetization (phase-shift)")
-        for icmpt = 1:ncompartment
-            color = @lift angle.($(u_cmpts[icmpt]))
-            elements = femesh.elements[icmpt]
-            points = femesh.points[icmpt]
-            mesh!(ax, points', elements'; color, shading = NoShading, colorrange, colormap)
-        end
-    elseif dim == 3
-        ax = Axis3(gm[1, 1]; title = "Magnetization (phase-shift)")
-        ax.aspect = :data
-        for icmpt = 1:ncompartment
-            color = @lift angle.($(u_cmpts[icmpt]))
-            points = femesh.points[icmpt]
-            for iboundary = 1:nboundary
-                facets = femesh.facets[icmpt, iboundary]
-                if !isempty(facets)
-                    mesh!(
-                        ax,
-                        points',
-                        facets';
-                        color,
-                        shading = NoShading,
-                        colorrange,
-                        colormap,
-                    )
-                end
-            end
-        end
-    end
-    Colorbar(gm[1, 2]; limits = colorrange, colormap)
+    colsize!(fig.layout, 2, Relative(0.5))
 
     p.t = tobs
     p.u = uobs

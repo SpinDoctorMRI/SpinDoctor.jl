@@ -59,7 +59,8 @@ export eig2length, length2eig, limit_lengthscale, compute_mf_diffusion_tensor
 # Post-processing and output
 export compute_signal, split_field, compartment_weights, fit_adc, fit_tensors, save_field
 export Printer, VTKWriter, Plotter
-export plot_surfaces, plot_mesh, plot_field, plot_hardi
+export plot_surfaces,
+    plot_mesh, plot_mesh!, plot_field, plot_field!, plot_hardi, plot_hardi!
 
 # Public, but not exported
 @static if VERSION >= v"1.11.0-DEV.469"

@@ -109,8 +109,11 @@ The plotting functions require a Makie backend, e.g. `using CairoMakie` or
 ```@docs
 plot_surfaces
 plot_mesh
+plot_mesh!
 plot_field
+plot_field!
 plot_hardi
+plot_hardi!
 ```
 
 ## Public, not exported
