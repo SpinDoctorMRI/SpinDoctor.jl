@@ -12,10 +12,12 @@ end
 # include("setups/cylinders.jl")
 # include("setups/disks.jl")
 # include("setups/neuron.jl")
+# include("setups/packed_cylinders.jl")
 include("setups/plates.jl")
 # include("setups/slabs.jl")
 # include("setups/sphere.jl")
 # include("setups/spheres.jl")
+# include("setups/voronoi.jl")
 
 mesh, surfaces, cells = create_geometry(setup; savedir, recreate = true);
 model = Model(; mesh, coeffs...);

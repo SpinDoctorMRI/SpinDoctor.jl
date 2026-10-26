@@ -7,6 +7,18 @@ description (radii, centers). Random cell positions are drawn from `rng`.
 function create_cells end
 
 create_cells(::AbstractSetup; rng = Random.default_rng()) = nothing
+
+# Dense periodic packing of disks with radii uniformly distributed between `rmin` and `rmax`,
+# and gaps of at least `dmin` times the mean radius
+function create_cells(
+    setup::DiskSetup{T,<:PeriodicBoxECS};
+    rng = Random.default_rng(),
+) where {T}
+    (; ncell, rmin, rmax, dmin, ecs) = setup
+    radii = rmin .+ (rmax - rmin) .* rand(rng, T, ncell)
+    gap = dmin * (rmin + rmax) / 2
+    periodic_packing(radii; dim = 2, ecs.fraction, gap, rng)
+end
 create_cells(setup::ExtrusionSetup; rng = Random.default_rng()) =
     create_cells(setup.groundsetup; rng)
 

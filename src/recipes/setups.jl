@@ -43,6 +43,28 @@ Facets of the hull with angles below `threshold` are refined for up to `maxiter`
 end
 
 """
+    PeriodicBoxECS(; fraction = 0.5)
+
+Extracellular space of a sample of a periodic tissue. The box of the cell configuration
+(`cells.box`, e.g. from [`periodic_packing`](@ref)) is filled with the cells, cut by its
+faces, and their periodic images, and the ECS fills the rest. Unlike [`BoxECS`](@ref),
+there is no free layer of ECS along the faces, and the geometry is periodic. The box faces
+are impermeable boundaries, as in the other recipes (the equations have no periodic
+boundary conditions).
+
+If no cell configuration is given to [`create_geometry`](@ref), a packing with the cell
+volume fraction `fraction` is created (see [`create_cells`](@ref)). Available for disks
+and cylinders. Fractions up to about 0.8 (counting the gaps as part of the cells) require
+many cells, e.g. twenty or more. As in the other recipes, the disks are polygons inscribed in the circles
+(with `nsidewall` sides for the mean radius), so that their area is slightly smaller than
+that of the circles (by 1.1 % for 24 sides).
+"""
+@with_kw struct PeriodicBoxECS{T} <: AbstractECS
+    fraction::T = 0.5
+    @assert 0 < fraction < 1
+end
+
+"""
     AbstractSetup{T}
 
 Setup recipe describing a geometry, from which [`create_geometry`](@ref) creates cells,

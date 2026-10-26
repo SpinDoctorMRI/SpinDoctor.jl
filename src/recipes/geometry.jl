@@ -65,8 +65,8 @@ end
 function setup_cells(setup, cells, rng)
     isnothing(cells) && return create_cells(setup; rng)
     ncell = cells_setup(setup).ncell
-    size(cells.centers, 2) == length(cells.radii) == ncell ||
-        error("The setup has $ncell cells, but $(length(cells.radii)) were given")
+    size(cells.centers, 2) == ncell ||
+        error("The setup has $ncell cells, but $(size(cells.centers, 2)) were given")
     cells
 end
 

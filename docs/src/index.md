@@ -49,7 +49,9 @@ SpinDoctor also comes with a geometry generation module, allowing for
 2. cylindrical cells with a myelin layer;
 3. an extra-cellular space (ECS) enclosed in either a box or a convex hull around the
    cells;
-4. deformation of canonical cells by bending and twisting.
+4. dense samples of periodic tissue: packings of disks and cylinders, or polyhedral
+   (shrunk Voronoi) cells, cut by the faces of a periodic box;
+5. deformation of canonical cells by bending and twisting.
 
 In addition, a variety of neuron meshes is available, whose surface geometries were
 extracted from [NeuroMopho.org](http://neuromorpho.org). The neurons may also be enclosed in

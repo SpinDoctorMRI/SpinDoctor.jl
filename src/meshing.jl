@@ -13,19 +13,19 @@ Returns a named tuple with `points`, `facets` and `facetmarkers` (boundary numbe
 """
 function create_mesh(surfaces, refinement)
     (; points, facets, facetmarkers, regions) = surfaces
+    regionmarkers = get(surfaces, :regionmarkers, 1:size(regions, 2))
 
     dim = size(points, 1)
-    nregion = size(regions, 2)
 
     if dim == 2
-        regionlist = [regions; (1:nregion)'; fill(refinement, 1, nregion)]
+        regionlist = [regions; regionmarkers'; fill(refinement, 1, length(regionmarkers))]
 
         triin = TriangulateIO()
         triin.pointlist = points
         triin.segmentlist = facets
         triin.segmentmarkerlist = facetmarkers
         triin.regionlist = regionlist
-        triout = first(triangulate("pqcaAQ", triin))
+        triout = first(triangulate("pqaAQ", triin))
 
         points = triout.pointlist
         facets = Int.(triout.segmentlist)
@@ -36,20 +36,42 @@ function create_mesh(surfaces, refinement)
         input = RawTetGenIO{Cdouble}()
         input.pointlist = points
 
-        facetlist!(input, facets)
+        if facets isa AbstractMatrix
+            # Triangles
+            facetlist!(input, facets)
+        else
+            # Polygons, or polygons with holes `(; polygons, holes)`
+            input.facetlist = map(facets) do f
+                if f isa NamedTuple
+                    RawFacet{Cdouble}(Vector{Cint}.(f.polygons), Matrix{Cdouble}(f.holes))
+                else
+                    RawFacet{Cdouble}([Vector{Cint}(f)], zeros(Cdouble, 3, 0))
+                end
+            end
+        end
 
         input.facetmarkerlist = facetmarkers
 
         input.regionlist = [
             regions
-            collect(1:nregion)'
-            fill(0.1, 1, nregion)
+            collect(regionmarkers)'
+            fill(0.1, 1, length(regionmarkers))
         ]
 
-        if isinf(refinement)
-            tetgen = tetrahedralize(input, "pqAQ")
-        else
-            tetgen = tetrahedralize(input, "pqAQa$(refinement)")
+        # The quality refinement of TetGen occasionally fails with an internal error for
+        # inputs with small features, which a stricter radius-edge ratio than the default
+        # (2) may avoid
+        maxvolume = isinf(refinement) ? "" : "a$(refinement)"
+        ratios = (2.0, 1.6, 1.4, 1.2)
+        local tetgen
+        for ratio in ratios
+            try
+                tetgen = tetrahedralize(input, "pq$(ratio)AQ$(maxvolume)")
+                break
+            catch e
+                e isa TetGenError && e.rc == 2 && ratio != last(ratios) || rethrow()
+                @info "TetGen failed with the radius-edge ratio $(ratio), retrying"
+            end
         end
 
         points = tetgen.pointlist
@@ -58,6 +80,9 @@ function create_mesh(surfaces, refinement)
         elements = Int.(tetgen.tetrahedronlist)
         elementmarkers = Int.(tetgen.tetrahedronattributelist[:])
     end
+
+    unseeded = setdiff(elementmarkers, regionmarkers)
+    isempty(unseeded) || error("The mesh has regions without region points: $unseeded")
 
     (; points, facets, facetmarkers, elements, elementmarkers)
 end

@@ -72,5 +72,10 @@ extension, split OrdinaryDiffEq packages).
 - `ScalarGradient(dir, profile; bvalue, gamma)` and `bvalue(gradient, gamma)`; time
   profiles accept integer arguments.
 - `fit_adc(bvalues, signals; degree)`.
+- Dense samples of periodic tissue: `periodic_packing` packs polydisperse disks or spheres
+  with gaps in a periodic box (collective rearrangement), `PeriodicBoxECS` fills the box
+  with disks or cylinders cut by its faces (without the free ECS layer of `BoxECS`), and
+  `VoronoiSetup` creates polyhedral cells (shrunk Voronoi cells) for any cell volume
+  fraction. The TetGen meshing accepts polygon facets and several seeds per region.
 - Value-based tests (analytical solutions, exact identities), and regression outputs of
   v0.1.0 in `test/regression`.

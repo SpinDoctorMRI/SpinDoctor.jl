@@ -10,7 +10,7 @@ The main functions and types are exported. The building blocks listed under
 ## Setup recipes and geometry
 
 SpinDoctor comes with recipes for creating finite element meshes of plates, slabs, disks,
-cylinders, spheres and neurons, possibly immersed in an extracellular space (ECS).
+cylinders, spheres, polyhedra and neurons, possibly immersed in an extracellular space (ECS).
 
 ```@docs
 PlateSetup
@@ -20,9 +20,12 @@ CylinderSetup
 SphereSetup
 ExtrusionSetup
 NeuronSetup
+VoronoiSetup
 NoECS
 BoxECS
 ConvexHullECS
+PeriodicBoxECS
+periodic_packing
 create_geometry
 save_geometry
 load_geometry

@@ -1,5 +1,6 @@
 function plot_surfaces(surfaces, boundaries = 1:maximum(surfaces.facetmarkers))
-    (; points, facets, facetmarkers) = surfaces
+    (; points) = surfaces
+    facets, facetmarkers = SpinDoctor.triangulate_facets(surfaces)
     dim, npoint = size(points)
     if dim == 2
         fig = Figure()

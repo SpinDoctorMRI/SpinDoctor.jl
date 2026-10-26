@@ -11,7 +11,9 @@ Returns a named tuple containing:
 - `points`: the points (size `dim`, `npoint`);
 - `facets`: the triangles (edges in 2D) (size `dim`, `nfacet`);
 - `facetmarkers`: the boundary number of each facet;
-- `regions`: one point inside each region (size `dim`, `nregion`).
+- `regions`: points inside the regions (size `dim`, `npoint`), by default one per region;
+- `regionmarkers` (optional): the region number of each of these points, for regions
+  with several parts.
 
 The boundaries between `n` regions are numbered with the interfaces between regions
 `i < j` first (row by row: 12, 13, ..., 1n, 23, ...), followed by the outer boundaries of
@@ -162,12 +164,9 @@ function create_surfaces(setup::ExtrusionSetup, cells)
     groundfacets = create_surfaces(groundsetup, cells)
     groundmesh = create_mesh(groundfacets, groundsetup.refinement)
 
-    # groundfacets.facetmarkers
-    # plot_surfaces(groundfacets, 1:10)
-    # plot_mesh(split_mesh(groundmesh), 1:4)
-
     groundregions = groundfacets.regions
-    nregion = size(groundregions, 2)
+    regionmarkers = get(groundfacets, :regionmarkers, 1:size(groundregions, 2))
+    nregion = maximum(regionmarkers)
 
     # 2D facets are 3D edges, 2D elements are 3D facets
     points = groundmesh.points
@@ -201,11 +200,10 @@ function create_surfaces(setup::ExtrusionSetup, cells)
     top = outer_boundary_index.(facetmarkers, nregion)
     facetmarkers = [sidefacetmarkers; top; top]
 
-    # Put a point in the middle of each region (z = 0 is in the middle of
-    # bottom and top layer)
-    regions = [groundregions[1:2, :]; zeros(1, nregion)]
+    # Put the region points in the middle of the bottom and top layers (z = 0)
+    regions = [groundregions[1:2, :]; zeros(1, size(groundregions, 2))]
 
-    (; points, facets, facetmarkers, regions)
+    (; points, facets, facetmarkers, regions, regionmarkers)
 end
 
 function create_surfaces(setup::NeuronSetup, meshfile)
@@ -357,4 +355,238 @@ function create_surfaces(ecs::ConvexHullECS, points)
     region = points[:, i] - margin / 2 * dirs[:, i] / norm(dirs[:, i])
 
     (; points, facets, region)
+end
+
+# Disks in a periodic box: the disks (and their periodic images) are cut by the faces of
+# the box, and the ECS fills the rest of the box
+function create_surfaces(setup::DiskSetup{T,<:PeriodicBoxECS}, cells) where {T}
+    (; ncell, layersizes, rmin, rmax, nsidewall) = setup
+    (; centers, radii, box) = cells
+    lower, upper = SVector{2,T}(box[1]), SVector{2,T}(box[2])
+    L = upper - lower
+    nlayer = length(layersizes)
+    nregion = nlayer * ncell + 1
+    rmean = (rmin + rmax) / 2
+    tol = 1e-10 * norm(L)
+
+    points = SVector{2,T}[]
+    edges = SVector{2,Int}[]
+    edgemarkers = Int[]
+    regions = SVector{2,T}[]
+    regionmarkers = Int[]
+    boundarypoints = Int[] # Indices of the points on the box boundary
+    pieces = Tuple{Int,Vector{SVector{2,T}}}[] # Region and polygon of each cell piece
+
+    # Cut the polygons of all layers of all periodic images of the cells that reach into
+    # the box
+    for j = 1:ncell, shift in Iterators.product(-1:1, -1:1)
+        c = SVector{2,T}(centers[:, j]) + SVector{2,T}(shift) .* L
+        rout = layersizes[end] * radii[j]
+        all(lower .- rout .< c .< upper .+ rout) || continue
+        inner = SVector{2,T}[]
+        for i = 1:nlayer
+            r = layersizes[i] * radii[j]
+            n = max(8, round(Int, nsidewall * r / rmean))
+            # Vertices close to a box face, and cuts close to a box edge, are moved onto
+            # it, so that the cuts leave no slivers. A quarter of the distance between the
+            # vertices and the chords of their neighbors keeps the polygons convex.
+            snap = r * (1 - cos(2pi / n)) / 4
+            polygon = [
+                snap_to_faces(
+                    c + r * SVector(cos(2pi * k / n), sin(2pi * k / n)),
+                    box,
+                    snap,
+                ) for k = 0:(n-1)
+            ]
+            polygon = clip_polygon(polygon, lower, upper, snap, tol)
+            if length(polygon) < 3
+                inner = SVector{2,T}[]
+                continue
+            end
+            region = (i - 1) * ncell + j
+            push!(pieces, (region, polygon))
+
+            # Edges: membranes inside the box (the edges on the box are added below)
+            offset = length(points)
+            append!(points, polygon)
+            m = length(polygon)
+            marker =
+                i < nlayer ? interface_index(region, region + ncell, nregion) :
+                interface_index(region, nregion, nregion)
+            for k = 1:m
+                a, b = polygon[k], polygon[mod1(k + 1, m)]
+                onboundary(a, lower, upper, tol) && push!(boundarypoints, offset + k)
+                if !onsameside(a, b, lower, upper, tol)
+                    push!(edges, SVector(offset + k, offset + mod1(k + 1, m)))
+                    push!(edgemarkers, marker)
+                end
+            end
+
+            # Region points: inside the piece, and outside the layer inside
+            if isempty(inner)
+                # Convex piece
+                push!(regions, sum(polygon) / m)
+                push!(regionmarkers, region)
+            else
+                # Ring piece (possibly in several parts): move inwards from the middle of
+                # each membrane edge
+                rin = layersizes[i-1] * radii[j]
+                for k = 1:m
+                    a, b = polygon[k], polygon[mod1(k + 1, m)]
+                    onsameside(a, b, lower, upper, tol) && continue
+                    e = (a + b) / 2
+                    for step in (r - rin) .* (1 / 2, 1 / 4, 1 / 8, 1 / 16)
+                        q = e + step * (c - e) / norm(c - e)
+                        if inpolygon(q, polygon) && !inpolygon(q, inner)
+                            push!(regions, q)
+                            push!(regionmarkers, region)
+                            break
+                        end
+                    end
+                end
+            end
+            inner = polygon
+        end
+    end
+
+    # The box boundary, split at the points of the cut polygons
+    corners = [lower, SVector(upper[1], lower[2]), upper, SVector(lower[1], upper[2])]
+    append!(points, corners)
+    append!(boundarypoints, (length(points)-3):length(points))
+    perimeter(p) =
+        if abs(p[2] - lower[2]) <= tol
+            p[1] - lower[1]
+        elseif abs(p[1] - upper[1]) <= tol
+            L[1] + p[2] - lower[2]
+        elseif abs(p[2] - upper[2]) <= tol
+            L[1] + L[2] + upper[1] - p[1]
+        else
+            2L[1] + L[2] + upper[2] - p[2]
+        end
+    s = perimeter.(points[boundarypoints])
+    p = sortperm(s)
+    boundarypoints, s = boundarypoints[p], s[p]
+
+    # Merge coinciding points on the boundary (e.g. polygon vertices at the corners)
+    duplicate = [false; diff(s) .<= tol]
+    rep = collect(1:length(points))
+    for k in findall(duplicate)
+        rep[boundarypoints[k]] = rep[boundarypoints[k-1]]
+    end
+    boundarypoints = boundarypoints[.!duplicate]
+    edges = [SVector(rep[e[1]], rep[e[2]]) for e in edges]
+
+    nb = length(boundarypoints)
+    for k = 1:nb
+        a, b = boundarypoints[k], boundarypoints[mod1(k + 1, nb)]
+
+        # The region inside the box next to the middle of the segment (the box is on the
+        # left of the counterclockwise boundary)
+        t = points[b] - points[a]
+        m = (points[a] + points[b]) / 2 + SVector(-t[2], t[1]) / 1000
+        inside = [region for (region, polygon) in pieces if inpolygon(m, polygon)]
+        region = isempty(inside) ? nregion : minimum(inside)
+        push!(edges, SVector(a, b))
+        push!(edgemarkers, outer_boundary_index(region, nregion))
+
+        # Region point: the ECS and the layers may have several parts in the box (e.g.
+        # between two cells and a face, or between an inner layer and a corner), which the
+        # points next to the membranes do not all reach
+        push!(regions, m)
+        push!(regionmarkers, region)
+    end
+    nregion in regionmarkers || error("No ECS found on the boundary of the box")
+
+    # Remove the merged points
+    used = rep .== 1:length(points)
+    newindex = cumsum(used)
+    edges = [SVector(newindex[e[1]], newindex[e[2]]) for e in edges]
+    points = points[used]
+
+    (;
+        points = reduce(hcat, points),
+        facets = reduce(hcat, edges),
+        facetmarkers = edgemarkers,
+        regions = reduce(hcat, regions),
+        regionmarkers,
+    )
+end
+
+create_surfaces(::PeriodicBoxECS, points) =
+    error("PeriodicBoxECS is only available for disks and cylinders")
+
+# Move the coordinates of the point p that are within `snap` of a face of the periodic box
+# (or of one of its periodic images) onto the face
+snap_to_faces(p, (lower, upper), snap) =
+    map(p, SVector{length(p)}(lower), SVector{length(p)}(upper)) do x, l, u
+        k = round((x - l) / (u - l))
+        y = k == 0 ? l : k == 1 ? u : l + k * (u - l)
+        abs(x - y) < snap ? y : x
+    end
+
+# Clip a convex polygon to the box `[lower, upper]` (Sutherland-Hodgman), with the cuts
+# within `snap` of the other faces moved onto them, removing points closer than `tol` to
+# their predecessor
+function clip_polygon(polygon, lower, upper, snap, tol)
+    for d = 1:2, (bound, sign) in ((lower[d], 1), (upper[d], -1))
+        isempty(polygon) && break
+        inside(p) = sign * (p[d] - bound) >= 0
+        clipped = empty(polygon)
+        m = length(polygon)
+        for k = 1:m
+            a, b = polygon[k], polygon[mod1(k + 1, m)]
+            inside(a) && push!(clipped, a)
+            if inside(a) != inside(b)
+                t = (bound - a[d]) / (b[d] - a[d])
+                q = a + t * (b - a)
+                q = snap_to_faces(Base.setindex(q, bound, d), (lower, upper), snap)
+                push!(clipped, q)
+            end
+        end
+        polygon = empty(clipped)
+        for p in clipped
+            (isempty(polygon) || norm(p - polygon[end]) > tol) && push!(polygon, p)
+        end
+        length(polygon) > 1 && norm(polygon[1] - polygon[end]) <= tol && pop!(polygon)
+    end
+    polygon
+end
+
+onboundary(p, lower, upper, tol) = any(@. abs(p - lower) <= tol || abs(p - upper) <= tol)
+
+# Whether the points a and b lie on the same face of the box
+onsameside(a, b, lower, upper, tol) = any(
+    d ->
+        (abs(a[d] - lower[d]) <= tol && abs(b[d] - lower[d]) <= tol) ||
+        (abs(a[d] - upper[d]) <= tol && abs(b[d] - upper[d]) <= tol),
+    1:length(a),
+)
+
+# Whether the point p is inside the counterclockwise convex polygon
+function inpolygon(p, polygon)
+    m = length(polygon)
+    all(1:m) do k
+        a, b = polygon[k], polygon[mod1(k + 1, m)]
+        (b[1] - a[1]) * (p[2] - a[2]) - (b[2] - a[2]) * (p[1] - a[1]) > 0
+    end
+end
+
+"""
+    facets, facetmarkers = triangulate_facets(surfaces)
+
+The facets of a surface triangulation as a matrix of triangles (edges in 2D), with polygon
+facets (e.g. of [`VoronoiSetup`](@ref)) split into triangles.
+"""
+function triangulate_facets(surfaces)
+    (; facets, facetmarkers) = surfaces
+    facets isa AbstractMatrix && return facets, facetmarkers
+    triangles = Vector{Int}[]
+    markers = Int[]
+    for (f, marker) in zip(facets, facetmarkers)
+        for k = 2:(length(f)-1)
+            push!(triangles, [f[1], f[k], f[k+1]])
+            push!(markers, marker)
+        end
+    end
+    reduce(hcat, triangles), markers
 end

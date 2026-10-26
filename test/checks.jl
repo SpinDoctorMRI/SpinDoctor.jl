@@ -223,6 +223,78 @@ end
     @test_throws ErrorException create_geometry(SphereSetup(; ncell = 3); cells)
 end
 
+@testset "Packings and periodic samples" begin
+    # Periodic packing: requested fraction, gaps between all pairs (minimum image)
+    rng = Xoshiro(5)
+    radii = 0.5 .+ rand(rng, 20)
+    cells = periodic_packing(radii; fraction = 0.75, gap = 0.05, rng)
+    L = cells.box[2][1]
+    @test sum(pi .* cells.radii .^ 2) / L^2 ≈ 0.75
+    gaps = [
+        norm(mod.(cells.centers[:, i] - cells.centers[:, j] .+ L / 2, L) .- L / 2) -
+        cells.radii[i] - cells.radii[j] for j = 2:20 for i = 1:(j-1)
+    ]
+    @test minimum(gaps) >= 0.9 * 0.05
+
+    # Disks cut by the box: the pieces of each cell (with its periodic images) make up the
+    # whole cell polygon (up to vertices moved onto the faces), and the opposite faces of
+    # the box match
+    setup = DiskSetup(;
+        ncell = 20,
+        rmin = 0.5,
+        rmax = 1.5,
+        nsidewall = 16,
+        layersizes = [0.6, 1.0],
+        ecs = PeriodicBoxECS(),
+    )
+    mesh, = create_geometry(setup; cells)
+    V = compartment_volumes(mesh)
+    nside(r) = max(8, round(Int, 16 * r))
+    polyarea(r) = nside(r) / 2 * r^2 * sin(2pi / nside(r))
+    r = vec(cells.radii)
+    @test sum(V) ≈ L^2
+    @test V[1:20] ≈ polyarea.(0.6 .* r) rtol = 1e-2
+    @test V[21:40] ≈ polyarea.(r) - polyarea.(0.6 .* r) rtol = 1e-2
+    faces = box_faces(mesh)
+    len(f) = sum(first(SpinDoctor.facet_geometry(mesh.points[end], f)))
+    @test len(faces.xmin) ≈ len(faces.xmax)
+    @test len(faces.ymin) ≈ len(faces.ymax)
+
+    # Without a given configuration, a packing is created
+    setup = CylinderSetup(;
+        ncell = 10,
+        rmin = 1.0,
+        rmax = 2.0,
+        nsidewall = 16,
+        ecs = PeriodicBoxECS(; fraction = 0.6),
+        height = 2.0,
+    )
+    mesh, _, cells = create_geometry(setup; rng = Xoshiro(6))
+    V = compartment_volumes(mesh)
+    r = vec(cells.radii)
+    nside16(r) = max(8, round(Int, 16 * r / 1.5))
+    @test sum(V) ≈ 2 * cells.box[2][1]^2
+    @test V[1:10] ≈ 2 * nside16.(r) / 2 .* r .^ 2 .* sin.(2pi ./ nside16.(r)) rtol = 1e-2
+    @test sum(pi * r .^ 2) / cells.box[2][1]^2 ≈ 0.6
+
+    # Voronoi cells: ECS fraction, periodic faces, and outward normals
+    setup = VoronoiSetup(; ncell = 8, boxsize = 10.0, fraction = 0.8)
+    mesh, = create_geometry(setup; rng = Xoshiro(1))
+    V = compartment_volumes(mesh)
+    @test sum(V) ≈ 1000
+    @test V[end] / sum(V) ≈ 0.2 rtol = 1e-6
+    faces = box_faces(mesh)
+    area(f) = sum(first(SpinDoctor.facet_geometry(mesh.points[end], f)))
+    @test area(faces.xmin) ≈ area(faces.xmax)
+    @test area(faces.ymin) ≈ area(faces.ymax)
+    @test area(faces.zmin) ≈ area(faces.zmax)
+    model = Model(; mesh, get_coeffs(SphereSetup(; ncell = 8, ecs = BoxECS()))...)
+    matrices = assemble_matrices(model)
+    for i in eachindex(mesh.points), d = 1:3
+        @test mesh.points[i][d, :]' * matrices.G[i][:, d] ≈ matrices.volumes[i] rtol = 1e-8
+    end
+end
+
 @testset "Geometry files" begin
     setup = CylinderSetup(; ncell = 2, rmin = 2.0, rmax = 3.0, ecs = BoxECS(), height = 5.0)
     other = CylinderSetup(; ncell = 2, rmin = 2.0, rmax = 3.0, ecs = BoxECS(), height = 6.0)
@@ -249,6 +321,17 @@ end
         @test same(create_geometry(setup; savedir, rng = Xoshiro(1))[1], mesh)
         @test same(create_geometry(setup; savedir, rng = Xoshiro(2))[1], mesh)
         @test !same(create_geometry(other; savedir, rng = Xoshiro(1))[1], mesh)
+
+        # Text files of periodic samples: cells with a gap and a box, and polygon facets
+        setup = VoronoiSetup(; ncell = 4, boxsize = 8.0, fraction = 0.8)
+        savedir = joinpath(dir, "voronoi")
+        mesh, _, cells = create_geometry(setup; savedir, rng = Xoshiro(1))
+        mesh_text, _, cells_text = create_geometry(setup; savedir)
+        @test same(mesh_text, mesh)
+        @test cells_text == cells
+        cells = periodic_packing(1 .+ rand(Xoshiro(1), 5); fraction = 0.5)
+        SpinDoctor.save_cells(joinpath(dir, "cells"), cells)
+        @test SpinDoctor.read_cells(joinpath(dir, "cells")) == cells
     end
 end
 

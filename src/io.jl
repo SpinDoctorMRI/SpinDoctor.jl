@@ -38,7 +38,8 @@ end
 """
     read_cells(filename)
 
-Read a cell configuration `(; centers, radii)`.
+Read a cell configuration `(; centers, radii)`, with the fields `box` and `gap` if present
+in the file.
 """
 function read_cells(filename)
     @info "Loading cell configuration from " * filename
@@ -47,46 +48,60 @@ function read_cells(filename)
         ncell = parse(Int, readline(io))
         readline(io)
         dim = parse(Int, readline(io))
+        hasradii = occursin("Radius", readline(io))
         centers = zeros(dim, ncell)
         radii = zeros(1, ncell)
-        readline(io)
         for icell = 1:ncell
             tmp = parse.(Float64, split(readline(io)))
             centers[:, icell] = tmp[2:(1+dim)]
-            radii[icell] = tmp[2+dim]
+            hasradii && (radii[icell] = tmp[2+dim])
         end
-        (; centers, radii)
+        cells = hasradii ? (; centers, radii) : (; centers)
+        while !eof(io)
+            line = readline(io)
+            if line == "Box (lower, upper):"
+                lower = parse.(Float64, split(readline(io)))
+                upper = parse.(Float64, split(readline(io)))
+                cells = (; cells..., box = (lower, upper))
+            elseif line == "Gap:"
+                cells = (; cells..., gap = parse(Float64, readline(io)))
+            end
+        end
+        cells
     end
 end
 
 """
     save_cells(filename, cells)
 
-Save a cell configuration `(; centers, radii)`. The file contains the spatial dimension: 2
-for disks and cylinders, 3 for spheres.
+Save a cell configuration `(; centers, radii)`, and its fields `box` and `gap` if present
+(e.g. from [`periodic_packing`](@ref) or [`VoronoiSetup`](@ref), whose cells have no
+radii). The file contains the spatial dimension: 2 for disks and cylinders, 3 for spheres.
 """
 function save_cells(filename, cells)
-    (; centers, radii) = cells
+    (; centers) = cells
     d, ncell = size(centers)
+    hasradii = haskey(cells, :radii)
     @info "Writing cell geometry to " * filename
     open(filename, "w") do io
-        write(io, "Number of cells:\n")
-        write(io, "$ncell\n")
-        write(io, "Dimension:\n")
-        write(io, "$d\n")
-        c = "x,y"
-        if d == 3
-            c = c * ",z"
-        end
-        write(io, "Number n, Center ($c), Radius r\n")
+        println(io, "Number of cells:")
+        println(io, ncell)
+        println(io, "Dimension:")
+        println(io, d)
+        coordinates = d == 2 ? "x,y" : "x,y,z"
+        println(io, "Number n, Center ($coordinates)", hasradii ? ", Radius r" : "")
         for i = 1:ncell
-            if d == 2
-                write(io, @sprintf "%d %.17g %.17g %.17g\n" i centers[:, i]... radii[i])
-            else
-                write(
-                    io,
-                    @sprintf "%d %.17g %.17g %.17g %.17g\n" i centers[:, i]... radii[i]
-                )
+            values = hasradii ? [centers[:, i]; cells.radii[i]] : centers[:, i]
+            println(io, i, " ", join((@sprintf("%.17g", v) for v in values), " "))
+        end
+        if haskey(cells, :gap)
+            println(io, "Gap:")
+            println(io, @sprintf("%.17g", cells.gap))
+        end
+        if haskey(cells, :box)
+            println(io, "Box (lower, upper):")
+            for corner in cells.box
+                println(io, join((@sprintf("%.17g", v) for v in corner), " "))
             end
         end
     end
@@ -115,7 +130,7 @@ function read_surfaces(filename)
     end
 
     # Read .poly file
-    facets, facetmarkers, regions = open(filename * ".poly", "r") do io
+    facets, facetmarkers, regions, regionmarkers = open(filename * ".poly", "r") do io
 
         # Read list of holes (refer to separate file)
         readline(io)
@@ -144,15 +159,17 @@ function read_surfaces(filename)
         readline(io)
         nregion = parse(Int, split(readline(io))[1])
         regions = zeros(dim, nregion)
+        regionmarkers = zeros(Int, nregion)
         for iregion = 1:nregion
             tmp = parse.(Float64, split(readline(io)))
             regions[:, iregion] = tmp[2:(2+dim-1)]
+            regionmarkers[iregion] = round(Int, tmp[2+dim])
         end
 
-        facets, facetmarkers, regions
+        facets, facetmarkers, regions, regionmarkers
     end
 
-    (; points, facets, facetmarkers, regions)
+    (; points, facets, facetmarkers, regions, regionmarkers)
 end
 
 """
@@ -164,8 +181,10 @@ be passed to TetGen.
 function save_surfaces(filename, surfaces)
     default_refinement = 0.1
 
-    # Extract surface triangulation
-    (; points, facets, facetmarkers, regions) = surfaces
+    # Extract surface triangulation (polygon facets are split into triangles)
+    (; points, regions) = surfaces
+    facets, facetmarkers = triangulate_facets(surfaces)
+    regionmarkers = get(surfaces, :regionmarkers, 1:size(regions, 2))
 
     dim, npoint = size(points)
     nfacet = size(facets, 2)
@@ -222,7 +241,7 @@ function save_surfaces(filename, surfaces)
                         "%d %.17g %.17g %d %f\n",
                         i,
                         regions[:, i]...,
-                        i,
+                        regionmarkers[i],
                         default_refinement
                     )
                 )
@@ -233,7 +252,7 @@ function save_surfaces(filename, surfaces)
                         "%d %.17g %.17g %.17g %d %f\n",
                         i,
                         regions[:, i]...,
-                        i,
+                        regionmarkers[i],
                         default_refinement
                     )
                 )

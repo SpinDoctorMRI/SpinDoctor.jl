@@ -23,7 +23,7 @@ using SpecialFunctions:
     AmosException, besselj, bessely, erf, sphericalbesselj, sphericalbessely
 using StaticArrays: SMatrix, SVector
 using Statistics: mean
-using TetGen: RawTetGenIO, facetlist!, tetrahedralize
+using TetGen: RawFacet, RawTetGenIO, TetGenError, facetlist!, tetrahedralize
 using Triangulate: TriangulateIO, triangulate
 using WriteVTK:
     MeshCell,
@@ -37,7 +37,8 @@ using WriteVTK:
 
 # Geometry
 export PlateSetup, DiskSetup, SphereSetup, CylinderSetup, SlabSetup, ExtrusionSetup
-export NeuronSetup, NoECS, BoxECS, ConvexHullECS
+export VoronoiSetup
+export NeuronSetup, NoECS, BoxECS, ConvexHullECS, PeriodicBoxECS, periodic_packing
 export create_geometry, save_geometry, load_geometry
 export compartment_mesh, box_faces, compartment_volumes
 
@@ -124,8 +125,10 @@ include("callbacks.jl")
 
 include("recipes/setups.jl")
 include("recipes/coefficients.jl")
+include("recipes/packing.jl")
 include("recipes/cells.jl")
 include("recipes/surfaces.jl")
+include("recipes/voronoi.jl")
 include("recipes/geometry.jl")
 
 include("extensions.jl")
