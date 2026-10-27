@@ -26,10 +26,12 @@ apparent diffusion coefficients with several methods. This is the Julia version 
 - **Geometries**: plates, slabs, disks, cylinders (bent, twisted), spheres, with layers
   (myelin, nuclei) and an extracellular space; dense samples of periodic tissue (packed
   cylinders, polyhedral cells); realistic neurons from
-  [RealNeuronMeshes](https://github.com/SpinDoctorMRI/RealNeuronMeshes).
+  [RealNeuronMeshes](https://github.com/SpinDoctorMRI/RealNeuronMeshes); meshes made with
+  other tools, such as whole brains, from their elements and the compartment of each.
 - **Signals**: the Bloch-Torrey equation for PGSE, double PGSE, OGSE and arbitrary
   three-dimensional gradient sequences, with permeable membranes, T2 relaxation and
-  anisotropic diffusion.
+  anisotropic diffusion (a tensor per compartment, or per element, as from diffusion
+  tensor imaging).
 - **ADCs**: fitted signals, the homogenized ADC model, the matrix formalism (Laplace
   eigenfunctions), the Kärger model and the short diffusion time approximation;
   analytical solutions for layered plates, cylinders and spheres.
@@ -96,6 +98,21 @@ adcs = solve_hadc(model, matrices, gradient)  # ADC of each compartment
 
 The [documentation](https://spindoctormri.github.io/SpinDoctor.jl/dev) has all the
 examples, with interactive figures, and the manual.
+
+### Brain geometries
+
+![Laplace eigenfunctions of a human brain](assets/brain_eigenfunctions.png)
+
+Brain geometries can be loaded as well: `SpinDoctor.tagged_mesh` makes a SpinDoctor mesh
+from a tetrahedral mesh made with other tools (such as Gmsh or FEniCS) and the compartment
+of each element, and finds the interfaces and boundaries. Above, Laplace eigenfunctions
+(`solve_laplace`) of the human brain mesh of the
+[Gonzo](https://github.com/jorgenriseth/gonzo) dataset, with three compartments (cortex,
+white matter and subcortical gray matter) and a diffusion tensor per element from the DTI
+of the dataset (isotropic in the cortex): the lowest modes, and higher ones, on axial and
+coronal sections and on the brain surface seen from the left and from above (the colors
+are clipped at the 99th percentile, to show the global structure of the modes with intense
+spots).
 
 ### Spinning spindle spins
 
