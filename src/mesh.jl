@@ -67,6 +67,47 @@ function split_mesh(mesh_all)
 end
 
 """
+    tagged_mesh(points, elements, elementmarkers)
+
+Finite element mesh of a simplex mesh created elsewhere, with the compartment number of
+each element (`elementmarkers`, from 1 to the number of compartments), e.g. the cell tags of
+a mesh from Gmsh or FEniCS. The boundaries are found from the elements: the interfaces
+between pairs of compartments, and the outer boundary of each compartment, numbered as in
+the setup recipes (see [`create_surfaces`](@ref)).
+"""
+function tagged_mesh(points, elements, elementmarkers)
+    dim = size(points, 1)
+    ncompartment = maximum(elementmarkers)
+
+    # The faces of the elements, with the elements that have them
+    faces = Dict{NTuple{dim,Int},Tuple{Int,Int}}()
+    for e in axes(elements, 2), skip in axes(elements, 1)
+        f = Tuple(sort(SVector{dim}(ntuple(k -> elements[k < skip ? k : k + 1, e], dim))))
+        first, _ = get(faces, f, (0, 0))
+        faces[f] = first == 0 ? (e, 0) : (first, e)
+    end
+
+    # Outer boundaries (faces of one element) and interfaces (faces between compartments)
+    facets = Int[]
+    facetmarkers = Int[]
+    for (f, (e1, e2)) in faces
+        i = elementmarkers[e1]
+        if e2 == 0
+            boundary = outer_boundary_index(i, ncompartment)
+        elseif elementmarkers[e2] != i
+            boundary = interface_index(minmax(i, elementmarkers[e2])..., ncompartment)
+        else
+            continue
+        end
+        append!(facets, f)
+        push!(facetmarkers, boundary)
+    end
+    facets = reshape(facets, dim, :)
+
+    split_mesh((; points, facets, facetmarkers, elements, elementmarkers))
+end
+
+"""
     split_field(mesh, u)
 
 Split the field `u` (with values at all the points of `mesh`) into a vector with a view of

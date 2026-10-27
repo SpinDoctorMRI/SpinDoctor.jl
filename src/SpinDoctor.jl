@@ -67,6 +67,7 @@ export plot_surfaces,
     eval(Meta.parse("""
         public FEMesh,
             split_mesh,
+            tagged_mesh,
             facet_elements,
             element_geometry,
             facet_geometry,

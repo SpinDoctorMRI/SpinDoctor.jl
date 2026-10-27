@@ -66,6 +66,9 @@ extension, split OrdinaryDiffEq packages).
 
 - Multithreaded matrix assembly with static element kernels, much faster and with far
   less memory than before.
+- `SpinDoctor.tagged_mesh`: a mesh made elsewhere (e.g. with Gmsh or FEniCS), with the
+  compartment of each element; the interfaces and outer boundaries are found from the
+  elements.
 - `compartment_mesh`, `box_faces`, `compartment_weights`, given cell configurations
   (`create_geometry(setup; cells)`), random number generators (`rng`), and
   `save_geometry`/`load_geometry`.

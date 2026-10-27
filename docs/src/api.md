@@ -123,6 +123,7 @@ plot_hardi!
 ```@docs
 SpinDoctor.FEMesh
 SpinDoctor.split_mesh
+SpinDoctor.tagged_mesh
 SpinDoctor.facet_elements
 SpinDoctor.element_geometry
 SpinDoctor.facet_geometry

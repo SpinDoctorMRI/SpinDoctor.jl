@@ -160,6 +160,28 @@ end
     end
 end
 
+@testset "Meshes from tagged elements" begin
+    # The elements and compartments of recipe meshes (2D and 3D) give the same compartments
+    # and boundaries
+    for setup in [
+        DiskSetup(; ncell = 3, layersizes = [0.5, 1.0], ecs = BoxECS()),
+        SphereSetup(; ncell = 3, layersizes = [0.5, 1.0], ecs = BoxECS()),
+    ]
+        mesh, = create_geometry(setup; rng = Xoshiro(1))
+        dim = size(mesh.points[1], 1)
+        points = zeros(dim, maximum(maximum, mesh.point_map))
+        for (p, map) in zip(mesh.points, mesh.point_map)
+            points[:, map] = p
+        end
+        elements = reduce(hcat, [map[e] for (map, e) in zip(mesh.point_map, mesh.elements)])
+        markers = reduce(vcat, [fill(i, size(e, 2)) for (i, e) in enumerate(mesh.elements)])
+        tagged = SpinDoctor.tagged_mesh(points, elements, markers)
+        @test tagged.points == mesh.points
+        @test tagged.elements == mesh.elements
+        @test size.(tagged.facets, 2) == size.(mesh.facets, 2)
+    end
+end
+
 @testset "Compartment meshes and box faces" begin
     for setup in [
         DiskSetup(; ncell = 3, rmin = 2.0, rmax = 4.0, ecs = BoxECS(; margin = 1.0)),
