@@ -1,6 +1,9 @@
 <div align="center">
 
-![SpinDoctor](assets/logo_text.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo_text_dark.svg">
+  <img alt="SpinDoctor.jl" src="assets/logo_text.svg" width="480">
+</picture>
 
 [![Docs (stable)](https://img.shields.io/badge/docs-stable-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/stable)
 [![Docs (dev)](https://img.shields.io/badge/docs-dev-blue.svg)](https://spindoctormri.github.io/SpinDoctor.jl/dev)
