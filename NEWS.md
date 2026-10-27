@@ -66,6 +66,10 @@ extension, split OrdinaryDiffEq packages).
 
 - Multithreaded matrix assembly with static element kernels, much faster and with far
   less memory than before.
+- Diffusion tensor fields: `Model(; D)` takes, for each compartment, a tensor or one tensor
+  per element (e.g. from diffusion tensor imaging), for all the solvers. The homogenized
+  ADC uses the volume integral of `D ∇φ` as its source, which equals the surface integral
+  for constant tensors.
 - `SpinDoctor.tagged_mesh`: a mesh made elsewhere (e.g. with Gmsh or FEniCS), with the
   compartment of each element; the interfaces and outer boundaries are found from the
   elements.

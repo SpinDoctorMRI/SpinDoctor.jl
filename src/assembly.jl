@@ -229,7 +229,8 @@ end
     assemble_stiffness_matrix(elements, points, D = I[, pattern])
 
 Assemble the P1 stiffness matrix ``S_{ij} = \\int \\nabla \\varphi_i \\cdot D \\nabla
-\\varphi_j`` of the simplices `elements` with `points`, for a constant diffusion tensor `D`.
+\\varphi_j`` of the simplices `elements` with `points`, for a constant diffusion tensor `D`,
+or one tensor per element (a vector of matrices).
 """
 function assemble_stiffness_matrix(
     elements,
@@ -238,24 +239,36 @@ function assemble_stiffness_matrix(
     pattern = FEPattern(elements, size(points, 2)),
 )
     dim = size(points, 1)
-    _stiffness(points, elements, SMatrix{dim,dim}(D * I(dim)), pattern, Val(dim))
+    _stiffness(points, elements, element_tensors(D, Val(dim)), pattern, Val(dim))
 end
 
 function _stiffness(points, elements, D, pattern, ::Val{dim}) where {dim}
     nb = Val(dim + 1)
     assemble(
-        e -> local_stiffness(simplex(points, elements, e, Val(dim), nb), D),
+        e -> local_stiffness(simplex(points, elements, e, Val(dim), nb), D(e)),
         pattern,
         elements,
         nb,
     )
 end
 
+# The diffusion tensor of element e, for a constant tensor or one tensor per element
+function element_tensors(D, ::Val{dim}) where {dim}
+    if D isa AbstractVector
+        tensors = [SMatrix{dim,dim}(d) for d in D]
+        e -> tensors[e]
+    else
+        tensor = SMatrix{dim,dim}(D * I(dim))
+        e -> tensor
+    end
+end
+
 """
     assemble_derivative_matrix(elements, points, d, D = I[, pattern])
 
 Assemble the P1 matrix ``C_{ij} = \\int \\varphi_i (D \\nabla \\varphi_j)_d`` of the simplices
-`elements` with `points`, for a constant diffusion tensor `D` and the axis `d`.
+`elements` with `points`, for the axis `d` and a constant diffusion tensor `D`, or one
+tensor per element (a vector of matrices).
 """
 function assemble_derivative_matrix(
     elements,
@@ -265,13 +278,13 @@ function assemble_derivative_matrix(
     pattern = FEPattern(elements, size(points, 2)),
 )
     dim = size(points, 1)
-    _derivative(points, elements, SMatrix{dim,dim}(D * I(dim)), d, pattern, Val(dim))
+    _derivative(points, elements, element_tensors(D, Val(dim)), d, pattern, Val(dim))
 end
 
 function _derivative(points, elements, D, d, pattern, ::Val{dim}) where {dim}
     nb = Val(dim + 1)
     assemble(
-        e -> local_derivative(simplex(points, elements, e, Val(dim), nb), D, d),
+        e -> local_derivative(simplex(points, elements, e, Val(dim), nb), D(e), d),
         pattern,
         elements,
         nb,

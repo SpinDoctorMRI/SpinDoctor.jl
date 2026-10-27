@@ -7,7 +7,8 @@ Compute the ADC of each compartment in the short diffusion time approximation (S
 the direction of the scalar gradient `gradient`.
 """
 function compute_adc_sta(model::Model{T}, gradient::ScalarGradient) where {T}
-    (; mesh, D) = model
+    (; mesh) = model
+    D = mean_diffusion_tensors(model)
     d = gradient.dir
     t = diffusion_time_sta(gradient.profile)
 
@@ -80,7 +81,8 @@ direction follows from one solve per axis. With `arraytype = CuArray` (after `us
 CUDSS`), it is solved on an NVIDIA GPU.
 
 With periodic matrices (`assemble_matrices(model; periodic = true)`), the compartments
-are periodic, and the faces of the box are not boundaries.
+are periodic, and the faces of the box are not boundaries. With one diffusion tensor per
+element, the tensors are relative to the volume average of the diffusion tensor.
 """
 function solve_hadc_tensors(
     model,
@@ -89,21 +91,30 @@ function solve_hadc_tensors(
     timestep = echotime(profile) / 1000,
     arraytype = Array,
 )
-    (; D) = model
-    (; M_cmpts, S_cmpts, G, volumes) = matrices
-    P_cmpts = get(matrices, :P_cmpts, nothing)
-    if !isnothing(P_cmpts)
-        # Periodic compartments: the matrices of the periodic points, where the surface
-        # integrals on opposite faces of the box cancel
-        M_cmpts = [sparse(P') * Mi * P for (Mi, P) in zip(M_cmpts, P_cmpts)]
-        S_cmpts = [sparse(P') * Si * P for (Si, P) in zip(S_cmpts, P_cmpts)]
-        G = [P' * Gi for (Gi, P) in zip(G, P_cmpts)]
-    end
+    (; mesh) = model
+    (; M_cmpts, S_cmpts, volumes) = matrices
+    dim = size(mesh.points[1], 1)
+    D = mean_diffusion_tensors(model)
 
     # The auxiliary function solves M w' + S w = F(t) B u for the direction u, and the ADC
-    # correction is u' A u / (volume * int_F2) with A = B' int F(t) w(t) dt. The compartments
-    # are independent, and solved together (with block diagonal matrices).
-    B = [G[i] * D[i] for i in eachindex(D)]
+    # correction is u' A u / (volume * int_F2) with A = B' int F(t) w(t) dt, where
+    # B_jd = int (D grad phi_j)_d. For a constant tensor, B = G D with the surface integrals G
+    # of the basis functions times the normal, but the volume integral also holds for a
+    # tensor that varies in the compartment. The compartments are independent, and solved
+    # together (with block diagonal matrices).
+    B = map(eachindex(D)) do i
+        (; points, elements) = (; points = mesh.points[i], elements = mesh.elements[i])
+        C = [assemble_derivative_matrix(elements, points, d, model.D[i]) for d = 1:dim]
+        reduce(hcat, [vec(sum(C[d]; dims = 1)) for d = 1:dim])
+    end
+    P_cmpts = get(matrices, :P_cmpts, nothing)
+    if !isnothing(P_cmpts)
+        # Periodic compartments: the matrices of the periodic points, where the integrals on
+        # opposite faces of the box cancel
+        M_cmpts = [sparse(P') * Mi * P for (Mi, P) in zip(M_cmpts, P_cmpts)]
+        S_cmpts = [sparse(P') * Si * P for (Si, P) in zip(S_cmpts, P_cmpts)]
+        B = [P' * Bi for (Bi, P) in zip(B, P_cmpts)]
+    end
     Wint = hadc_integral(
         blockdiag(M_cmpts...),
         blockdiag(S_cmpts...),

@@ -160,6 +160,66 @@ end
     end
 end
 
+@testset "Diffusion tensors per element" begin
+    # A tensor per element that is the same everywhere gives the same results as a constant
+    # tensor
+    setup = CylinderSetup(; ncell = 2, rmin = 2.0, rmax = 3.0, ecs = BoxECS(), height = 4.0)
+    mesh, = create_geometry(setup; rng = Xoshiro(1))
+    coeffs = get_coeffs(setup)
+    D = [Matrix(Diagonal([0.002, 0.001, 0.003])) for _ in mesh.points]
+    model = Model(; mesh, coeffs..., D)
+    perelement = Model(;
+        mesh,
+        coeffs...,
+        D = [fill(D[i], size(e, 2)) for (i, e) in enumerate(mesh.elements)],
+    )
+    m1, m2 = assemble_matrices(model), assemble_matrices(perelement)
+    @test m1.S ≈ m2.S
+    profile = PGSE(2000.0, 6000.0)
+    @test solve_hadc_tensors(model, m1, profile) ≈
+          solve_hadc_tensors(perelement, m2, profile)
+
+    # Two plates with different diffusivities, as one compartment with a tensor per element,
+    # and as two compartments with a nearly perfect interface: same signals. The HADC of
+    # the heterogeneous compartment is the low b-value ADC of the BTPDE.
+    setup = PlateSetup(; depth = 10.0, widths = [4.0, 6.0], refinement = 0.2)
+    two, = create_geometry(setup)
+    D1, D2 = [0.002 0.0; 0.0 0.002], [0.0005 0.0002; 0.0002 0.001]
+    twomodel = Model(;
+        mesh = two,
+        rho = [1.0, 1.0],
+        D = [D1, D2],
+        T2 = [Inf, Inf],
+        kappa = [1e3, 0.0, 0.0],
+        gamma,
+    )
+    points = zeros(2, maximum(maximum, two.point_map))
+    for (p, map) in zip(two.points, two.point_map)
+        points[:, map] = p
+    end
+    elements = reduce(hcat, [map[e] for (map, e) in zip(two.point_map, two.elements)])
+    one = SpinDoctor.tagged_mesh(points, elements, ones(Int, size(elements, 2)))
+    onemodel = Model(;
+        mesh = one,
+        rho = [1.0],
+        D = [[fill(D1, size(two.elements[1], 2)); fill(D2, size(two.elements[2], 2))]],
+        T2 = [Inf],
+        kappa = [0.0],
+        gamma,
+    )
+    m1, m2 = assemble_matrices(onemodel), assemble_matrices(twomodel)
+    solver = ThetaSolver(; timestep = 10.0)
+    signals = map((m1, m2), (onemodel, twomodel)) do matrices, model
+        map([0, 50, 100]) do b
+            g = ScalarGradient([1.0, 0.5], profile; bvalue = b, gamma)
+            abs(compute_signal(matrices.M, solve_btpde(model, matrices, g, solver)))
+        end
+    end
+    @test signals[1] ≈ signals[2] rtol = 1e-4
+    g = ScalarGradient([1.0, 0.5], profile; bvalue = 100, gamma)
+    @test only(solve_hadc(onemodel, m1, g)) ≈ fit_adc([0, 50, 100], signals[1]) rtol = 2e-3
+end
+
 @testset "Meshes from tagged elements" begin
     # The elements and compartments of recipe meshes (2D and 3D) give the same compartments
     # and boundaries
