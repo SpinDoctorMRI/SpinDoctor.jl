@@ -127,7 +127,8 @@ end
 # with the wave vector q(t) = gamma int_0^t g(s) ds, where m is periodic and solves
 # m' = (grad - i q) . D (grad - i q) m inside the compartments, with the same interface
 # conditions as M. The Galerkin matrix of the right hand side is -A(q), where
-# A(q) = S + Q + R + i sum_d q_d (Cx_d - Cx_d') + M diag(q' D q), on the periodic points.
+# A(q) = S + Q + R + i sum_d q_d (Cx_d - Cx_d') + N(q), on the periodic points, where N(q) is
+# the mass matrix weighted by q' D q.
 function solve_btpde_periodic(
     model::Model{T,dim},
     matrices,
@@ -147,11 +148,24 @@ function solve_btpde_periodic(
     A0 = Pt * (S + Q + R) * P
     K = [Pt * (Cx[d] - Cx[d]') * P for d = 1:dim]
 
-    # q' D q at the periodic points, with the diffusion tensor of their compartment
-    compartment = reduce(vcat, [fill(i, size(p, 2)) for (i, p) in enumerate(mesh.points)])
-    Dr = D[compartment[masters]]
-    weights(q) = [q' * Di * q for Di in Dr]
-    A(q) = A0 + im * sum(q[d] * K[d] for d = 1:dim) + Mr * Diagonal(weights(q))
+    # The mass matrices weighted by the components of the diffusion tensors: the term
+    # M diag(q' D q) is sum_{k <= l} q_k q_l N_kl
+    pairs = [(k, l) for k = 1:dim for l = k:dim]
+    N = map(pairs) do (k, l)
+        blocks = map(D, mesh.points, mesh.elements) do Di, points, elements
+            weights =
+                Di isa AbstractVector ? [d[k, l] for d in Di] :
+                fill(Di[k, l], size(elements, 2))
+            assemble_mass_matrix(
+                elements,
+                points;
+                elementweights = (k == l ? 1 : 2) * weights,
+            )
+        end
+        Pt * blockdiag(blocks...) * P
+    end
+    Nq(q) = sum(q[k] * q[l] * Nkl for ((k, l), Nkl) in zip(pairs, N))
+    A(q) = A0 + im * sum(q[d] * K[d] for d = 1:dim) + Nq(q)
 
     # Magnetization at all the points
     x = reduce(hcat, mesh.points)
@@ -169,6 +183,7 @@ function solve_btpde_periodic(
     # per step size) for the intervals where q changes
     Md, A0d = to_device(arraytype, Mr), to_device(arraytype, A0)
     Kd = [to_device(arraytype, K[d]) for d = 1:dim]
+    Nd = [to_device(arraytype, Nkl) for Nkl in N]
     preconditioners = Dict{T,Any}()
     preconditioner(h) = get!(preconditioners, h) do
         Ph = Mr + h * theta * A0
@@ -200,9 +215,10 @@ function solve_btpde_periodic(
             else
                 # A(q) changes at every step, so it is applied without being formed
                 qn = q((t0 + t1) / 2)
-                w = to_device(arraytype, weights(qn))
                 Amul(v) =
-                    A0d * v + im * sum(qn[d] * (Kd[d] * v) for d = 1:dim) + Md * (w .* v)
+                    A0d * v +
+                    im * sum(qn[d] * (Kd[d] * v) for d = 1:dim) +
+                    sum(qn[k] * qn[l] * (Ndkl * v) for ((k, l), Ndkl) in zip(pairs, Nd))
                 rhs = Md * m - h * (1 - theta) * Amul(m)
                 Kmul(v) = Md * v + h * theta * Amul(v)
                 m = preconditioned_gmres(Kmul, rhs, m, realsolve(Ph))

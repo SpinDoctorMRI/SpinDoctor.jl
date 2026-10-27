@@ -35,6 +35,10 @@ model = Model(; mesh, coeffs...)
 matrices = assemble_matrices(model)
 ```
 
+The diffusion tensor of a compartment may also vary: a vector with one tensor per element
+of the compartment (e.g. from diffusion tensor imaging) replaces the constant tensor, in
+the same order as `mesh.elements[i]`.
+
 [`assemble_matrices`](@ref) assembles the finite element matrices, in parallel on all Julia
 threads (start Julia with `--threads=auto`). [`compartment_weights`](@ref) gives the
 contribution of each compartment to the signal without gradient.

@@ -4,3 +4,5 @@ extend-exclude = ["docs/references.bib", "CITATION.md", "*.toml"]
 [default.extend-words]
 # J. Magn. Reson. (journal abbreviation)
 Reson = "Reson"
+# Device copies of the N matrices (time stepping)
+Nd = "Nd"
